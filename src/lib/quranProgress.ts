@@ -12,8 +12,8 @@ export interface QuranDailyProgress {
   completedAt?: number;
 }
 
-export function getTodayDateStr(): string {
-  const d = new Date();
+export function getTodayDateStr(date = new Date()): string {
+  const d = date;
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -52,9 +52,9 @@ export const MAX_PROGRESS_HISTORY_DAYS = 90;
 export async function pruneOldQuranDailyProgress(): Promise<void> {
   try {
     const allKeys = await AsyncStorage.getAllKeys();
-    const cutoffDate = new Date(Date.now() - MAX_PROGRESS_HISTORY_DAYS * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - MAX_PROGRESS_HISTORY_DAYS);
+    const cutoffDate = getTodayDateStr(cutoff);
 
     const keysToRemove = allKeys.filter((k) => {
       if (!k.startsWith(STORAGE_KEY_PREFIX)) return false;

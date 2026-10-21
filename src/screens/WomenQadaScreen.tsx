@@ -35,11 +35,16 @@ import {
   deleteMissedFast,
 } from '../lib/db';
 import { formatYMD, isValidYMD } from '../lib/womensFiqh';
+import { isWomenSpecificReason } from '../lib/womenReason';
 
 interface WomenQadaScreenProps {
   onBack?: () => void;
   backLabel?: string;
   onOpenCycle?: () => void;
+}
+
+export function getWomenMissedFasts(allMissedFasts: MissedFastItem[]): MissedFastItem[] {
+  return allMissedFasts.filter((f) => isWomenSpecificReason(f.reason));
 }
 
 function WomenQadaScreen({
@@ -79,10 +84,7 @@ function WomenQadaScreen({
 
   // Filter to women's worship missed fasts (menses & postnatal)
   const womenMissedFasts = useMemo(() => {
-    return allMissedFasts.filter((f) => {
-      const r = (f.reason || '').toLowerCase();
-      return r.includes('menstru') || r.includes('post-natal') || r.includes('postnatal');
-    });
+    return getWomenMissedFasts(allMissedFasts);
   }, [allMissedFasts]);
 
   const qadaStats = useMemo(() => {

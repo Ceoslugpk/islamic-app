@@ -40,7 +40,7 @@ interface HajjDay {
   practicalNotes: string[];
 }
 
-const HAJJ_DAYS: HajjDay[] = [
+export const HAJJ_DAYS: HajjDay[] = [
   {
     id: 'day-8',
     dayNumber: 'Day 1',
@@ -445,7 +445,7 @@ export default function HajjJourneyScreen({
               </View>
 
               <AppText variant="body" tone="faint" style={styles.daySummary}>
-                {day.summary}
+                {t(day.summary)}
               </AppText>
 
               <Hairline style={{ marginVertical: 14 }} />
@@ -475,7 +475,7 @@ export default function HajjJourneyScreen({
                   >
                     <View style={styles.ritualHeader}>
                       <AppText variant="rowTitle" style={styles.ritualName}>
-                        {r.name}
+                        {t(r.name)}
                       </AppText>
                       <View style={[styles.obligationBadge, { borderColor: obligationColor }]}>
                         <AppText variant="caption" style={[styles.obligationText, { color: obligationColor }]}>
@@ -484,7 +484,7 @@ export default function HajjJourneyScreen({
                       </View>
                     </View>
                     <AppText variant="body" tone="faint" style={styles.ritualDesc}>
-                      {r.description}
+                      {t(r.description)}
                     </AppText>
                   </View>
                 );
@@ -508,7 +508,7 @@ export default function HajjJourneyScreen({
                       ]}
                     >
                       <AppText variant="rowTitle" highlight style={styles.duaBoxTitle}>
-                        {d.title}
+                        {t(d.title)}
                       </AppText>
                       <ArabicText style={[styles.duaBoxArabic, { color: tokens.text }]}>
                         {d.arabic}
@@ -517,7 +517,7 @@ export default function HajjJourneyScreen({
                         {d.transliteration}
                       </AppText>
                       <AppText variant="body" tone="faint" style={styles.duaBoxTrans}>
-                        &quot;{d.translation}&quot;
+                        &quot;{t(d.translation)}&quot;
                       </AppText>
                       <AppText variant="caption" tone="faint" style={styles.duaBoxRef}>
                         {t('Source')}: {d.reference}
@@ -545,7 +545,7 @@ export default function HajjJourneyScreen({
                 </View>
                 {day.practicalNotes.map((pn, pni) => (
                   <AppText key={pni} variant="body" tone="faint" style={styles.tipsBoxText}>
-                    • {pn}
+                    • {t(pn)}
                   </AppText>
                 ))}
               </View>

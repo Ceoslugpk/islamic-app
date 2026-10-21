@@ -33,6 +33,13 @@ export interface ReadingPlan {
   days: PlanDayItem[];
 }
 
+export function formatPlanPortion(portion: string, translate: (key: string) => string): string {
+  return portion
+    .replace('Juz', translate('Juz'))
+    .replace('Part', translate('Part'))
+    .replace("Rub'", translate("Rub'"));
+}
+
 const PLANS: ReadingPlan[] = [
   {
     id: '30-days',
@@ -230,7 +237,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           renderItem={({ item }) => {
             const isCompleted = currentPlanProgress[item.day] === true;
             const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
-            const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
+            const displayPortion = formatPlanPortion(item.portion, t);
             return (
               <TouchableOpacity
                 style={[

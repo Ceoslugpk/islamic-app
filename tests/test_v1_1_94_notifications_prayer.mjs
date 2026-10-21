@@ -252,8 +252,12 @@ writeStub('watcherSettings.mjs', `
   }};
   export function useSettings() { return state; }
 `);
+const watcherDateKey = transpileProduction('src/lib/dateKey.ts', 'watcherDateKey.mjs', []);
+void watcherDateKey;
+
 const watcherFile = transpileProduction('src/lib/usePrayerWatcher.ts', 'watcher.mjs', [
   ["from 'react'", "from './watcherReact.mjs'"],
+  ["from './dateKey'", "from './watcherDateKey.mjs'"],
   ["from './prayerTimes'", "from './watcherPrayerTimes.mjs'"],
   ["from './audio'", "from './watcherAudio.mjs'"],
   ["from './settings'", "from './watcherSettings.mjs'"],
@@ -330,11 +334,13 @@ writeStub('countdownStubs.mjs', `
   export const AccessibilityInfo = { isReduceMotionEnabled: async () => false };
   export const useTheme = () => ({ colors: { accent: '#000', textMuted: '#000' } });
   export const AppText = () => null;
+  export const t = (key) => key;
 `);
 const countdownFile = transpileProduction('src/components/PrayerCountdown.tsx', 'countdown.mjs', [
   ["from 'react'", "from './countdownStubs.mjs'"],
   ["from 'react-native'", "from './countdownStubs.mjs'"],
   ["from '../lib/theme'", "from './countdownStubs.mjs'"],
+  ["from '../lib/i18n'", "from './countdownStubs.mjs'"],
   ["from './ui/AppText'", "from './countdownStubs.mjs'"],
 ]);
 const countdown = await import(countdownFile);

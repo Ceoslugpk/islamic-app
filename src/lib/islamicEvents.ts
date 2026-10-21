@@ -2,6 +2,8 @@
  * Major Islamic events with fixed Hijri dates.
  * Used for calendar markers, countdowns, and event listings.
  */
+
+import { t } from './i18n';
 export interface IslamicEvent {
   hijriMonth: number; // 1-12
   hijriDay: number;   // 1-30
@@ -18,7 +20,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 1,
     name: 'Islamic New Year',
     arabic: 'رأس السنة الهجرية',
-    significance: 'First day of Muharram, marking the Hijri new year.',
+    get significance() { return t('First day of Muharram, marking the Hijri new year.'); },
     type: 'major',
   },
   {
@@ -26,7 +28,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 10,
     name: 'Ashura',
     arabic: 'عاشوراء',
-    significance: 'Day of fasting; commemorates Musa\'s victory and Husayn\'s martyrdom at Karbala.',
+    get significance() { return t('Day of fasting; commemorates Musa\'s victory and Husayn\'s martyrdom at Karbala.'); },
     type: 'major',
   },
 
@@ -36,7 +38,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 12,
     name: 'Mawlid al-Nabi',
     arabic: 'المولد النبوي',
-    significance: 'Birth anniversary of the Prophet Muhammad ﷺ (observed on 12th by most).',
+    get significance() { return t('Birth anniversary of the Prophet Muhammad ﷺ (observed on 12th by most).'); },
     type: 'major',
   },
 
@@ -46,7 +48,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 27,
     name: 'Isra and Mi\'raj',
     arabic: 'الإسراء والمعراج',
-    significance: 'Night journey and ascension of the Prophet ﷺ to the heavens.',
+    get significance() { return t('Night journey and ascension of the Prophet ﷺ to the heavens.'); },
     type: 'major',
   },
 
@@ -56,7 +58,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 15,
     name: 'Nisf Sha\'ban (Laylat al-Bara\'ah)',
     arabic: 'ليلة النصف من شعبان',
-    significance: 'Night of forgiveness; many observe prayers and fasting the next day.',
+    get significance() { return t('Night of forgiveness; many observe prayers and fasting the next day.'); },
     type: 'observance',
   },
 
@@ -66,7 +68,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 1,
     name: 'Ramadan Begins',
     arabic: 'بدء رمضان',
-    significance: 'First day of the month of fasting.',
+    get significance() { return t('First day of the month of fasting.'); },
     type: 'major',
   },
   {
@@ -74,7 +76,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 27,
     name: 'Laylat al-Qadr',
     arabic: 'ليلة القدر',
-    significance: 'Night of Power; better than a thousand months. Often observed on the 27th night.',
+    get significance() { return t('Night of Power; better than a thousand months. Often observed on the 27th night.'); },
     type: 'major',
   },
 
@@ -84,7 +86,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 1,
     name: 'Eid al-Fitr',
     arabic: 'عيد الفطر',
-    significance: 'Festival of breaking the fast; marks the end of Ramadan.',
+    get significance() { return t('Festival of breaking the fast; marks the end of Ramadan.'); },
     type: 'major',
   },
 
@@ -97,7 +99,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 9,
     name: 'Day of Arafah',
     arabic: 'يوم عرفة',
-    significance: 'Hajj pilgrims gather at Arafat; highly recommended fast for non-pilgrims.',
+    get significance() { return t('Hajj pilgrims gather at Arafat; highly recommended fast for non-pilgrims.'); },
     type: 'major',
   },
   {
@@ -105,7 +107,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 10,
     name: 'Eid al-Adha',
     arabic: 'عيد الأضحى',
-    significance: 'Festival of Sacrifice; coincides with Hajj rites.',
+    get significance() { return t('Festival of Sacrifice; coincides with Hajj rites.'); },
     type: 'major',
   },
   {
@@ -113,7 +115,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 11,
     name: 'Days of Tashriq (1st)',
     arabic: 'أيام التشريق',
-    significance: 'Three days following Eid al-Adha; continuation of celebration and sacrifice.',
+    get significance() { return t('Three days following Eid al-Adha; continuation of celebration and sacrifice.'); },
     type: 'observance',
   },
   {
@@ -121,7 +123,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 12,
     name: 'Days of Tashriq (2nd)',
     arabic: 'أيام التشريق',
-    significance: 'Three days following Eid al-Adha; continuation of celebration and sacrifice.',
+    get significance() { return t('Three days following Eid al-Adha; continuation of celebration and sacrifice.'); },
     type: 'observance',
   },
   {
@@ -129,7 +131,7 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 13,
     name: 'Days of Tashriq (3rd)',
     arabic: 'أيام التشريق',
-    significance: 'Three days following Eid al-Adha; continuation of celebration and sacrifice.',
+    get significance() { return t('Three days following Eid al-Adha; continuation of celebration and sacrifice.'); },
     type: 'observance',
   },
 
@@ -139,16 +141,24 @@ export const ISLAMIC_EVENTS: IslamicEvent[] = [
     hijriDay: 15,
     name: 'Nuzul al-Quran',
     arabic: 'نزول القرآن',
-    significance: 'Commemorates the first revelation of the Quran to the Prophet ﷺ.',
+    get significance() { return t('Commemorates the first revelation of the Quran to the Prophet ﷺ.'); },
     type: 'observance',
   },
 ];
 
-export const HIJRI_MONTH_NAMES = [
+const HIJRI_MONTH_NAME_KEYS = [
   'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' al-Thani",
   'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', "Sha'ban",
   'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
 ];
+
+export const HIJRI_MONTH_NAMES = HIJRI_MONTH_NAME_KEYS.slice();
+HIJRI_MONTH_NAME_KEYS.forEach((month, index) => {
+  Object.defineProperty(HIJRI_MONTH_NAMES, index, {
+    enumerable: true,
+    get: () => t(month),
+  });
+});
 
 /** Get events for a specific hijri month */
 export function getEventsForMonth(hijriMonth: number): IslamicEvent[] {
@@ -212,5 +222,9 @@ function getHijriMonthLength(year: number, month: number): number {
 /** Format a hijri date as "20 Rabi' al-Thani 1448 AH" */
 export function formatHijriDate(day: number, month: number, year: number): string {
   const safeMonth = Math.max(1, Math.min(12, month || 1));
-  return `${day} ${HIJRI_MONTH_NAMES[safeMonth - 1]} ${year} AH`;
+  return t('{{day}} {{month}} {{year}} AH', {
+    day,
+    month: HIJRI_MONTH_NAMES[safeMonth - 1],
+    year,
+  });
 }

@@ -3,6 +3,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  AppState,
   useWindowDimensions,
   AccessibilityRole,
   Animated,
@@ -22,12 +23,12 @@ import { isRTL, t } from '../lib/i18n';
 import { getForwardIcon } from '../lib/iconMap';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { AppText } from '../components/ui/AppText';
+import { InteractiveSurface } from '../components/InteractiveSurface';
 import { useLocation } from '../lib/useLocation';
 import { qiblaBearing } from '../lib/qibla';
 import {
   getSalahEntries,
-  computeStreak,
-  getSalahHistory,
+  getSalahStreak,
   markSalahCompleted,
 } from '../lib/db';
 import {
@@ -38,6 +39,7 @@ import {
   DayTimings,
 } from '../lib/prayerTimes';
 import { getHijriDate } from '../lib/fasting';
+import { getLocalDateKey } from '../lib/dateKey';
 
 /* ─── Route Union ────────────────────────────────────────────────────────── */
 
@@ -97,7 +99,7 @@ interface AccessiblePressableProps {
   testID?: string;
 }
 
-function AccessiblePressable({
+export function AccessiblePressable({
   onPress,
   style,
   scaleOnPress = 0.98,
@@ -110,23 +112,19 @@ function AccessiblePressable({
   testID,
 }: AccessiblePressableProps) {
   return (
-    <Pressable
+    <InteractiveSurface
       onPress={onPress}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessible={accessible}
       testID={testID}
-      style={({ pressed }) => [
-        style,
-        pressed && {
-          transform: [{ scale: scaleOnPress }],
-          opacity: activeOpacity,
-        },
-      ]}
+      style={style}
+      scaleOnPress={scaleOnPress}
+      activeOpacity={activeOpacity}
     >
       {children}
-    </Pressable>
+    </InteractiveSurface>
   );
 }
 
@@ -142,9 +140,8 @@ function DiamondIcon({ size = 6, color = GOLD_SOLID }: { size?: number; color?: 
   );
 }
 
-function getTodayIso(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+export function getTodayIso(date = new Date()): string {
+  return getLocalDateKey(date);
 }
 
 const PRAYERS_LIST = [
@@ -154,6 +151,45 @@ const PRAYERS_LIST = [
   { key: 'Maghrib', label: 'Maghrib' },
   { key: 'Isha', label: 'Isha' },
 ] as const;
+
+export function getTrackedNextPrayerName(nextPrayerName?: string): string | undefined {
+  if (nextPrayerName === 'Sunrise') return 'Dhuhr';
+  return PRAYERS_LIST.some((prayer) => prayer.key === nextPrayerName) ? nextPrayerName : undefined;
+}
+
+export function useTodayIso(): string {
+  const [todayIso, setTodayIso] = useState(() => getTodayIso());
+
+  useEffect(() => {
+    let midnightTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleMidnightRefresh = () => {
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      midnightTimer = setTimeout(refreshDate, Math.max(1, nextMidnight.getTime() - now.getTime()));
+    };
+
+    const refreshDate = () => {
+      const nextIso = getTodayIso();
+      setTodayIso((previous) => (previous === nextIso ? previous : nextIso));
+      scheduleMidnightRefresh();
+    };
+
+    scheduleMidnightRefresh();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refreshDate();
+    });
+
+    return () => {
+      subscription.remove();
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+    };
+  }, []);
+
+  return todayIso;
+}
 
 /* ─── Main ToolsScreen ───────────────────────────────────────────────────── */
 
@@ -188,8 +224,23 @@ const ToolsScreen = React.memo(function ToolsScreen({
   }, [settings.locationMode, gpsLocation, settings.autoLocation, settings.manualLocation]);
 
   // 1. Tracker Data & Streak
-  const [completed, setCompleted] = useState<Record<string, boolean>>(() => getSalahEntries(getTodayIso()));
-  const [streak, setStreak] = useState(() => computeStreak(getSalahHistory(30)));
+  const todayIso = useTodayIso();
+  const [completedState, setCompletedState] = useState(() => ({
+    date: todayIso,
+    entries: getSalahEntries(todayIso),
+  }));
+  const completed = useMemo(
+    () => completedState.date === todayIso ? completedState.entries : getSalahEntries(todayIso),
+    [completedState, todayIso],
+  );
+  const [streakState, setStreakState] = useState(() => ({
+    date: todayIso,
+    value: getSalahStreak(),
+  }));
+  const streak = useMemo(
+    () => streakState.date === todayIso ? streakState.value : getSalahStreak(),
+    [streakState, todayIso],
+  );
   const [prayerTimings, setPrayerTimings] = useState<DayTimings | null>(() => {
     const loc = effectiveLocation;
     if (loc?.latitude != null && loc?.longitude != null) {
@@ -219,15 +270,17 @@ const ToolsScreen = React.memo(function ToolsScreen({
     return () => {
       cancelled = true;
     };
-  }, [isActive, effectiveLocation, settings.methodId]);
+  }, [isActive, effectiveLocation, settings.methodId, todayIso]);
 
   function togglePrayer(prayer: string) {
-    const iso = getTodayIso();
+    const iso = todayIso;
     const next = !completed[prayer];
     markSalahCompleted(iso, prayer, next);
-    setCompleted((prev) => ({ ...prev, [prayer]: next }));
-    const history = getSalahHistory(30);
-    setStreak(computeStreak(history));
+    setCompletedState((previous) => ({
+      date: iso,
+      entries: { ...(previous.date === iso ? previous.entries : getSalahEntries(iso)), [prayer]: next },
+    }));
+    setStreakState({ date: iso, value: getSalahStreak() });
   }
 
   const completedCount = useMemo(() => {
@@ -500,7 +553,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
               <View style={styles.heroPrayersRow}>
                 {PRAYERS_LIST.map((prayer) => {
                   const isDone = Boolean(completed[prayer.key]);
-                  const isNext = nextPrayer?.name === prayer.key;
+                  const isNext = getTrackedNextPrayerName(nextPrayer?.name) === prayer.key;
                   let isPassed = false;
                   if (!isDone && !isNext && prayerTimings?.timings?.[prayer.key]) {
                     const now = new Date();

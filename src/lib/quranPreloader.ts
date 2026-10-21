@@ -125,13 +125,6 @@ export function getCachedSurahsCount(editionIdentifier: string): number {
   for (let i = 1; i <= TOTAL_SURAHS; i++) {
     if (keys.has(`surah:${i}:${editionIdentifier}`)) {
       count++;
-    } else if (keys.has(`surah:${i}:ar`)) {
-      for (const ed of QURAN_LANGUAGE_EDITIONS) {
-        if (keys.has(`surah:${i}:${ed.editionIdentifier}`)) {
-          count++;
-          break;
-        }
-      }
     }
   }
   return count;
@@ -463,12 +456,13 @@ export async function preloadSingleSurah(
     try {
       const detail = await fetchSurahFromQuranCom(surahNumber);
       if (detail && detail.ayahs && detail.ayahs.length > 0) {
-        const ok = saveQuranCache(cacheKey, detail);
         const arKey = `surah:${surahNumber}:ar`;
         if (!loadQuranCache(arKey)) {
           saveQuranCache(arKey, detail);
         }
-        return ok && isQuranCacheKeyPresent(cacheKey);
+        // Quran.com supplies Arabic-only text. It must never satisfy the
+        // requested translation edition, even though the Arabic cache is useful.
+        return false;
       }
     } catch {
       // Both providers failed — the outer retry loop will re-attempt

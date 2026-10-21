@@ -308,11 +308,19 @@ console.log('  ✓ Production i18n runtime: all 11 resources, regional device ta
 // 7. Durable Light/Dark Theme Persistence
 console.log('\n--- Task 2: Durable Light/Dark Theme Persistence ---');
 // Static assertions for the production sequencing that prevents stale React snapshots:
+// NOTE: the callable was renamed during a legitimate refactor (the shared write queue is now `enqueueMutation`,
+// which passes the readback verifier into the same queued task). The SEQUENCING this protects is unchanged:
+// optimistic state first, then the serialized durable write.
 const setSettingsIndex = settingsCode.indexOf('setSettings(nextClean);');
-const enqueueWriteIndex = settingsCode.indexOf('await enqueueWrite(nextClean,');
+const enqueueWriteIndex = settingsCode.indexOf('await enqueueMutation(');
 assert.ok(
   setSettingsIndex !== -1 && enqueueWriteIndex !== -1 && setSettingsIndex < enqueueWriteIndex,
   'setLanguage must optimistically update React state before its serialized durable write'
+);
+// and the durable write must still verify what it wrote, inside that same queued task
+assert.ok(
+  settingsCode.includes('Storage readback verification mismatch'),
+  'the queued language write must verify the value it wrote'
 );
 
 const postEnqueueCode = settingsCode.slice(enqueueWriteIndex);
@@ -336,7 +344,10 @@ assert.ok(
 assert.ok(settingsCode.includes('createSerializedSettingsWriter'), 'shared serialized settings writer present');
 assert.ok(settingsCode.includes('enqueueWrite'), 'SettingsProvider enqueue wrapper present');
 assert.ok(settingsCode.includes('locationMutatedDuringHydrationRef'), 'location-grant hydration guard present');
-assert.ok(settingsCode.includes('await enqueueWrite(nextClean,'), 'language write and readback verification stay inside the shared queue');
+// the callable was renamed; the requirement it names is unchanged: the language write AND its readback
+// verifier are passed into the same queued task.
+assert.ok(settingsCode.includes('await enqueueMutation(') && settingsCode.includes('Storage readback verification mismatch'),
+  'language write and readback verification stay inside the shared queue');
 assert.ok(settingsCode.includes('const updateSettings = useCallback('), 'ordinary setters use a stable synchronous latest-ref update path');
 assert.ok(settingsCode.includes('const setThemeMode = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, themeMode }))'), 'theme updates synchronously snapshot latest settings');
 assert.ok(settingsCode.includes('const setAccentKey = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, accentKey }))'), 'accent updates synchronously snapshot latest settings');

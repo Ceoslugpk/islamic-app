@@ -652,12 +652,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    // Hug the chip's own content on the main axis. Without this the active chip (whose
+    // gradient child carried flex:1 + width:'100%') stretched to fill the scrolling row
+    // and rendered as a long gold pill, while the inactive chips stayed compact.
+    alignSelf: 'flex-start',
   },
   monthChipGradient: {
-    flex: 1,
-    alignSelf: 'stretch',
     minHeight: 44,
-    width: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,
     alignItems: 'center',

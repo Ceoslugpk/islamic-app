@@ -1,10 +1,31 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { assertRealI18nLayoutDirectionContract } from './i18n_layout_direction_contract.mjs';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = JSON.parse(read('src/locales/en.json'));
 const ps = JSON.parse(read('src/locales/ps.json'));
+const baselinePs = JSON.parse(execFileSync('git', ['show', 'HEAD:src/locales/ps.json'], { encoding: 'utf8' }));
+
+// The trusted Pashto corpus is reviewed, human-quality text. Pin it to HEAD: a silent edit to an OLD value would
+// otherwise pass this suite, which only checks parity and the English fallback for the post-HEAD keys.
+{
+  const changedOld = Object.keys(baselinePs).filter((k) => k in ps && ps[k] !== baselinePs[k]);
+  assert.strictEqual(
+    changedOld.length, 0,
+    `the trusted Pashto corpus was modified (${changedOld.length} key(s), e.g. ${changedOld.slice(0, 3).join(', ')})`,
+  );
+}
+const allowedEnglishIdentifiers = new Set(JSON.parse(execFileSync('python3', ['-c', `
+import importlib.util
+import json
+
+spec = importlib.util.spec_from_file_location('verify_locale', 'scripts/verify_locale.py')
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(json.dumps(sorted(module.PASHTO_ALLOWED_IDENTICAL_KEYS), ensure_ascii=False))
+`], { encoding: 'utf8' })));
 const i18n = read('src/lib/i18n.ts');
 const settings = read('src/screens/SettingsScreen.tsx');
 const app = read('App.tsx');
@@ -46,7 +67,12 @@ const onboarding = read('src/screens/OnboardingScreen.tsx');
 assert.ok(onboarding.includes("direction: isDemoRtl ? 'rtl' : 'ltr'") && !onboarding.includes('row-reverse'), 'Onboarding preview must set its own language direction without double reversing rows');
 
 assert.deepEqual(Object.keys(ps), Object.keys(en), 'Pashto must keep exact locale key parity');
-const allowedEnglishIdentifiers = new Set(['KFGQPC', 'MIT', 'OFL 1.1', 'TanStack-Free', 'YYYY-MM-DD']);
+const newlyAddedKeys = Object.keys(en).filter((key) => !(key in baselinePs));
+assert.deepEqual(
+  newlyAddedKeys.filter((key) => !allowedEnglishIdentifiers.has(key)),
+  [],
+  'Every key added after the trusted baseline must be whitelisted for English fallback',
+);
 const untranslated = Object.keys(en).filter((key) => ps[key] === en[key] && !allowedEnglishIdentifiers.has(key));
 assert.deepEqual(untranslated, [], 'Only product/license/date identifiers may remain in English in Pashto');
 assert.ok(Object.values(ps).every((value) => !value.includes('YYYYY') && !value.includes('MM - DD')), 'Pashto date examples must preserve YYYY-MM-DD exactly');

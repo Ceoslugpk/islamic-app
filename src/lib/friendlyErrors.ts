@@ -55,32 +55,32 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   if (isNetworkError) {
     if (scope === 'prayer_times') {
       return {
-        title: 'Offline Schedule Active',
+        title: t('Offline Schedule Active'),
         message: t('Unable to connect to the prayer times server. Displaying your saved prayer schedule.'),
-        actionLabel: 'Retry',
+        actionLabel: t('Retry'),
         actionType: 'retry',
       };
     }
     if (scope === 'mosque_finder') {
       return {
-        title: 'Network Connection Needed',
+        title: t('Network Connection Needed'),
         message: t('Mosque search requires an active internet connection to load map data.'),
-        actionLabel: 'Retry Search',
+        actionLabel: t('Retry Search'),
         actionType: 'retry',
       };
     }
     if (scope === 'audio') {
       return {
-        title: 'Audio Stream Unavailable',
+        title: t('Audio Stream Unavailable'),
         message: t('Unable to connect to the audio server. Check your connection or play downloaded recitations.'),
-        actionLabel: 'Try Again',
+        actionLabel: t('Try Again'),
         actionType: 'retry',
       };
     }
     return {
-      title: 'Connection Unavailable',
+      title: t('Connection Unavailable'),
       message: t('Please check your internet connection. Saved content remains accessible offline.'),
-      actionLabel: 'Retry',
+      actionLabel: t('Retry'),
       actionType: 'retry',
     };
   }
@@ -95,9 +95,9 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
 
   if (isServerError) {
     return {
-      title: 'Service Temporarily Busy',
+      title: t('Service Temporarily Busy'),
       message: t('The Islamic data service is experiencing high traffic or brief maintenance. Please try again shortly.'),
-      actionLabel: 'Retry',
+      actionLabel: t('Retry'),
       actionType: 'retry',
     };
   }
@@ -106,18 +106,18 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   if (isNotFound) {
     if (scope === 'mosque_finder') {
       return {
-        title: 'Area Not Found',
+        title: t('Area Not Found'),
         message: context?.query
-          ? `No geographic results found for "${context.query}". Try a different city or landmark.`
-          : 'Could not find mosques in this area. Try searching by city name.',
-        actionLabel: 'Choose City',
+          ? t('No geographic results found for "{{query}}". Try a different city or landmark.', { query: context.query })
+          : t('Could not find mosques in this area. Try searching by city name.'),
+        actionLabel: t('Choose City'),
         actionType: 'choose_city',
       };
     }
     return {
-      title: 'Resource Not Found',
+      title: t('Resource Not Found'),
       message: t('The requested Islamic content could not be located. It may have been updated.'),
-      actionLabel: 'Dismiss',
+      actionLabel: t('Dismiss'),
       actionType: 'dismiss',
     };
   }
@@ -130,11 +130,11 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
 
   if (scope === 'location' || isLocationPermission) {
     return {
-      title: 'Location Permission Needed',
+      title: t('Location Permission Needed'),
       message: context?.fallbackCity
-        ? `Location access is disabled. Currently using your saved location (${context.fallbackCity}).`
-        : 'Enable location in device settings or choose a city manually for accurate prayer times and Qibla.',
-      actionLabel: 'Choose City',
+        ? t('Location access is disabled. Currently using your saved location ({{city}}).', { city: context.fallbackCity })
+        : t('Enable location in device settings or choose a city manually for accurate prayer times and Qibla.'),
+      actionLabel: t('Choose City'),
       actionType: 'choose_city',
     };
   }
@@ -142,29 +142,29 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   // 4. Scope-specific fallbacks
   if (scope === 'mosque_finder') {
     return {
-      title: 'Unable to Load Mosques',
+      title: t('Unable to Load Mosques'),
       message: t('We encountered an issue retrieving nearby mosques. Please try again or search by area.'),
-      actionLabel: 'Retry Search',
+      actionLabel: t('Retry Search'),
       actionType: 'retry',
     };
   }
 
   if (scope === 'prayer_times') {
     return {
-      title: 'Prayer Times Unavailable',
+      title: t('Prayer Times Unavailable'),
       message: t('Could not update prayer timings for this location. Using cached timings where available.'),
-      actionLabel: 'Retry',
+      actionLabel: t('Retry'),
       actionType: 'retry',
     };
   }
 
   // 5. Generic friendly fallback (never show raw code/stack)
   return {
-    title: 'Unable to Complete Request',
+    title: t('Unable to Complete Request'),
     message: rawMsg.length > 0 && rawMsg.length < 120 && !rawMsg.includes('HTTP') && !rawMsg.includes('{')
       ? rawMsg
-      : 'An unexpected issue occurred. Please try again.',
-    actionLabel: 'Retry',
+      : t('An unexpected issue occurred. Please try again.'),
+    actionLabel: t('Retry'),
     actionType: 'retry',
   };
 }

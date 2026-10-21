@@ -17,19 +17,19 @@ function triggerHaptic(kind: HapticKind): void {
   try {
     switch (kind) {
       case 'light':
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        void Promise.resolve(Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)).catch(() => {});
         break;
       case 'success':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void Promise.resolve(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)).catch(() => {});
         break;
       case 'selection':
-        Haptics.selectionAsync();
+        void Promise.resolve(Haptics.selectionAsync()).catch(() => {});
         break;
       case 'warning':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        void Promise.resolve(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)).catch(() => {});
         break;
       case 'error':
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        void Promise.resolve(Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)).catch(() => {});
         break;
     }
   } catch {

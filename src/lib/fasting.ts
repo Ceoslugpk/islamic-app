@@ -4,6 +4,7 @@
 
 import { FastingEntry } from './db';
 import { gregorianToHijri, HIJRI_MONTHS } from './hijri';
+import { t } from './i18n';
 
 export type FastingType = 'ramadan' | 'voluntary' | 'qada';
 
@@ -21,50 +22,50 @@ export interface VoluntaryFastRecommendation {
 export const VOLUNTARY_FASTS_CATALOG = [
   {
     id: 'mon_thu',
-    name: 'Mondays & Thursdays',
+    get name() { return t('Mondays & Thursdays'); },
     arabicName: 'صيام الإثنين والخميس',
-    description: 'Weekly Sunnah fasts observed on Monday and Thursday.',
-    virtue: "The Messenger of Allah ﷺ said: 'Deeds are presented on Monday and Thursday, and I love that my deeds be presented while I am fasting.' (Tirmidhi)",
+    get description() { return t('Weekly Sunnah fasts observed on Monday and Thursday.'); },
+    get virtue() { return t("The Messenger of Allah ﷺ said: 'Deeds are presented on Monday and Thursday, and I love that my deeds be presented while I am fasting.' (Tirmidhi)"); },
     type: 'weekly' as const,
   },
   {
     id: 'ayyam_beed',
-    name: 'Ayyam al-Beed (White Days)',
+    get name() { return t('Ayyam al-Beed (White Days)'); },
     arabicName: 'أيام البيض',
-    description: 'The 13th, 14th, and 15th of every lunar Hijri month during the full moon.',
-    virtue: 'Fasting three days of each month is equivalent to fasting the entire lifetime. (Sahih al-Bukhari)',
+    get description() { return t('The 13th, 14th, and 15th of every lunar Hijri month during the full moon.'); },
+    get virtue() { return t('Fasting three days of each month is equivalent to fasting the entire lifetime. (Sahih al-Bukhari)'); },
     type: 'monthly' as const,
   },
   {
     id: 'ashura',
-    name: 'Day of Ashura & Tasu’a',
+    get name() { return t('Day of Ashura & Tasu’a'); },
     arabicName: 'عاشوراء وتاسوعاء',
-    description: '10th of Muharram (Ashura), recommended to fast alongside the 9th (Tasu’a).',
-    virtue: 'Fasting the day of Ashura expiates the sins of the previous year. (Sahih Muslim)',
+    get description() { return t('10th of Muharram (Ashura), recommended to fast alongside the 9th (Tasu’a).'); },
+    get virtue() { return t('Fasting the day of Ashura expiates the sins of the previous year. (Sahih Muslim)'); },
     type: 'annual' as const,
   },
   {
     id: 'arafah',
-    name: 'Day of Arafah',
+    get name() { return t('Day of Arafah'); },
     arabicName: 'يوم عرفة',
-    description: '9th of Dhu al-Hijjah for non-pilgrims on the pinnacle day of Hajj.',
-    virtue: 'Fasting on the Day of Arafah expiates sins of the previous year and the coming year. (Sahih Muslim)',
+    get description() { return t('9th of Dhu al-Hijjah for non-pilgrims on the pinnacle day of Hajj.'); },
+    get virtue() { return t('Fasting on the Day of Arafah expiates sins of the previous year and the coming year. (Sahih Muslim)'); },
     type: 'annual' as const,
   },
   {
     id: 'shawwal',
-    name: 'Six Days of Shawwal',
+    get name() { return t('Six Days of Shawwal'); },
     arabicName: 'ستة من شوال',
-    description: 'Any six days during the month of Shawwal following Eid al-Fitr.',
-    virtue: 'Whoever fasts Ramadan then follows it with six days of Shawwal, it is as if he fasted the whole year. (Sahih Muslim)',
+    get description() { return t('Any six days during the month of Shawwal following Eid al-Fitr.'); },
+    get virtue() { return t('Whoever fasts Ramadan then follows it with six days of Shawwal, it is as if he fasted the whole year. (Sahih Muslim)'); },
     type: 'annual' as const,
   },
   {
     id: 'shaban',
-    name: 'Month of Sha’ban',
+    get name() { return t('Month of Sha’ban'); },
     arabicName: 'صيام شعبان',
-    description: 'Voluntary fasting during the month of Sha’ban before Ramadan begins.',
-    virtue: 'The Prophet ﷺ used to fast most of Sha’ban in spiritual preparation for Ramadan. (Sahih al-Bukhari)',
+    get description() { return t('Voluntary fasting during the month of Sha’ban before Ramadan begins.'); },
+    get virtue() { return t('The Prophet ﷺ used to fast most of Sha’ban in spiritual preparation for Ramadan. (Sahih al-Bukhari)'); },
     type: 'annual' as const,
   },
 ];
@@ -77,7 +78,13 @@ export function getHijriDate(date: Date = new Date()): { day: number; month: num
   return { day: h.day, month: h.month, year: h.year };
 }
 
-export const HIJRI_MONTH_NAMES = HIJRI_MONTHS;
+export const HIJRI_MONTH_NAMES = HIJRI_MONTHS.slice();
+HIJRI_MONTHS.forEach((month, index) => {
+  Object.defineProperty(HIJRI_MONTH_NAMES, index, {
+    enumerable: true,
+    get: () => t(month),
+  });
+});
 
 /** Format YYYY-MM-DD */
 export function toDateString(d: Date = new Date()): string {
@@ -107,33 +114,33 @@ export function getVoluntaryRecommendations(date: Date = new Date()): VoluntaryF
     if (item.id === 'mon_thu') {
       isActiveToday = isMonday || isThursday;
       upcomingDateLabel = isActiveToday
-        ? 'Active Today'
+        ? t('Active Today')
         : weekday < 1 || weekday > 4
-        ? 'Next: Monday'
-        : 'Next: Thursday';
+        ? t('Next: Monday')
+        : t('Next: Thursday');
     } else if (item.id === 'ayyam_beed') {
       isActiveToday = isAyyamBeed;
       upcomingDateLabel = isActiveToday
-        ? `Day ${hijri.day} of 15 (Active)`
+        ? t('Day {{day}} of 15 (Active)', { day: hijri.day })
         : hijri.day < 13
-        ? `${13 - hijri.day} days left (${HIJRI_MONTH_NAMES[hijri.month - 1]} 13-15)`
-        : `Next month (13-15 ${HIJRI_MONTH_NAMES[hijri.month % 12]})`;
+        ? t('{{count}} days left ({{month}} 13-15)', { count: 13 - hijri.day, month: HIJRI_MONTH_NAMES[hijri.month - 1] })
+        : t('Next month (13-15 {{month}})', { month: HIJRI_MONTH_NAMES[hijri.month % 12] });
     } else if (item.id === 'ashura') {
       isActiveToday = isAshuraSeason;
       upcomingDateLabel = isActiveToday
-        ? 'Active Today (Muharram)'
+        ? t('Active Today (Muharram)')
         : hijri.month === 1 && hijri.day < 9
-        ? `In ${9 - hijri.day} days (9-10 Muharram)`
-        : '10 Muharram';
+        ? t('In {{count}} days (9-10 Muharram)', { count: 9 - hijri.day })
+        : t('10 Muharram');
     } else if (item.id === 'arafah') {
       isActiveToday = isArafah;
-      upcomingDateLabel = isActiveToday ? 'Active Today (9 Dhu al-Hijjah)' : '9 Dhu al-Hijjah';
+      upcomingDateLabel = isActiveToday ? t('Active Today (9 Dhu al-Hijjah)') : t('9 Dhu al-Hijjah');
     } else if (item.id === 'shawwal') {
       isActiveToday = isShawwal;
-      upcomingDateLabel = isActiveToday ? 'Active this month (Shawwal)' : 'Month of Shawwal (post-Ramadan)';
+      upcomingDateLabel = isActiveToday ? t('Active this month (Shawwal)') : t('Month of Shawwal (post-Ramadan)');
     } else if (item.id === 'shaban') {
       isActiveToday = isShaban;
-      upcomingDateLabel = isActiveToday ? 'Active this month (Sha’ban)' : 'Month of Sha’ban';
+      upcomingDateLabel = isActiveToday ? t('Active this month (Sha’ban)') : t('Month of Sha’ban');
     }
 
     return {
@@ -206,7 +213,7 @@ export function getFastingCountdown(
     return {
       phase: 'fasting',
       remainingMinutes: diff,
-      label: hours > 0 ? `${hours}h ${mins}m until Iftar` : `${mins}m until Iftar`,
+      label: hours > 0 ? t('{{hours}}h {{minutes}}m until Iftar', { hours, minutes: mins }) : t('{{minutes}}m until Iftar', { minutes: mins }),
     };
   } else {
     // Eating window, waiting for Suhoor
@@ -222,7 +229,7 @@ export function getFastingCountdown(
     return {
       phase: 'eating',
       remainingMinutes: diff,
-      label: hours > 0 ? `${hours}h ${mins}m until Suhoor ends` : `${mins}m until Suhoor ends`,
+      label: hours > 0 ? t('{{hours}}h {{minutes}}m until Suhoor ends', { hours, minutes: mins }) : t('{{minutes}}m until Suhoor ends', { minutes: mins }),
     };
   }
 }

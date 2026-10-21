@@ -5,13 +5,13 @@ import {
   ViewStyle,
   StyleProp,
   Platform,
-  TouchableOpacity,
   LayoutChangeEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { cardTokens, themeTokens } from '../../theme/tokens';
 import { useAutoProbe } from '../../lib/diagnostic';
+import { InteractiveSurface } from '../InteractiveSurface';
 
 export interface PremiumCardProps {
   children?: React.ReactNode;
@@ -114,7 +114,7 @@ export function PremiumCard({
 
   if (onPress) {
     return (
-      <TouchableOpacity
+      <InteractiveSurface
         testID={testID}
         activeOpacity={activeOpacity}
         onPress={onPress}
@@ -124,7 +124,7 @@ export function PremiumCard({
         accessibilityLabel={accessibilityLabel}
       >
         {cardContent}
-      </TouchableOpacity>
+      </InteractiveSurface>
     );
   }
 

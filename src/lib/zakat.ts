@@ -2,7 +2,7 @@
  * Zakat calculator definitions, currency conversion rates, and asset breakdown logic.
  */
 
-import { getCurrentLanguage, isAppLanguage } from './i18n';
+import { getCurrentLanguage, isAppLanguage, t } from './i18n';
 
 export interface CurrencyConfig {
   code: string;
@@ -15,22 +15,22 @@ export interface CurrencyConfig {
 }
 
 export const SUPPORTED_CURRENCIES: CurrencyConfig[] = [
-  { code: 'AED', name: 'UAE Dirham', symbol: 'AED', ratePerUSD: 3.6725, goldPricePerGram: 286.5, silverPricePerGram: 3.5, decimals: 2 },
-  { code: 'USD', name: 'US Dollar', symbol: '$', ratePerUSD: 1.0, goldPricePerGram: 78.0, silverPricePerGram: 0.95, decimals: 2 },
-  { code: 'SAR', name: 'Saudi Riyal', symbol: 'SAR', ratePerUSD: 3.75, goldPricePerGram: 292.5, silverPricePerGram: 3.6, decimals: 2 },
-  { code: 'EUR', name: 'Euro', symbol: '€', ratePerUSD: 0.92, goldPricePerGram: 71.8, silverPricePerGram: 0.88, decimals: 2 },
-  { code: 'GBP', name: 'British Pound', symbol: '£', ratePerUSD: 0.79, goldPricePerGram: 61.6, silverPricePerGram: 0.75, decimals: 2 },
-  { code: 'PKR', name: 'Pakistani Rupee', symbol: '₨', ratePerUSD: 278.5, goldPricePerGram: 21720, silverPricePerGram: 265, decimals: 0 },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹', ratePerUSD: 83.5, goldPricePerGram: 6510, silverPricePerGram: 79.5, decimals: 0 },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'CA$', ratePerUSD: 1.36, goldPricePerGram: 106.0, silverPricePerGram: 1.3, decimals: 2 },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'AU$', ratePerUSD: 1.52, goldPricePerGram: 118.5, silverPricePerGram: 1.45, decimals: 2 },
-  { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KWD', ratePerUSD: 0.308, goldPricePerGram: 24.0, silverPricePerGram: 0.29, decimals: 3 },
-  { code: 'QAR', name: 'Qatari Riyal', symbol: 'QAR', ratePerUSD: 3.64, goldPricePerGram: 284.0, silverPricePerGram: 3.45, decimals: 2 },
-  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', ratePerUSD: 4.7, goldPricePerGram: 366.5, silverPricePerGram: 4.45, decimals: 2 },
-  { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', ratePerUSD: 15800, goldPricePerGram: 1232000, silverPricePerGram: 15000, decimals: 0 },
-  { code: 'EGP', name: 'Egyptian Pound', symbol: 'EGP', ratePerUSD: 48.0, goldPricePerGram: 3744, silverPricePerGram: 45.6, decimals: 2 },
-  { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', ratePerUSD: 117.0, goldPricePerGram: 9126, silverPricePerGram: 111.0, decimals: 0 },
-  { code: 'TRY', name: 'Turkish Lira', symbol: '₺', ratePerUSD: 34.2, goldPricePerGram: 2668, silverPricePerGram: 32.5, decimals: 2 },
+  { code: 'AED', get name() { return t('UAE Dirham'); }, symbol: 'AED', ratePerUSD: 3.6725, goldPricePerGram: 286.5, silverPricePerGram: 3.5, decimals: 2 },
+  { code: 'USD', get name() { return t('US Dollar'); }, symbol: '$', ratePerUSD: 1.0, goldPricePerGram: 78.0, silverPricePerGram: 0.95, decimals: 2 },
+  { code: 'SAR', get name() { return t('Saudi Riyal'); }, symbol: 'SAR', ratePerUSD: 3.75, goldPricePerGram: 292.5, silverPricePerGram: 3.6, decimals: 2 },
+  { code: 'EUR', get name() { return t('Euro'); }, symbol: '€', ratePerUSD: 0.92, goldPricePerGram: 71.8, silverPricePerGram: 0.88, decimals: 2 },
+  { code: 'GBP', get name() { return t('British Pound'); }, symbol: '£', ratePerUSD: 0.79, goldPricePerGram: 61.6, silverPricePerGram: 0.75, decimals: 2 },
+  { code: 'PKR', get name() { return t('Pakistani Rupee'); }, symbol: '₨', ratePerUSD: 278.5, goldPricePerGram: 21720, silverPricePerGram: 265, decimals: 0 },
+  { code: 'INR', get name() { return t('Indian Rupee'); }, symbol: '₹', ratePerUSD: 83.5, goldPricePerGram: 6510, silverPricePerGram: 79.5, decimals: 0 },
+  { code: 'CAD', get name() { return t('Canadian Dollar'); }, symbol: 'CA$', ratePerUSD: 1.36, goldPricePerGram: 106.0, silverPricePerGram: 1.3, decimals: 2 },
+  { code: 'AUD', get name() { return t('Australian Dollar'); }, symbol: 'AU$', ratePerUSD: 1.52, goldPricePerGram: 118.5, silverPricePerGram: 1.45, decimals: 2 },
+  { code: 'KWD', get name() { return t('Kuwaiti Dinar'); }, symbol: 'KWD', ratePerUSD: 0.308, goldPricePerGram: 24.0, silverPricePerGram: 0.29, decimals: 3 },
+  { code: 'QAR', get name() { return t('Qatari Riyal'); }, symbol: 'QAR', ratePerUSD: 3.64, goldPricePerGram: 284.0, silverPricePerGram: 3.45, decimals: 2 },
+  { code: 'MYR', get name() { return t('Malaysian Ringgit'); }, symbol: 'RM', ratePerUSD: 4.7, goldPricePerGram: 366.5, silverPricePerGram: 4.45, decimals: 2 },
+  { code: 'IDR', get name() { return t('Indonesian Rupiah'); }, symbol: 'Rp', ratePerUSD: 15800, goldPricePerGram: 1232000, silverPricePerGram: 15000, decimals: 0 },
+  { code: 'EGP', get name() { return t('Egyptian Pound'); }, symbol: 'EGP', ratePerUSD: 48.0, goldPricePerGram: 3744, silverPricePerGram: 45.6, decimals: 2 },
+  { code: 'BDT', get name() { return t('Bangladeshi Taka'); }, symbol: '৳', ratePerUSD: 117.0, goldPricePerGram: 9126, silverPricePerGram: 111.0, decimals: 0 },
+  { code: 'TRY', get name() { return t('Turkish Lira'); }, symbol: '₺', ratePerUSD: 34.2, goldPricePerGram: 2668, silverPricePerGram: 32.5, decimals: 2 },
 ];
 
 export const NISAB_GOLD_GRAMS = 85;
@@ -80,7 +80,10 @@ export interface ZakatEvaluation {
 
 export function getCurrencyConfig(code: string): CurrencyConfig {
   const found = SUPPORTED_CURRENCIES.find((c) => c.code === code);
-  return found || SUPPORTED_CURRENCIES[0];
+  if (!found) {
+    throw new Error(`Unsupported currency code: ${code}`);
+  }
+  return found;
 }
 
 export function convertCurrency(

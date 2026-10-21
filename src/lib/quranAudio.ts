@@ -25,6 +25,7 @@ import { isSurahDownloaded, resolveAudioUri } from './surahDownloads';
 import { fetchWithTimeout } from './quran';
 import { isAppOnline } from './useConnectivity';
 import { ensureNotificationPermissionForPlayback } from './notifications';
+import { t } from './i18n';
 
 export type { PlaylistItem } from './db';
 export { resolveAudioUri };
@@ -53,6 +54,21 @@ export interface Reciter {
   englishName: string;
   language: string;
   country?: string;
+}
+
+function localizeReciter(reciter: Reciter): Reciter {
+  return {
+    ...reciter,
+    get name() {
+      return /[A-Za-z]/.test(reciter.name) ? t(reciter.name) : reciter.name;
+    },
+    get englishName() {
+      return t(reciter.englishName);
+    },
+    get country() {
+      return reciter.country ? t(reciter.country) : reciter.country;
+    },
+  };
 }
 
 /** Ayah counts for all 114 surahs to compute global ayah indices (1..6236). */
@@ -115,9 +131,27 @@ export const EVERYAYAH_EDITIONS: Record<string, EveryAyahConfig> = {
  * Mapping of user-selected translation language codes to verified non-Arabic audio editions.
  * Verified working endpoints from docs/quran-audio-languages.md.
  */
-export const LANGUAGE_AUDIO_EDITIONS: Record<
+interface AudioLanguageEdition {
+  identifier: string;
+  name: string;
+  langName: string;
+}
+
+function localizeAudioLanguageEdition(edition: AudioLanguageEdition): AudioLanguageEdition {
+  return {
+    ...edition,
+    get name() {
+      return t(edition.name);
+    },
+    get langName() {
+      return t(edition.langName);
+    },
+  };
+}
+
+const RAW_LANGUAGE_AUDIO_EDITIONS: Record<
   string,
-  { identifier: string; name: string; langName: string }
+  AudioLanguageEdition
 > = {
   en: { identifier: 'en.everyayah-walk', name: 'Sahih International (Ibrahim Walk)', langName: 'English' },
   ur: { identifier: 'ur.everyayah-shamshad', name: 'Shamshad Ali Khan', langName: 'Urdu' },
@@ -132,6 +166,10 @@ export const LANGUAGE_AUDIO_EDITIONS: Record<
   bs: { identifier: 'bs.everyayah-korkut', name: 'Besim Korkut', langName: 'Bosnian' },
 };
 
+export const LANGUAGE_AUDIO_EDITIONS: Record<string, AudioLanguageEdition> = Object.fromEntries(
+  Object.entries(RAW_LANGUAGE_AUDIO_EDITIONS).map(([code, edition]) => [code, localizeAudioLanguageEdition(edition)]),
+);
+
 export function getAudioEditionForLanguage(
   langCode: string
 ): { identifier: string; name: string; langName: string } | null {
@@ -142,7 +180,7 @@ export function getAudioEditionForLanguage(
  * 13 verified non-Arabic audio editions (AlQuran Cloud CDN + EveryAyah).
  * Covers: English, Urdu, Chinese, French, Russian, Kazakh, Turkish, Uzbek, Persian, Azerbaijani, Bosnian.
  */
-export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
+const RAW_VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
   // English (EveryAyah - Sahih International)
   {
     identifier: 'en.everyayah-walk',
@@ -235,6 +273,8 @@ export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
     language: 'bs',
   },
 ];
+
+export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = RAW_VERIFIED_NON_ARABIC_EDITIONS.map(localizeReciter);
 
 /** Alias for VERIFIED_NON_ARABIC_EDITIONS representing dedicated non-Arabic audio translation reciters */
 export const NON_ARABIC_AUDIO_EDITIONS: Reciter[] = VERIFIED_NON_ARABIC_EDITIONS;
@@ -471,11 +511,12 @@ export const RECITER_COUNTRIES: Record<string, string> = {
 
 export function getReciterCountry(identifier: string): string | undefined {
   const resolved = ALIAS_MAP[identifier] || identifier;
-  return RECITER_COUNTRIES[resolved];
+  const country = RECITER_COUNTRIES[resolved];
+  return country ? t(country) : country;
 }
 
 /** Offline fallback reciters (strictly verified working Arabic recitations). */
-export const DEFAULT_RECITERS: Reciter[] = [
+const RAW_DEFAULT_RECITERS: Reciter[] = [
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishari Rashid al-Afasy', language: 'ar', country: 'Kuwait' },
   { identifier: 'ar.abdulbasitmurattal', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Basit (Murattal)', language: 'ar', country: 'Egypt' },
   { identifier: 'ar.abdullahbasfar', name: 'عبد الله بصفر', englishName: 'Abdullah Basfar', language: 'ar', country: 'Saudi Arabia' },
@@ -496,6 +537,8 @@ export const DEFAULT_RECITERS: Reciter[] = [
   { identifier: 'ar.saoodshuraym', name: 'سعود بن إبراهيم الشريم', englishName: 'Saood bin Ibraaheem Ash-Shuraym', language: 'ar', country: 'Saudi Arabia' },
   { identifier: 'ar.aymanswoaid', name: 'أيمن سويد', englishName: 'Ayman Sowaid', language: 'ar', country: 'Syria' },
 ];
+
+export const DEFAULT_RECITERS: Reciter[] = RAW_DEFAULT_RECITERS.map(localizeReciter);
 
 /** Get list of verified non-Arabic translation audio editions (kept strictly separate from Arabic reciters). */
 export function getTranslationAudioEditions(): Reciter[] {
@@ -751,7 +794,7 @@ export async function fetchReciters(): Promise<Reciter[]> {
           .filter((r: any) => r && r.language === 'ar' && !BLOCKED_EDITIONS.has(r.identifier))
           .map((r: any) => ({
             ...r,
-            country: r.country || RECITER_COUNTRIES[r.identifier] || getReciterCountry(r.identifier),
+            country: r.country || getReciterCountry(r.identifier),
           }));
       }
     }
@@ -782,7 +825,7 @@ export async function fetchReciters(): Promise<Reciter[]> {
           name: String(item.name ?? ''),
           englishName: String(item.englishName ?? ''),
           language: String(item.language ?? ''),
-          country: RECITER_COUNTRIES[identifier] || getReciterCountry(identifier),
+          country: getReciterCountry(identifier),
         };
       });
 
@@ -1337,7 +1380,9 @@ const KNOWN_RECITER_NAMES: Record<string, string> = {
 
 export function resolveReciterName(identifier: string): string {
   const resolved = ALIAS_MAP[identifier] || identifier;
-  if (KNOWN_RECITER_NAMES[resolved]) return KNOWN_RECITER_NAMES[resolved];
+  if (KNOWN_RECITER_NAMES[resolved]) return t(KNOWN_RECITER_NAMES[resolved]);
+  const defaultReciter = DEFAULT_RECITERS.find((reciter) => reciter.identifier === resolved);
+  if (defaultReciter) return defaultReciter.englishName;
   const found = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === resolved);
   if (found) return found.englishName;
   const clean = resolved.replace(/^(ar|en|ru|zh|fr|kk|tr|uz|fa|az|bs)\./, '').replace(/[-_]/g, ' ');
@@ -1602,8 +1647,8 @@ async function playTranslationSegment(
   arabicReciterName: string
 ): Promise<void> {
   const transUrl = getAyahAudioUrl(transAudio.identifier, surah, ayah);
-  const langDisplay = transAudio.langName || (transAudio.language ? getAudioTranslationLangName(transAudio.language) : '') || 'Translation';
-  const resolvedTitle = `Translation (${langDisplay}) · Surah ${surah}:${ayah}`;
+  const langDisplay = transAudio.langName || (transAudio.language ? getAudioTranslationLangName(transAudio.language) : '') || t('Translation');
+  const resolvedTitle = formatTranslationPlaybackTitle(langDisplay, surah, ayah);
 
   currentPlayback = {
     identifier: transAudio.identifier,
@@ -1645,6 +1690,10 @@ async function playTranslationSegment(
     // If translation playback fails, skip to next ayah without breaking recitation flow
     await advanceAfterAyah(surah, ayah, isSurahMode, arabicReciter, arabicReciterName);
   }
+}
+
+export function formatTranslationPlaybackTitle(langDisplay: string, surah: number, ayah: number): string {
+  return t('Translation ({{lang}}) · Surah {{surah}}:{{ayah}}', { lang: langDisplay, surah, ayah });
 }
 
 async function advanceAfterAyah(

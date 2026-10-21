@@ -1,5 +1,6 @@
 import { AudioPlayer, AudioStatus, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t } from './i18n';
 
 export interface AdhanReciter {
   id: string;
@@ -11,7 +12,7 @@ export interface AdhanReciter {
   isBundled?: boolean;
 }
 
-export const ADHAN_RECITERS: AdhanReciter[] = [
+const RAW_ADHAN_RECITERS: AdhanReciter[] = [
   {
     id: 'alafasy',
     name: 'Mishary Rashid Alafasy',
@@ -102,10 +103,28 @@ export const ADHAN_RECITERS: AdhanReciter[] = [
   },
 ];
 
+function localizeAdhanReciter(reciter: AdhanReciter): AdhanReciter {
+  return {
+    ...reciter,
+    get name() {
+      return t(reciter.name);
+    },
+    get location() {
+      return t(reciter.location);
+    },
+    get description() {
+      return t(reciter.description);
+    },
+  };
+}
+
+export const ADHAN_RECITERS: AdhanReciter[] = RAW_ADHAN_RECITERS.map(localizeAdhanReciter);
+
 let sound: AudioPlayer | null = null;
 let statusSubscription: { remove: () => void } | null = null;
 let currentPlayingReciterId: string | null = null;
 let activeReciterId = 'alafasy';
+let adhanPlayTail: Promise<void> = Promise.resolve();
 
 type AdhanStatusListener = (playingReciterId: string | null) => void;
 const statusListeners = new Set<AdhanStatusListener>();
@@ -203,7 +222,7 @@ export async function unloadAdhan(): Promise<void> {
  * If reciter is 'default' or offline, plays the bundled chime.
  * If remote audio fails for any reason, falls back gracefully to bundled chime.
  */
-export async function playAdhan(reciterId?: string): Promise<void> {
+async function playAdhanInternal(reciterId?: string): Promise<void> {
   await configureAudio();
   await stopAdhan();
 
@@ -317,4 +336,16 @@ export async function playAdhan(reciterId?: string): Promise<void> {
     currentPlayingReciterId = null;
     notifyListeners();
   }
+}
+
+export function playAdhan(reciterId?: string): Promise<void> {
+  const task = adhanPlayTail.then(
+    () => playAdhanInternal(reciterId),
+    () => playAdhanInternal(reciterId),
+  );
+  adhanPlayTail = task.then(
+    () => undefined,
+    () => undefined,
+  );
+  return task;
 }

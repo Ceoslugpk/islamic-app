@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { t } from './i18n';
 
 /**
  * Languages the primary source (islamic.app) ships a meaning for on all 99 names:
@@ -24,7 +25,7 @@ export interface Name99 {
   verses?: NameVerseRef[];
 }
 
-export const NAMES_99: Name99[] = [
+const STATIC_NAMES_99: Name99[] = [
   { number: 1, arabic: 'الرَّحْمَنُ', transliteration: 'Ar-Rahman', meaning: 'The Most Gracious' },
   { number: 2, arabic: 'الرَّحِيمُ', transliteration: 'Ar-Raheem', meaning: 'The Most Merciful' },
   { number: 3, arabic: 'الْمَلِكُ', transliteration: 'Al-Malik', meaning: 'The Sovereign / King' },
@@ -126,6 +127,20 @@ export const NAMES_99: Name99[] = [
   { number: 99, arabic: 'الصَّبُورُ', transliteration: 'As-Sabur', meaning: 'The Timeless Patient' },
 ];
 
+function localizeStaticName(item: Name99): Name99 {
+  return {
+    ...item,
+    get transliteration() {
+      return t(item.transliteration);
+    },
+    get meaning() {
+      return t(item.meaning);
+    },
+  };
+}
+
+export const NAMES_99: Name99[] = STATIC_NAMES_99.map(localizeStaticName);
+
 /* ─── Keyless, CORS-enabled fetch layer ───────────────────────── */
 
 /**
@@ -150,7 +165,7 @@ export const NAMES_FALLBACK_API_URL = 'https://ummahapi.com/api/asma-ul-husna';
  */
 export const NAMES_AUDIO_BASE = 'https://esmaulhusna.org';
 
-export const NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = [
+const STATIC_NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'fr', label: 'Français' },
   { code: 'tr', label: 'Türkçe' },
@@ -161,6 +176,13 @@ export const NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = [
   { code: 'ru', label: 'Русский' },
   { code: 'ur', label: 'اردو' },
 ];
+
+export const NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = STATIC_NAMES_LANGUAGES.map((item) => ({
+  ...item,
+  get label() {
+    return /[A-Za-z]/.test(item.label) ? t(item.label) : item.label;
+  },
+}));
 
 /** Which dataset produced the list currently on screen (shown in the source label). */
 export type NamesProvider = 'islamic.app' | 'UmmahAPI' | 'EsmaulHusna.org' | 'Bundled';

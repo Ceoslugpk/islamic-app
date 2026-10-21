@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocalDateKey } from './dateKey';
 import { HADITHS, Hadith } from './hadith';
 import { isAppOnline } from './useConnectivity';
 
@@ -18,8 +19,7 @@ interface ApiHadithResponse {
 const CACHE_PREFIX = 'hadith-of-day-';
 
 function getTodayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return getLocalDateKey(new Date());
 }
 
 function getFallbackHadith(): Hadith {

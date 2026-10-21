@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Animated,
   LayoutChangeEvent,
-  Pressable,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -18,6 +17,7 @@ import { t } from '../lib/i18n';
 import { isRtlScript } from '../lib/rtl';
 import { AppText } from './ui/AppText';
 import { useAutoProbe } from '../lib/diagnostic';
+import { InteractiveSurface } from './InteractiveSurface';
 
 export interface AyahBookmarkButtonProps {
   isBookmarked: boolean;
@@ -224,7 +224,7 @@ const AyahCardRowComponent = ({
   };
 
   return (
-    <Pressable
+    <InteractiveSurface
       style={[
         styles.ayahCard,
         {
@@ -413,7 +413,7 @@ const AyahCardRowComponent = ({
           )}
         </View>
       )}
-    </Pressable>
+    </InteractiveSurface>
   );
 };
 

@@ -27,6 +27,7 @@ import { DetailScreen } from '../components/layout/DetailScreen';
 import { SectionHeader } from '../components/SectionHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Card } from '../components/Card';
+import { InteractiveSurface } from '../components/InteractiveSurface';
 import { EmptyState } from '../components/EmptyState';
 import {
   HadithCollection,
@@ -422,12 +423,13 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
   const handleBack = useCallback(() => {
     if (activeTab !== 'collections') {
       if (view.type === 'detail') {
-        if (view.from === 'saved') {
-          setActiveTab('saved');
-          return;
-        }
-        if (view.from === 'recent') {
-          setActiveTab('recent');
+        if (view.from === 'saved' || view.from === 'recent') {
+          // Reset the nested view to this tab's list. Setting the tab alone was a NO-OP
+          // because it is already active, and the early return left `view` as 'detail' -
+          // so the header back button did nothing AND the Android hardware-back handler
+          // below swallowed the system back press, trapping the user on the detail until
+          // the app was restarted.
+          setView({ type: 'collections' });
           return;
         }
       }
@@ -669,7 +671,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 {savedList.map((item) => (
                   <View key={item.id} style={isWide && styles.gridCell}>
                   <Card padded style={styles.savedCard} contentStyle={styles.savedCardContent}>
-                    <TouchableOpacity
+                    <InteractiveSurface
                       onPress={() =>
                         openDetail(
                           {
@@ -739,7 +741,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                           <Ionicons name="trash-outline" size={16} color={tokens.muted} />
                         </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                    </InteractiveSurface>
                   </Card>
                   </View>
                 ))}

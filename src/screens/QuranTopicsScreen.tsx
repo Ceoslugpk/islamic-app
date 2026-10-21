@@ -15,6 +15,7 @@ import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { QURAN_TOPICS, QuranTopic, TopicVerse } from '../lib/quranTopics';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { isRTL, t } from '../lib/i18n';
 
 interface QuranTopicsScreenProps {
@@ -54,7 +55,7 @@ export default function QuranTopicsScreen({
         <View style={styles.verseHeader}>
           <View style={[styles.refBadge, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
             <AppText variant="caption" highlight style={styles.refBadgeText}>
-              {verse.surahName} {verse.surah}:{verse.ayah}
+              {getLocalizedSurahName(verse.surah, verse.surahName)} {verse.surah}:{verse.ayah}
             </AppText>
           </View>
           <AppText variant="link" style={styles.openLinkText}>

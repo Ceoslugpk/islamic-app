@@ -35,7 +35,7 @@ interface UmrahStep {
   criticalNotes?: string[];
 }
 
-const UMRAH_STEPS: UmrahStep[] = [
+export const UMRAH_STEPS: UmrahStep[] = [
   {
     id: 'ihram',
     stepNumber: 1,
@@ -258,7 +258,7 @@ export default function UmrahGuideScreen({
                     scrollRef.current?.scrollTo({ y: Math.max(0, offset - 12), animated: true });
                   }
                 }}
-                accessibilityLabel={`Step ${s.stepNumber}: ${t(s.title)}`}
+                accessibilityLabel={`${t('Step')} ${s.stepNumber}: ${t(s.title)}`}
               />
             );
           })}
@@ -342,7 +342,7 @@ export default function UmrahGuideScreen({
               </View>
 
               <AppText variant="body" tone="faint" style={styles.stepDescription}>
-                {step.description}
+                {t(step.description)}
               </AppText>
 
               {/* Location Pill */}
@@ -371,7 +371,7 @@ export default function UmrahGuideScreen({
                 <View key={idx} style={styles.actionRow}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={tokens.success} style={{ marginTop: 2 }} />
                   <AppText variant="body" tone="faint" style={styles.actionText}>
-                    {action}
+                    {t(action)}
                   </AppText>
                 </View>
               ))}
@@ -394,7 +394,7 @@ export default function UmrahGuideScreen({
                       ]}
                     >
                       <AppText variant="rowTitle" highlight style={styles.duaTitle}>
-                        {dua.title}
+                        {t(dua.title)}
                       </AppText>
                       <ArabicText style={[styles.duaArabic, { color: tokens.text }]}>
                         {dua.arabic}
@@ -403,7 +403,7 @@ export default function UmrahGuideScreen({
                         {dua.transliteration}
                       </AppText>
                       <AppText variant="body" tone="faint" style={styles.duaTrans}>
-                        &quot;{dua.translation}&quot;
+                        &quot;{t(dua.translation)}&quot;
                       </AppText>
                       <AppText variant="caption" tone="faint" style={styles.duaRef}>
                         {t('Source')}: {dua.reference}
@@ -432,7 +432,7 @@ export default function UmrahGuideScreen({
                   </View>
                   {step.criticalNotes.map((note, ni) => (
                     <AppText key={ni} variant="body" tone="faint" style={styles.warningText}>
-                      • {note}
+                      • {t(note)}
                     </AppText>
                   ))}
                 </View>

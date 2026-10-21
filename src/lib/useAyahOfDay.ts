@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocalDateKey } from './dateKey';
 import { isAppOnline } from './useConnectivity';
+import { getQuranTranslationLanguage } from './quranLanguageState';
+import { getEditionForLanguage } from './quranLanguages';
 
 export interface AyahOfDay {
   arabic: string;
@@ -116,8 +119,7 @@ export function getDayOfYear(date = new Date()): number {
 }
 
 function getTodayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return getLocalDateKey(new Date());
 }
 
 function getFallbackAyah(dayOfYear: number): AyahOfDay {
@@ -135,7 +137,9 @@ export function useAyahOfDay() {
     setError(null);
     const dayOfYear = getDayOfYear();
     const verseIndex = (dayOfYear % 6236) + 1;
-    const cacheKey = CACHE_PREFIX + getTodayKey();
+    const languageCode = getQuranTranslationLanguage();
+    const editionIdentifier = getEditionForLanguage(languageCode)?.editionIdentifier || 'en.sahih';
+    const cacheKey = `${CACHE_PREFIX}${getTodayKey()}-${languageCode}-${editionIdentifier}`;
 
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
@@ -178,7 +182,7 @@ export function useAyahOfDay() {
       });
 
       const fetchPromise = fetch(
-        `https://api.alquran.cloud/v1/ayah/${verseIndex}/editions/quran-uthmani,en.sahih`,
+        `https://api.alquran.cloud/v1/ayah/${verseIndex}/editions/quran-uthmani,${editionIdentifier}`,
         { signal: controller.signal }
       );
 

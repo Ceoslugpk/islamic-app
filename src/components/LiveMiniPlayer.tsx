@@ -10,6 +10,7 @@ import { useTheme } from '../lib/theme';
 import { ActiveLiveStream, toggleLiveStreamPlayPause } from '../lib/liveStream';
 import { AppText } from './ui/AppText';
 import { t } from '../lib/i18n';
+import { InteractiveSurface } from './InteractiveSurface';
 
 interface LiveMiniPlayerProps {
   stream: ActiveLiveStream;
@@ -31,7 +32,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
         },
       ]}
     >
-      <TouchableOpacity
+      <InteractiveSurface
         style={[
           styles.container,
           {
@@ -42,7 +43,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
         onPress={onExpand}
         activeOpacity={0.85}
         accessibilityRole="button"
-        accessibilityLabel={`Expand ${stream.title} live stream`}
+        accessibilityLabel={t('Expand {{title}} live stream', { title: stream.title })}
       >
         {/* Left: Live status badge */}
         <View style={styles.liveBadge}>
@@ -76,7 +77,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
             style={styles.actionBtn}
             onPress={toggleLiveStreamPlayPause}
             accessibilityRole="button"
-            accessibilityLabel={stream.isPlaying ? 'Pause stream' : 'Play stream'}
+            accessibilityLabel={stream.isPlaying ? t('Pause stream') : t('Play stream')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
@@ -96,7 +97,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
             <Ionicons name="close" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </InteractiveSurface>
     </View>
   );
 }

@@ -6,6 +6,7 @@
 import { savePrayerCache, loadPrayerCache } from './db';
 import { isAppOnline } from './useConnectivity';
 import type { Madhab } from './settings';
+import { t } from './i18n';
 
 export { Madhab };
 
@@ -43,17 +44,17 @@ export interface Location {
 }
 
 export const CALC_METHODS = [
-  { id: 16, name: 'Dubai', region: 'UAE' },
-  { id: 4, name: 'Umm al-Qura (Makkah)', region: 'Saudi Arabia, Gulf' },
-  { id: 8, name: 'Gulf Region (UAE, Qatar, Kuwait)', region: 'UAE / Qatar / Kuwait' },
-  { id: 3, name: 'Muslim World League', region: 'Europe, Far East' },
-  { id: 2, name: 'ISNA', region: 'North America' },
-  { id: 1, name: 'Karachi (UIK)', region: 'Pakistan, Bangladesh, India' },
-  { id: 5, name: 'Egyptian General Authority', region: 'Africa, Syria, Lebanon' },
-  { id: 13, name: 'Diyanet (Turkey)', region: 'Turkey' },
+  { id: 16, get name() { return t('Dubai'); }, get region() { return t('UAE'); } },
+  { id: 4, get name() { return t('Umm al-Qura (Makkah)'); }, get region() { return t('Saudi Arabia, Gulf'); } },
+  { id: 8, get name() { return t('Gulf Region (UAE, Qatar, Kuwait)'); }, get region() { return t('UAE / Qatar / Kuwait'); } },
+  { id: 3, get name() { return t('Muslim World League'); }, get region() { return t('Europe, Far East'); } },
+  { id: 2, get name() { return t('ISNA'); }, get region() { return t('North America'); } },
+  { id: 1, get name() { return t('Karachi (UIK)'); }, get region() { return t('Pakistan, Bangladesh, India'); } },
+  { id: 5, get name() { return t('Egyptian General Authority'); }, get region() { return t('Africa, Syria, Lebanon'); } },
+  { id: 13, get name() { return t('Diyanet (Turkey)'); }, get region() { return t('Turkey'); } },
 ] as const;
 
-export const DEFAULT_LOCATION: Location = { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
+export const DEFAULT_LOCATION: Location = { latitude: 21.4225, longitude: 39.8262, get label() { return t('Makkah, Saudi Arabia'); } };
 
 export function pad2(n: number): string {
   return String(n).padStart(2, '0');

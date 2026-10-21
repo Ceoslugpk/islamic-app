@@ -713,7 +713,7 @@ export function AdjustRow({
           disabled={clamped <= min}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
-          accessibilityLabel={`Decrease ${label}`}
+          accessibilityLabel={t('Decrease {{label}}', { label })}
           accessibilityState={{ disabled: clamped <= min }}
         >
           <AppText variant="rowTitle" style={styles.adjustBtnText}>{decreaseLabel}</AppText>
@@ -724,7 +724,7 @@ export function AdjustRow({
           onPress={probeId ? trackProbe.onPress : handleTrackPress}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="adjustable"
-          accessibilityLabel={`${label}, ${valueLabel}`}
+          accessibilityLabel={t('{{label}}, {{value}}', { label, value: valueLabel })}
           accessibilityValue={{ min, max, now: clamped, text: valueLabel }}
         >
           <View style={[styles.adjustTrack, { backgroundColor: colors.borderSubtle }]}>
@@ -738,7 +738,7 @@ export function AdjustRow({
           disabled={clamped >= max}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
-          accessibilityLabel={`Increase ${label}`}
+          accessibilityLabel={t('Increase {{label}}', { label })}
           accessibilityState={{ disabled: clamped >= max }}
         >
           <AppText variant="rowTitle" style={styles.adjustBtnText}>{increaseLabel}</AppText>
@@ -811,6 +811,25 @@ export default function SettingsScreen({
   const failSafeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSwitchingLanguageRef = useRef(false);
   const mountedRef = useRef(true);
+  const languageSwitchGenerationRef = useRef(0);
+
+  const releaseLanguageSwitch = (generation: number, error?: string) => {
+    if (generation !== languageSwitchGenerationRef.current) return;
+    if (reloadTimerRef.current) {
+      clearTimeout(reloadTimerRef.current);
+      reloadTimerRef.current = null;
+    }
+    if (failSafeTimerRef.current) {
+      clearTimeout(failSafeTimerRef.current);
+      failSafeTimerRef.current = null;
+    }
+    isSwitchingLanguageRef.current = false;
+    if (mountedRef.current) {
+      setIsSwitchingLanguage(false);
+      setSwitchingTargetLang(null);
+      if (error) setLanguageError(error);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -875,7 +894,8 @@ export default function SettingsScreen({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (reloadTimerRef.current && !isSwitchingLanguageRef.current) {
+      languageSwitchGenerationRef.current += 1;
+      if (reloadTimerRef.current) {
         clearTimeout(reloadTimerRef.current);
         reloadTimerRef.current = null;
       }
@@ -883,6 +903,7 @@ export default function SettingsScreen({
         clearTimeout(failSafeTimerRef.current);
         failSafeTimerRef.current = null;
       }
+      isSwitchingLanguageRef.current = false;
     };
   }, []);
 
@@ -1265,6 +1286,7 @@ export default function SettingsScreen({
                   isSwitchingLanguageRef.current = true;
                   setIsSwitchingLanguage(true);
                   setSwitchingTargetLang(nextLang);
+                  const switchGeneration = ++languageSwitchGenerationRef.current;
                   setLanguageError(null);
                   haptic('selection');
                   if (reloadTimerRef.current) {
@@ -1281,22 +1303,15 @@ export default function SettingsScreen({
                   if (!needsNativeReload) {
                     withLanguageWriteTimeout(Promise.resolve(setLanguage(nextLang)))
                       .then(() => {
+                        if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         languageSwitch.markResolved();
                         prepareNativeLayoutDirection(nextLang);
-                        isSwitchingLanguageRef.current = false;
-                        if (mountedRef.current) {
-                          setIsSwitchingLanguage(false);
-                          setSwitchingTargetLang(null);
-                        }
+                        releaseLanguageSwitch(switchGeneration);
                       })
                       .catch(() => {
+                        if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         languageSwitch.markRejected();
-                        isSwitchingLanguageRef.current = false;
-                        if (mountedRef.current) {
-                          setIsSwitchingLanguage(false);
-                          setSwitchingTargetLang(null);
-                          setLanguageError(t('Failed to save settings. Please try again.'));
-                        }
+                        releaseLanguageSwitch(switchGeneration, t('Failed to save settings. Please try again.'));
                       });
                     return;
                   }
@@ -1312,37 +1327,29 @@ export default function SettingsScreen({
                   const RELOAD_TIMEOUT_MS = 1500;
 
                   const handleReloadFallback = () => {
+                    if (switchGeneration !== languageSwitchGenerationRef.current) return;
                     // The switch neither restarted the app nor completed: say so.
                     languageSwitch.markNoRestart();
-                    if (reloadTimerRef.current) {
-                      clearTimeout(reloadTimerRef.current);
-                      reloadTimerRef.current = null;
-                    }
-                    if (failSafeTimerRef.current) {
-                      clearTimeout(failSafeTimerRef.current);
-                      failSafeTimerRef.current = null;
-                    }
-                    isSwitchingLanguageRef.current = false;
-                    if (mountedRef.current) {
-                      setIsSwitchingLanguage(false);
-                      setSwitchingTargetLang(null);
-                      setLanguageError(
-                        t('Please restart the app to apply the new layout direction.')
-                      );
-                    }
+                    releaseLanguageSwitch(
+                      switchGeneration,
+                      t('Please restart the app to apply the new layout direction.'),
+                    );
                   };
 
                   withLanguageWriteTimeout(persistLanguageChange(settings, nextLang)).then(() => {
+                    if (switchGeneration !== languageSwitchGenerationRef.current) return;
                     languageSwitch.markReloadRequested();
                     onPrepareReload?.();
                     prepareNativeLayoutDirection(nextLang);
 
                     reloadTimerRef.current = setTimeout(() => {
+                      if (switchGeneration !== languageSwitchGenerationRef.current) return;
                       reloadTimerRef.current = null;
 
                       // Safety window: if JS engine is still executing after this duration,
                       // reloadAppAsync did not restart the process (e.g. standalone release APK).
                       failSafeTimerRef.current = setTimeout(() => {
+                        if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         failSafeTimerRef.current = null;
                         handleReloadFallback();
                       }, RELOAD_TIMEOUT_MS);
@@ -1353,21 +1360,9 @@ export default function SettingsScreen({
                     }, 300);
                   })
                     .catch(() => {
+                      if (switchGeneration !== languageSwitchGenerationRef.current) return;
                       languageSwitch.markRejected();
-                      isSwitchingLanguageRef.current = false;
-                      if (reloadTimerRef.current) {
-                        clearTimeout(reloadTimerRef.current);
-                        reloadTimerRef.current = null;
-                      }
-                      if (failSafeTimerRef.current) {
-                        clearTimeout(failSafeTimerRef.current);
-                        failSafeTimerRef.current = null;
-                      }
-                      if (mountedRef.current) {
-                        setIsSwitchingLanguage(false);
-                        setSwitchingTargetLang(null);
-                        setLanguageError(t('Still could not load. Try again later.'));
-                      }
+                      releaseLanguageSwitch(switchGeneration, t('Still could not load. Try again later.'));
                     });
                 }
               };
@@ -1566,7 +1561,10 @@ export default function SettingsScreen({
             title={t("Translation Language")}
             desc={`${flag} ${getLocalizedLanguageName(edition.language)} (${getLocalizedTranslatorName(edition.editionIdentifier, edition.name)})`}
             onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
-            accessibilityLabel={`Change translation language. Current: ${getLocalizedLanguageName(edition.language)} ${flag}`}
+            accessibilityLabel={t('Change translation language. Current: {{language}} {{flag}}', {
+              language: getLocalizedLanguageName(edition.language),
+              flag,
+            })}
             right={<Ionicons name={getForwardIcon()} size={18} color={colors.accent} />}
           />
           <Hairline />
@@ -1649,7 +1647,7 @@ export default function SettingsScreen({
                   accessibilityRole="radio"
                   accessibilityState={{ selected, checked: selected }}
                   {...(Platform.OS === 'web' ? { 'aria-checked': selected as any } : {})}
-                  accessibilityLabel={`${option.label}, ${option.desc}`}
+                  accessibilityLabel={`${t(option.label)}, ${t(option.desc)}`}
                   right={
                     <View
                       style={[
@@ -1837,15 +1835,15 @@ export default function SettingsScreen({
             title={t("Prayer reminders")}
             desc={
               remindersEnabled
-                ? `On · ${reminderOffsetMinutes} min before each prayer`
-                : 'Off — no prayer notifications'
+                ? t('On · {{minutes}} min before each prayer', { minutes: reminderOffsetMinutes })
+                : t('Off — no prayer notifications')
             }
             right={
               <Toggle
                 probeId="prayer-reminders"
                 checked={remindersEnabled}
                 onChange={() => { onToggleReminders(); }}
-                label={`${t('Prayer reminders')}, ${remindersEnabled ? `On · ${reminderOffsetMinutes} min before each prayer` : 'Off — no prayer notifications'}`}
+                label={`${t('Prayer reminders')}, ${remindersEnabled ? t('On · {{minutes}} min before each prayer', { minutes: reminderOffsetMinutes }) : t('Off — no prayer notifications')}`}
               />
             }
           />
@@ -1854,7 +1852,7 @@ export default function SettingsScreen({
           <Hairline />
           <Row
             title={t("Remind before prayer")}
-            desc={`${reminderOffsetMinutes} min before each prayer`}
+            desc={t('{{minutes}} min before each prayer', { minutes: reminderOffsetMinutes })}
             accessibilityRole="text"
           />
           <Segmented
@@ -1890,13 +1888,13 @@ export default function SettingsScreen({
           <Hairline />
           <Row
             title={t("Test adhan sound")}
-            desc={`Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
+            desc={t('Preview {{name}}', { name: getAdhanReciter(settings.adhanReciterId).name })}
             right={
               <OutlineButton
                 label={isPlayingAdhan ? t('Stop') : t('Play')}
                 icon={isPlayingAdhan ? 'stop' : 'play'}
                 onPress={probePress('button', 'test-adhan-sound', onTestAdhan)}
-                accessibilityLabel={`${t('Test adhan sound')}, Preview ${getAdhanReciter(settings.adhanReciterId).name}, ${isPlayingAdhan ? t('Stop') : t('Play')}`}
+                accessibilityLabel={`${t('Test adhan sound')}, ${t('Preview {{name}}', { name: getAdhanReciter(settings.adhanReciterId).name })}, ${isPlayingAdhan ? t('Stop') : t('Play')}`}
               />
             }
           />
@@ -1907,15 +1905,15 @@ export default function SettingsScreen({
             title={t("Quran reminder")}
             desc={
               quranReminderEnabled
-                ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}`
-                : 'Off — no daily reminder'
+                ? t('On · daily at {{time}}', { time: formatTime(settings.quranReminderTime, timeFormat) })
+                : t('Off — no daily reminder')
             }
             right={
               <Toggle
                 probeId="quran-reminder"
                 checked={quranReminderEnabled}
                 onChange={onToggleQuranReminder}
-                label={`${t('Quran reminder')}, ${quranReminderEnabled ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}` : 'Off — no daily reminder'}`}
+                label={`${t('Quran reminder')}, ${quranReminderEnabled ? t('On · daily at {{time}}', { time: formatTime(settings.quranReminderTime, timeFormat) }) : t('Off — no daily reminder')}`}
               />
             }
           />
@@ -1928,7 +1926,7 @@ export default function SettingsScreen({
                 <View style={styles.healthCompactRow}>
                   <View style={[styles.healthCompactDot, { backgroundColor: homeTokens.muted }]} />
                   <AppText variant="caption" style={styles.healthCompactText} numberOfLines={2}>
-                    Web — preferences saved, notifications schedule on your device
+                    {t('Web — preferences saved, notifications schedule on your device')}
                   </AppText>
                 </View>
               </View>
@@ -2025,10 +2023,10 @@ export default function SettingsScreen({
                 title={t("App lock (PIN)")}
                 desc={
                   womenLockEnabled
-                    ? "On · PIN required to open women's features"
+                    ? t("On · PIN required to open women's features")
                     : womenPinHash
-                    ? 'Off — PIN set but not enabled'
-                    : "Off — protect women's screens with a 4-digit PIN"
+                    ? t('Off — PIN set but not enabled')
+                    : t("Off — protect women's screens with a 4-digit PIN")
                 }
                 right={
                   <TouchableOpacity
@@ -2053,7 +2051,7 @@ export default function SettingsScreen({
                       }
                     })}
                     accessibilityRole="button"
-                    accessibilityLabel={womenLockEnabled ? "Disable App lock PIN" : "Enable App lock PIN"}
+                    accessibilityLabel={womenLockEnabled ? t('Disable App lock PIN') : t('Enable App lock PIN')}
                   >
                     <AppText variant="link" style={styles.privacyActionText}>
                       {womenLockEnabled ? t('Disable') : t('Enable')}
@@ -2540,7 +2538,7 @@ export default function SettingsScreen({
                     onPress={probePress('segmented', `mission-language-tab-${missionIndex}`, () => setSelectedMissionLanguage(tab.lang))}
                     accessibilityRole="tab"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={`${tab.label}${selected ? ', selected' : ''}`}
+                    accessibilityLabel={selected ? t('{{label}}, selected', { label: tab.label }) : tab.label}
                     hitSlop={{ top: 12, bottom: 12, left: 2, right: 2 }}
                   >
                     {selected ? <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} /> : null}

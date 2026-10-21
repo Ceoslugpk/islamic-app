@@ -1,4 +1,4 @@
-import { getCurrentLanguage } from './i18n';
+import { getCurrentLanguage, t } from './i18n';
 import { LANGUAGE_NAMES_UR, LANGUAGE_NAMES_AR, LANGUAGE_NAMES_HI, LANGUAGE_NAMES_ML, LANGUAGE_NAMES_SI } from './surahNamesLocalized';
 
 export interface QuranLanguageEdition {
@@ -60,7 +60,7 @@ export const LANGUAGE_FLAGS: Record<string, string> = {
   zh: '🇨🇳',
 };
 
-export const QURAN_LANGUAGE_EDITIONS: QuranLanguageEdition[] = [
+const RAW_QURAN_LANGUAGE_EDITIONS: QuranLanguageEdition[] = [
   // Primary / commonly used languages
   { language: 'Arabic', languageCode: 'ar', editionIdentifier: 'ar.muyassar', name: 'الميسر', flag: '🇸🇦' },
   { language: 'English', languageCode: 'en', editionIdentifier: 'en.sahih', name: 'Saheeh International', flag: '🇬🇧' },
@@ -113,12 +113,31 @@ export const QURAN_LANGUAGE_EDITIONS: QuranLanguageEdition[] = [
   { language: 'Chinese', languageCode: 'zh', editionIdentifier: 'zh.jian', name: 'Ma Jian', flag: '🇨🇳' },
 ];
 
+function localizeEditionText(item: QuranLanguageEdition): QuranLanguageEdition {
+  return {
+    ...item,
+    get language() {
+      return t(item.language);
+    },
+    get name() {
+      return /[A-Za-z]/.test(item.name) ? t(item.name) : item.name;
+    },
+  };
+}
+
+export const QURAN_LANGUAGE_EDITIONS: QuranLanguageEdition[] = RAW_QURAN_LANGUAGE_EDITIONS.map(localizeEditionText);
+
 export function getLanguageFlag(code: string): string {
   return LANGUAGE_FLAGS[code] || '🌐';
 }
 
 export function getEditionForLanguage(code: string): QuranLanguageEdition | undefined {
-  return QURAN_LANGUAGE_EDITIONS.find((e) => e.languageCode === code);
+  return QURAN_LANGUAGE_EDITIONS.find((e) => e.languageCode === code.toLowerCase());
+}
+
+/** Returns the registered Quran language recommended for an app language. */
+export function getRecommendedQuranLanguage(appLanguage: string): string {
+  return getEditionForLanguage(appLanguage)?.languageCode || 'en';
 }
 
 export function getLanguages(): QuranLanguageEdition[] {

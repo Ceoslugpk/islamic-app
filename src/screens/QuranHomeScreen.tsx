@@ -166,7 +166,7 @@ const SurahRow = React.memo(function SurahRow({
         },
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Open Surah ${item.number} ${item.englishName}`}
+      accessibilityLabel={`${t('Open Surah')} ${item.number} ${item.englishName}`}
       testID={`surah-row-${item.number}`}
       onPress={handlePress}
       onLayout={isSurah1 && isDiag ? diag.parentProps.onLayout : undefined}
@@ -248,6 +248,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
   const currentLanguage = getCurrentLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
+  const effectiveTranslatedNames = language === 'en' ? null : translatedNames;
   const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
   const { setQuranPreloadRequested } = useSettings();
 
@@ -263,8 +264,8 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
     return getBundledSurahs114();
   });
   const [loading] = useState<boolean>(false);
-  const [bookmarkCount] = useState(() => getBookmarks().length);
-  const [noteCount] = useState(() => getNotes().length);
+  const [bookmarkCount, setBookmarkCount] = useState(() => getBookmarks().length);
+  const [noteCount, setNoteCount] = useState(() => getNotes().length);
   const [error, setError] = useState<string | null>(null);
 
   // Debounced search input (150ms)
@@ -358,12 +359,6 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
     };
   }, []);
 
-  if (language === 'en' && translatedNames !== null) {
-    if (language === 'en') {
-      setTranslatedNames(null);
-    }
-  }
-
   // Load per-language surah names when selected language changes
   useEffect(() => {
     let mounted = true;
@@ -414,6 +409,8 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
     wasActiveRef.current = true;
     const gen = ++refreshGenRef.current;
     setLastRead(loadLastReadPosition());
+    setBookmarkCount(getBookmarks().length);
+    setNoteCount(getNotes().length);
     getContinueReadingPosition()
       .then((pos) => {
         if (gen === refreshGenRef.current) setReadingPosition(pos);
@@ -464,7 +461,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
     return surahs.filter((s) => {
       const englishNameMatch = s.englishName.toLowerCase().includes(lowerQuery);
       const meaningMatch = s.englishNameTranslation.toLowerCase().includes(lowerQuery);
-      const tr = translatedNames?.[s.number]?.toLowerCase() || '';
+      const tr = effectiveTranslatedNames?.[s.number]?.toLowerCase() || '';
       const trMatch = tr.includes(lowerQuery);
       const numberMatch = s.number.toString() === lowerQuery;
 
@@ -488,7 +485,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
           return nameMatch || meaningMatch || trMatch || numberMatch;
       }
     });
-  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef]);
+  }, [surahs, searchQuery, effectiveTranslatedNames, searchFilter, verseRef]);
 
   useEffect(() => {
     if (verseRef && searchQuery.trim().length > 0) {
@@ -1596,7 +1593,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
           tokens={tokens}
           mode={mode}
           isCompact={isCompact}
-          trName={translatedNames?.[item.number]}
+          trName={effectiveTranslatedNames?.[item.number]}
           flag={flag}
           isMarked={isMarked}
           readingPositionAyah={isMarked ? readingPosition?.ayah : undefined}
@@ -1605,7 +1602,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
         />
       );
     },
-    [tokens, mode, isCompact, translatedNames, flag, readingPosition, onOpenSurah]
+    [tokens, mode, isCompact, effectiveTranslatedNames, flag, readingPosition, onOpenSurah]
   );
 
   if (loading && (!surahs || surahs.length === 0)) {

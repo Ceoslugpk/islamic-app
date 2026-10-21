@@ -127,10 +127,10 @@ export function NowPlayingHeroCard({
         </View>
 
         <AppText variant="title" style={styles.idleTitle}>
-          Ready to Recite
+          {t('Ready to Recite')}
         </AppText>
         <AppText variant="subtitle" tone="faint" style={styles.idleSub}>
-          Select any reciter, curated playlist, or surah to begin listening.
+          {t('Select any reciter, curated playlist, or surah to begin listening.')}
         </AppText>
 
         {onResumeRecent && recentTitle && (
@@ -138,11 +138,11 @@ export function NowPlayingHeroCard({
             onPress={onResumeRecent}
             style={[styles.resumeBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
             accessibilityRole="button"
-            accessibilityLabel={`Resume last played ${recentTitle}`}
+            accessibilityLabel={t('Resume last played {{title}}', { title: recentTitle })}
           >
             <Ionicons name="play" size={14} color={colors.accent} />
             <AppText variant="link" style={styles.resumeBtnText} numberOfLines={2}>
-              Resume: {recentTitle}
+              {t('Resume: {{title}}', { title: recentTitle })}
             </AppText>
           </TouchableOpacity>
         )}
@@ -151,7 +151,9 @@ export function NowPlayingHeroCard({
   }
 
   const isQueueActive = queueCount > 0 && currentQueueIndex >= 0;
-  const queueLabel = isQueueActive ? `Track ${currentQueueIndex + 1} of ${queueCount}` : null;
+  const queueLabel = isQueueActive
+    ? t('Track {{current}} of {{total}}', { current: currentQueueIndex + 1, total: queueCount })
+    : null;
 
   return (
     <View
@@ -222,8 +224,10 @@ export function NowPlayingHeroCard({
                 style={styles.segmentBadgeText}
               >
                 {playback.segmentType === 'arabic'
-                  ? 'ARABIC'
-                  : `TRANSLATION${playback.translationLang ? ` (${playback.translationLang.toUpperCase()})` : ''}`}
+                  ? t('ARABIC')
+                  : playback.translationLang
+                  ? t('TRANSLATION ({{language}})', { language: playback.translationLang.toUpperCase() })
+                  : t('TRANSLATION')}
               </AppText>
             </View>
           )}
@@ -242,6 +246,7 @@ export function NowPlayingHeroCard({
           <TouchableOpacity
             onPress={onStop}
             style={[styles.dismissBtn, { borderColor: colors.borderSubtle }]}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
             accessibilityLabel={t('Stop and close player')}
           >
@@ -307,8 +312,9 @@ export function NowPlayingHeroCard({
               borderColor: repeatMode !== 'none' ? colors.accent : colors.borderSubtle,
             },
           ]}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           accessibilityRole="button"
-          accessibilityLabel={`Repeat mode: ${repeatMode}. Tap to change.`}
+          accessibilityLabel={t('Repeat mode: {{mode}}. Tap to change.', { mode: repeatMode })}
         >
           <Ionicons
             name={repeatMode === 'one' ? 'repeat-sharp' : 'repeat'}
@@ -333,6 +339,7 @@ export function NowPlayingHeroCard({
               borderColor: colors.borderSubtle,
             },
           ]}
+          hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
           accessibilityRole="button"
           accessibilityLabel={t('Previous track or verse')}
         >
@@ -349,7 +356,7 @@ export function NowPlayingHeroCard({
             },
           ]}
           accessibilityRole="button"
-          accessibilityLabel={status.isPlaying ? 'Pause' : 'Play'}
+          accessibilityLabel={status.isPlaying ? t('Pause') : t('Play')}
           disabled={status.isBuffering}
         >
           {status.isBuffering ? (
@@ -375,6 +382,7 @@ export function NowPlayingHeroCard({
               borderColor: colors.borderSubtle,
             },
           ]}
+          hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
           accessibilityRole="button"
           accessibilityLabel={t('Next track or verse')}
         >
@@ -385,6 +393,7 @@ export function NowPlayingHeroCard({
         <TouchableOpacity
           onPress={onStop}
           style={[styles.subCtrlBtn, { borderColor: colors.borderSubtle }]}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           accessibilityRole="button"
           accessibilityLabel={t('Stop audio')}
         >

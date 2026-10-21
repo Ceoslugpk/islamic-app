@@ -37,6 +37,7 @@ import { Hairline } from '../components/Hairline';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { QiblaCompass } from '../components/QiblaCompass';
 import { useLocation } from '../lib/useLocation';
+import type { Location as PrayerLocation } from '../lib/prayerTimes';
 import { useSettings } from '../lib/settings';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,6 +46,17 @@ import { t } from '../lib/i18n';
 
 type CompassSource = 'expo-location' | 'magnetometer' | 'static';
 type CompassAccuracy = 'high' | 'medium' | 'low' | 'uncalibrated' | 'unknown';
+
+export function resolveQiblaLocation(
+  gpsLocation: PrayerLocation | null,
+  locationMode: 'auto' | 'manual',
+  autoLocation: PrayerLocation | null,
+  manualLocation: PrayerLocation,
+): PrayerLocation {
+  if (locationMode === 'auto' && gpsLocation) return gpsLocation;
+  if (locationMode === 'auto' && autoLocation) return autoLocation;
+  return manualLocation;
+}
 
 function getCardinalDirection(deg: number): string {
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
@@ -102,9 +114,12 @@ export default function QiblaScreen({
 
   // Effective location: GPS if available, otherwise saved autoLocation (if in auto mode), otherwise manual location
   const effectiveLocation = useMemo(() => {
-    if (gpsLocation) return gpsLocation;
-    if (settings.locationMode === 'auto' && settings.autoLocation) return settings.autoLocation;
-    return settings.manualLocation;
+    return resolveQiblaLocation(
+      gpsLocation,
+      settings.locationMode,
+      settings.autoLocation,
+      settings.manualLocation,
+    );
   }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation]);
 
   const coords = useMemo(() => ({
@@ -125,12 +140,16 @@ export default function QiblaScreen({
   }, [effectiveLocation.latitude, effectiveLocation.longitude]);
 
   const locLabel = useMemo(() => {
-    const activeLoc = gpsLocation || (settings.locationMode === 'auto' ? settings.autoLocation : null);
-    if (activeLoc) {
-      return activeLoc.label;
+    if (settings.locationMode === 'auto' && (gpsLocation || settings.autoLocation)) {
+      return resolveQiblaLocation(
+        gpsLocation,
+        settings.locationMode,
+        settings.autoLocation,
+        settings.manualLocation,
+      ).label;
     }
     return `${t('Using manual location')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
-  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
+  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation]);
 
   // Refs for subscriptions & smoothing
   const smoothHeadingRef = useRef<number>(0);
@@ -145,6 +164,13 @@ export default function QiblaScreen({
   const lngRef = useRef<number | null>(effectiveLocation.longitude);
   const interferenceCheckTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hapticAlignedRef = useRef<boolean>(false);
+  const headingRef = useRef<number | null>(null);
+  const accuracyRef = useRef<CompassAccuracy>('unknown');
+
+  useEffect(() => {
+    headingRef.current = heading;
+    accuracyRef.current = accuracy;
+  }, [heading, accuracy]);
 
   // Sync refs when location coordinates change
   useEffect(() => {
@@ -176,7 +202,8 @@ export default function QiblaScreen({
   // Interference detection - check periodically when we have heading data
   useEffect(() => {
     let cancelled = false;
-    if (heading === null || Platform.OS === 'web' || source === 'static') {
+    const initialHeading = headingRef.current;
+    if (initialHeading === null || Platform.OS === 'web' || source === 'static') {
       Promise.resolve().then(() => {
         if (!cancelled) {
           setInterference({ hasInterference: false, level: 'none', details: '' });
@@ -190,15 +217,16 @@ export default function QiblaScreen({
     // Initial check
     Promise.resolve().then(() => {
       if (!cancelled) {
-        const result = checkMagneticInterference(heading, accuracy);
+        const result = checkMagneticInterference(initialHeading, accuracyRef.current);
         setInterference(result);
       }
     });
 
     // Periodic check every 2 seconds
     interferenceCheckTimerRef.current = setInterval(() => {
-      if (heading !== null) {
-        const r = checkMagneticInterference(heading, accuracy);
+      const currentHeading = headingRef.current;
+      if (currentHeading !== null) {
+        const r = checkMagneticInterference(currentHeading, accuracyRef.current);
         setInterference(r);
       }
     }, 2000);
@@ -210,7 +238,7 @@ export default function QiblaScreen({
         interferenceCheckTimerRef.current = null;
       }
     };
-  }, [heading, accuracy, source]);
+  }, [source]);
 
   // Trigger haptic vibration when user turns and faces Qibla (within ~3°)
   useEffect(() => {

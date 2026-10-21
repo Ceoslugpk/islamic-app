@@ -34,10 +34,16 @@ assert.ok(
   settingsCode.includes('setAppLanguage(nextLang)'),
   'setLanguage applies the new language immediately'
 );
+// The verifier passed as the 3rd argument of the queued language mutation must
+// read back the raw persisted value and throw when the written language differs.
+// Anchor on the contiguous region (same queued call), not two independent substrings.
+const languageVerifier = settingsCode.match(
+  /enqueueMutation\(\(latest\) => computeNextLanguageSettings\(latest, nextLang\), nextClean, \(raw\) => \{([\s\S]*?)\}\)/
+);
+assert.ok(languageVerifier, 'setLanguage must enqueue a mutation carrying a readback verifier');
 assert.ok(
-  settingsCode.includes('await enqueueWrite(nextClean, (raw)') &&
-    settingsCode.includes('parsed.language !== nextLang'),
-  'setLanguage serializes and verifies the language in the same queued call'
+  languageVerifier[1].includes('parsed.language !== nextLang'),
+  'setLanguage must verify the persisted language in the same queued call'
 );
 // The reload must happen AFTER the persist resolves so the reload boots in ur
 // The executed SettingsScreen check runs after the helper declaration below.
@@ -115,8 +121,12 @@ for (const [enName] of langNames) {
   assert.ok(enName.length > 0, 'LANGUAGE_NAMES_UR has empty key');
 }
 // The edition languages in quranLanguages must ALL have an entry in LANGUAGE_NAMES_UR
-const editionsBlockMatch = quranLangsCode.match(/export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/);
-const editionLangs = [...(editionsBlockMatch ? editionsBlockMatch[1] : quranLangsCode).matchAll(/language:\s*'([^']+)'/g)].map((m) => m[1]);
+const editionsBlockMatch = quranLangsCode.match(
+  /(?:export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];|const RAW_QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];)/
+);
+const editionLangs = [
+  ...(editionsBlockMatch ? (editionsBlockMatch[1] ?? editionsBlockMatch[2]) : quranLangsCode).matchAll(/language:\s*'([^']+)'/g),
+].map((m) => m[1]);
 const uniqueEditionLangs = [...new Set(editionLangs)];
 const uncovered = uniqueEditionLangs.filter((l) => !urLangKeys.has(l));
 assert.deepStrictEqual(uncovered, [], `Quran edition languages without Urdu name: ${uncovered.join(', ')}`);
@@ -142,7 +152,7 @@ ok('header wordmark: اسلامک in RTL w/ Amiri_700Bold, ISLAMIC in LTR w/ Sou
 
 // ── 5. QuranHome localized names wiring (fetchSurahListForLanguage on non-en) ──
 const quranHomeCode = fs.readFileSync('src/screens/QuranHomeScreen.tsx', 'utf8');
-assert.ok(quranHomeCode.includes("if (language === 'en') {\n      setTranslatedNames(null);"), 'QuranHome clears translated names for en');
+assert.ok(quranHomeCode.includes("const effectiveTranslatedNames = language === 'en' ? null : translatedNames;"), 'QuranHome derives empty translated names for en without a render-phase write');
 assert.ok(quranHomeCode.includes('fetchSurahListForLanguage(language)'), 'QuranHome fetches translated names for non-en');
 ok('QuranHome: per-language surah names wired to fetchSurahListForLanguage');
 

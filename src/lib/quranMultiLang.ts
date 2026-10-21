@@ -1,5 +1,6 @@
 import { fetchWithTimeout } from './quran';
 import { isAppOnline } from './useConnectivity';
+import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 
 const BASE = 'https://api.alquran.cloud/v1';
 
@@ -62,6 +63,19 @@ export async function fetchSurahTranslations(
     }));
 
     translations[identifier] = ayahs;
+  }
+
+  const expectedAyahCount = SURAH_AYAH_COUNTS[surahNumber - 1];
+  for (const requestedEdition of editionIdentifiers) {
+    const ayahs = translations[requestedEdition];
+    if (
+      !ayahs ||
+      ayahs.length === 0 ||
+      (expectedAyahCount && ayahs.length !== expectedAyahCount) ||
+      ayahs.some((ayah) => typeof ayah.text !== 'string' || !ayah.text.trim())
+    ) {
+      throw new Error(`Translation edition "${requestedEdition}" is unavailable for surah ${surahNumber}`);
+    }
   }
 
   return {

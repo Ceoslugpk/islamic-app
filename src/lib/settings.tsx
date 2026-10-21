@@ -192,6 +192,47 @@ const DEFAULTS: AppSettings = {
 const STORAGE_KEY = 'islamic-settings';
 export const METHOD_MIGRATION_KEY = 'islamic-settings-method-migrated-v16';
 
+// AsyncStorage normally settles quickly, but a native bridge can leave a Promise
+// pending forever after an activity/configuration transition.  A pending operation
+// must reject so the serialized queue can advance and the caller can unlock its UI.
+const SETTINGS_STORAGE_OPERATION_TIMEOUT_MS = 10_000;
+
+type SettingsWriter = ReturnType<typeof createSerializedSettingsWriter<AppSettings>>;
+
+function withStorageOperationTimeout<T>(operation: Promise<T>, operationName: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      settled = true;
+      reject(new Error(`Settings storage ${operationName} timed out`));
+    }, SETTINGS_STORAGE_OPERATION_TIMEOUT_MS);
+
+    operation.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+function createTimedStorage(storage: StringStorage): StringStorage {
+  return {
+    setItem: (key, value) => withStorageOperationTimeout(storage.setItem(key, value), 'write'),
+    getItem: (key) => withStorageOperationTimeout(storage.getItem(key), 'read'),
+  };
+}
+
+const timedAsyncStorage = createTimedStorage(AsyncStorage);
+
 export const VALID_ACCENTS: Set<string> = new Set<string>(ACCENT_KEYS);
 
 export const LEGACY_ACCENT_MAP: Record<string, AccentKey> = {
@@ -539,7 +580,6 @@ export async function persistLanguageChange(
     getItem?: (key: string) => Promise<string | null>;
   } = AsyncStorage
 ): Promise<AppSettings> {
-  const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
   const verify: StoredValueVerifier<AppSettings> = (raw) => {
     const parsed = raw ? JSON.parse(raw) : null;
     if (!parsed || parsed.language !== nextLang) {
@@ -548,13 +588,23 @@ export async function persistLanguageChange(
   };
 
   if (storage === AsyncStorage) {
-    await defaultSharedSettingsWriter(nextSettings, verify);
-  } else {
+    // Compute from the latest persisted snapshot inside the shared operation lane.
+    // The caller's render snapshot can be older than a theme/toggle write already
+    // queued ahead of this language switch.
+    return enqueueSharedSettingsMutation(
+      (latest) => computeNextLanguageSettings(latest, nextLang),
+      currentSettings,
+      verify,
+    );
+  }
+
+  const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
+  {
     const stringStorage: StringStorage = {
       setItem: (key: string, value: string) => storage.setItem(key, value),
       getItem: storage.getItem ? (key: string) => storage.getItem!(key) : async () => null,
     };
-    const writer = createSerializedSettingsWriter<AppSettings>(stringStorage, STORAGE_KEY, () => {});
+    const writer = getSettingsWriter(stringStorage, storage as object);
     await writer(nextSettings, storage.getItem ? verify : undefined);
   }
   return nextSettings;
@@ -569,10 +619,56 @@ export async function persistLanguageChange(
 let preloadRequestedMem: boolean | null = null;
 
 const defaultSharedSettingsWriter = createSerializedSettingsWriter<AppSettings>(
-  AsyncStorage,
+  timedAsyncStorage,
   STORAGE_KEY,
   () => {},
 );
+
+const customSettingsWriters = new WeakMap<object, SettingsWriter>();
+
+function getSettingsWriter(storage: StringStorage, cacheKey: object = storage as object): SettingsWriter {
+  const key = cacheKey;
+  const existing = customSettingsWriters.get(key);
+  if (existing) return existing;
+  const writer = createSerializedSettingsWriter<AppSettings>(createTimedStorage(storage), STORAGE_KEY, () => {});
+  customSettingsWriters.set(key, writer);
+  return writer;
+}
+
+let sharedSettingsOperationTail: Promise<void> = Promise.resolve();
+
+function enqueueSharedSettingsOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const task = sharedSettingsOperationTail.then(operation, operation);
+  sharedSettingsOperationTail = task.then(() => undefined, () => undefined);
+  return task;
+}
+
+async function readLatestSettings(fallback?: AppSettings): Promise<AppSettings> {
+  const raw = await timedAsyncStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return sanitizeSettings(parsed);
+      }
+    } catch {
+      // Treat malformed persisted settings as the caller's already-sanitized snapshot.
+    }
+  }
+  return sanitizeSettings(fallback ?? { ...DEFAULTS, language: getBootLanguage() });
+}
+
+function enqueueSharedSettingsMutation(
+  updater: (current: AppSettings) => AppSettings,
+  fallback?: AppSettings,
+  verify?: StoredValueVerifier<AppSettings>,
+): Promise<AppSettings> {
+  return enqueueSharedSettingsOperation(async () => {
+    const latest = await readLatestSettings(fallback);
+    const nextClean = sanitizeSettings(updater(latest));
+    return defaultSharedSettingsWriter(nextClean, verify);
+  });
+}
 
 type SettingsUpdater = (update: (current: AppSettings) => AppSettings) => AppSettings;
 let activeSettingsUpdater: SettingsUpdater | null = null;
@@ -592,20 +688,23 @@ export async function enqueueSettingsUpdate(
     return activeSettingsUpdater(updater);
   }
 
+  if (storage === AsyncStorage) {
+    return enqueueSharedSettingsMutation(updater);
+  }
+
   const op = async (): Promise<AppSettings> => {
     if (activeSettingsUpdater && storage === AsyncStorage) {
       return activeSettingsUpdater(updater);
     }
     let latestRaw: string | null = null;
+    const timedStorage = createTimedStorage(storage);
     try {
-      latestRaw = await storage.getItem(STORAGE_KEY);
+      latestRaw = await timedStorage.getItem(STORAGE_KEY);
     } catch {}
     const parsed = latestRaw ? JSON.parse(latestRaw) : {};
     const current = sanitizeSettings(parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {});
     const nextClean = sanitizeSettings(updater(current));
-    const writer = storage === AsyncStorage
-      ? defaultSharedSettingsWriter
-      : createSerializedSettingsWriter<AppSettings>(storage, STORAGE_KEY, () => {});
+    const writer = getSettingsWriter(storage);
     const persisted = await writer(nextClean, (raw) => {
       const stored = raw ? JSON.parse(raw) : null;
       if (!stored || typeof stored !== 'object') {
@@ -666,7 +765,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       nextClean: AppSettings,
       verify?: StoredValueVerifier<AppSettings>,
     ): Promise<AppSettings> => {
-      return writeSettings(nextClean, verify)
+      return enqueueSharedSettingsOperation(() => writeSettings(nextClean, verify))
         .then((persisted) => {
           lastPersistedRef.current = persisted;
           return persisted;
@@ -682,6 +781,30 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         });
     },
     [writeSettings],
+  );
+
+  const enqueueMutation = useCallback(
+    (
+      updater: (current: AppSettings) => AppSettings,
+      optimistic: AppSettings,
+      verify?: StoredValueVerifier<AppSettings>,
+    ): Promise<AppSettings> => {
+      return enqueueSharedSettingsMutation(updater, optimistic, verify)
+        .then((persisted) => {
+          lastPersistedRef.current = persisted;
+          return persisted;
+        })
+        .catch((err) => {
+          if (settingsRef.current === optimistic) {
+            const rollback = lastPersistedRef.current;
+            settingsRef.current = rollback;
+            preloadRequestedMem = rollback.quranPreloadRequested;
+            setSettings(rollback);
+          }
+          throw err;
+        });
+    },
+    [],
   );
 
   useEffect(() => {
@@ -797,9 +920,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
     setSettings(clean);
-    enqueueWrite(clean).catch(() => {});
+    enqueueMutation(update, clean).catch(() => {});
     return clean;
-  }, [enqueueWrite]);
+  }, [enqueueMutation]);
 
   useEffect(() => {
     activeSettingsUpdater = (fn) => updateSettings(fn);
@@ -905,7 +1028,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // Enqueue through the shared write queue and await completion
-        await enqueueWrite(nextClean, (raw) => {
+        await enqueueMutation((latest) => computeNextLanguageSettings(latest, nextLang), nextClean, (raw) => {
           const parsed = JSON.parse(raw);
           if (!parsed || parsed.language !== nextLang) {
             throw new Error(

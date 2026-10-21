@@ -10,8 +10,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import ts from 'typescript';
 import { DatabaseSync } from 'node:sqlite';
+import { compileEsmProductionModule } from './production_module_fallback.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'islamic-data-safety-'));
@@ -97,27 +97,25 @@ fs.writeFileSync(path.join(TMP, 'asyncStorage.mjs'), `
   };
 `);
 
-function compile(source, replacements, fileName) {
-  let rewritten = source;
-  for (const [from, to] of replacements) rewritten = rewritten.replaceAll(from, to);
-  const output = ts.transpileModule(rewritten, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2022,
-      jsx: ts.JsxEmit.React,
-    },
-    fileName: fileName.replace(/\.mjs$/, fileName.includes('screen') ? '.tsx' : '.ts'),
-  }).outputText;
-  const outputPath = path.join(TMP, fileName);
-  fs.writeFileSync(outputPath, output);
-  return outputPath;
+function compile(source, replacements, fileName, sourceRelativePath) {
+  return compileEsmProductionModule({
+    root: ROOT,
+    tmpDir: TMP,
+    sourceRelativePath,
+    source,
+    outputName: fileName,
+    replacements,
+  });
 }
 
 async function importDb(copyName) {
   const outputPath = compile(
     dbSource,
-    [["import * as SQLite from 'expo-sqlite';", "import SQLite from './sqliteAdapter.mjs';"]],
+    [
+      ["import * as SQLite from 'expo-sqlite';", "import SQLite from './sqliteAdapter.mjs';"],
+    ],
     copyName,
+    'src/lib/db.native.ts',
   );
   return import(outputPath);
 }
@@ -235,6 +233,7 @@ const backupPath = compile(
     ["import { webKV } from './webStorage';", "import { webKV } from './webStorage.mjs';"],
   ],
   'backup.mjs',
+  'src/lib/backup.ts',
 );
 const backup = await import(backupPath);
 
@@ -373,8 +372,11 @@ fs.writeFileSync(path.join(TMP, 'webStorageWeb.mjs'), `
 `);
 const webDbPath = compile(
   fs.readFileSync(path.join(ROOT, 'src/lib/db.ts'), 'utf8'),
-  [["import { webKV } from './webStorage';", "import { webKV } from './webStorageWeb.mjs';"]],
+  [
+    ["import { webKV } from './webStorage';", "import { webKV } from './webStorageWeb.mjs';"],
+  ],
   'db-web.mjs',
+  'src/lib/db.ts',
 );
 await import(webDbPath);
 globalThis.__platform.OS = 'web';
@@ -389,6 +391,7 @@ const webBackupPath = compile(
     ["import { webKV } from './webStorage';", "import { webKV } from './webStorageWeb.mjs';"],
   ],
   'backup-web.mjs',
+  'src/lib/backup.ts',
 );
 const webBackup = await import(webBackupPath);
 const webDefaultExport = await webBackup.buildBackupPayload();
@@ -652,6 +655,7 @@ const screenPath = compile(
     ["from '../lib/backup'", "from './backup.mjs'"],
   ],
   'backup-restore-screen.mjs',
+  'src/screens/BackupRestoreScreen.tsx',
 );
 const screenModule = await import(screenPath);
 const screenTree = screenModule.BackupRestoreScreen({ onBack: () => {} });

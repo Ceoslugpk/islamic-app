@@ -88,6 +88,16 @@ export function QiblaCompass({
             backgroundColor: colors.bgSurface,
           },
         ]}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={
+          bearing === null
+            ? t('Qibla compass')
+            : t('Qibla compass. Bearing {{bearing}} degrees. {{state}}', {
+                bearing: Math.round(bearing),
+                state: isAligned ? t('Facing Qibla') : t('Not facing Qibla'),
+              })
+        }
       >
         {/* Top device alignment marker (phone top notch) */}
         <View style={styles.topAlignmentMarker}>
@@ -170,7 +180,7 @@ export function QiblaCompass({
             styles.north,
           ]}
         >
-          N
+          {t('N')}
         </AppText>
         <AppText
           variant="eyebrow"
@@ -181,7 +191,7 @@ export function QiblaCompass({
             getCompassCardinalPosition('east', rtl),
           ]}
         >
-          E
+          {t('E')}
         </AppText>
         <AppText
           variant="eyebrow"
@@ -191,7 +201,7 @@ export function QiblaCompass({
             styles.south,
           ]}
         >
-          S
+          {t('S')}
         </AppText>
         <AppText
           variant="eyebrow"
@@ -202,7 +212,7 @@ export function QiblaCompass({
             getCompassCardinalPosition('west', rtl),
           ]}
         >
-          W
+          {t('W')}
         </AppText>
 
         {/* Rotating Needle Assembly */}

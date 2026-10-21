@@ -49,10 +49,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
             </View>
 
             <AppText variant="title" style={styles.title}>
-              Private & On-Device
+              {t('Private & On-Device')}
             </AppText>
             <AppText variant="subtitle" style={styles.subtitle}>
-              Your cycle, purity, and worship data are deeply personal. We protect your privacy with strict on-device guarantees:
+              {t('Your cycle, purity, and worship data are deeply personal. We protect your privacy with strict on-device guarantees:')}
             </AppText>
 
             {/* Guarantees List */}
@@ -63,10 +63,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 </View>
                 <View style={styles.listTextWrap}>
                   <AppText variant="rowTitle" style={styles.listHeading}>
-                    Stays on this device
+                    {t('Stays on this device')}
                   </AppText>
                   <AppText variant="body" style={styles.listBody}>
-                    All period entries, purity days, and notes are stored strictly in local device storage.
+                    {t('All period entries, purity days, and notes are stored strictly in local device storage.')}
                   </AppText>
                 </View>
               </View>
@@ -77,10 +77,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 </View>
                 <View style={styles.listTextWrap}>
                   <AppText variant="rowTitle" style={styles.listHeading}>
-                    No account or sign-in
+                    {t('No account or sign-in')}
                   </AppText>
                   <AppText variant="body" style={styles.listBody}>
-                    No login, email, or cloud profile is ever required or attached to your records.
+                    {t('No login, email, or cloud profile is ever required or attached to your records.')}
                   </AppText>
                 </View>
               </View>
@@ -91,10 +91,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 </View>
                 <View style={styles.listTextWrap}>
                   <AppText variant="rowTitle" style={styles.listHeading}>
-                    Zero analytics or telemetry
+                    {t('Zero analytics or telemetry')}
                   </AppText>
                   <AppText variant="body" style={styles.listBody}>
-                    Cycle data is never sent to remote servers or included in analytics or telemetry logs.
+                    {t('Cycle data is never sent to remote servers or included in analytics or telemetry logs.')}
                   </AppText>
                 </View>
               </View>
@@ -105,10 +105,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 </View>
                 <View style={styles.listTextWrap}>
                   <AppText variant="rowTitle" style={styles.listHeading}>
-                    Delete or hide anytime
+                    {t('Delete or hide anytime')}
                   </AppText>
                   <AppText variant="body" style={styles.listBody}>
-                    You can hide the feature from the menu or permanently wipe all records anytime in Settings.
+                    {t('You can hide the feature from the menu or permanently wipe all records anytime in Settings.')}
                   </AppText>
                 </View>
               </View>
@@ -128,7 +128,7 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   style={styles.primaryBtnText}
                   maxFontSizeMultiplier={1.4}
                 >
-                  I Understand
+                  {t('I Understand')}
                 </AppText>
               </TouchableOpacity>
 
@@ -143,7 +143,7 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   style={styles.cancelBtnText}
                   maxFontSizeMultiplier={1.4}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </AppText>
               </TouchableOpacity>
             </View>

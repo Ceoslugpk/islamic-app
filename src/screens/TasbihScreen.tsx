@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
   Pressable,
   ScrollView,
+  AppState,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,8 @@ import { Card } from '../components/Card';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
-import { saveTasbihCountAsync, loadTasbihCounts, saveTasbihDayTotalAsync, loadTasbihDayTotal } from '../lib/db';
+import { saveTasbihCountAsync, loadTasbihCounts, saveTasbihDayTotalAsync, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
+import { getLocalDateKey } from '../lib/dateKey';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { getCurrentLanguage, t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -108,22 +110,133 @@ export function getLocalizedDhikrTransliteration(item: DhikrItem): string {
 
 export function getLocalizedDhikrMeaning(item: DhikrItem): string {
   const language = getCurrentLanguage();
-  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi' | 'ml' | 'si']?.[item.id]?.meaning ?? item.meaning;
+  const translatedMeaning = t(item.meaning);
+  return translatedMeaning !== item.meaning
+    ? translatedMeaning
+    : language === 'en'
+      ? translatedMeaning
+      : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi' | 'ml' | 'si']?.[item.id]?.meaning ?? translatedMeaning;
 }
 
 const TARGET_OPTIONS = [33, 99, 100];
+
+export function getTasbihTodayKey(date = new Date()): string {
+  return getLocalDateKey(date);
+}
+
+/**
+ * The Tasbih day key was historically the UTC calendar date. A user who was
+ * counting before this fix therefore has their in-progress "today" total
+ * persisted under the UTC-derived key. On the first read of a local day whose
+ * local-keyed row is empty, adopt that legacy row so the count is not silently
+ * reset. The legacy row is then zeroed (moved, not copied) so it is never
+ * double-counted on a later read.
+ */
+function getLegacyUtcDayKey(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(date.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function loadTasbihDayTotalWithMigration(localKey: string, date = new Date()): number {
+  const localTotal = loadTasbihDayTotal(localKey);
+  if (localTotal > 0) return localTotal;
+  const legacyKey = getLegacyUtcDayKey(date);
+  if (legacyKey === localKey) return 0;
+  const legacyTotal = loadTasbihDayTotal(legacyKey);
+  if (legacyTotal <= 0) return 0;
+  saveTasbihDayTotal(localKey, legacyTotal);
+  saveTasbihDayTotal(legacyKey, -legacyTotal);
+  return legacyTotal;
+}
+
+/**
+ * Resolve where the next tap's delta must land. The write key is derived from
+ * the current clock (never from a possibly-stale render closure), so the first
+ * tap after local midnight is credited to the new day's row instead of
+ * inflating yesterday's. The displayed total is re-based to the new day when
+ * the day has advanced.
+ */
+export function computeTasbihTapRollover(params: {
+  stateKey: string;
+  stateTotal: number;
+  now?: Date;
+}): { key: string; nextTotal: number; rolled: boolean } {
+  const now = params.now ?? new Date();
+  const key = getTasbihTodayKey(now);
+  if (key !== params.stateKey) {
+    return { key, nextTotal: loadTasbihDayTotalWithMigration(key, now) + 1, rolled: true };
+  }
+  return { key, nextTotal: params.stateTotal + 1, rolled: false };
+}
+
+export function useTasbihTodayKey(): string {
+  const [todayKey, setTodayKey] = useState(() => getTasbihTodayKey());
+
+  useEffect(() => {
+    let midnightTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const refresh = () => {
+      const next = getTasbihTodayKey();
+      setTodayKey((previous) => (previous === next ? previous : next));
+    };
+
+    const schedule = () => {
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      midnightTimer = setTimeout(() => {
+        refresh();
+        schedule();
+      }, Math.max(1, nextMidnight.getTime() - now.getTime()));
+    };
+
+    schedule();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refresh();
+    });
+
+    return () => {
+      subscription.remove();
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+    };
+  }, []);
+
+  return todayKey;
+}
 
 function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: string }) {
   const { tokens, mode } = useThemeTokens();
   const { haptic } = useHaptics();
   const [selectedDhikr, setSelectedDhikr] = useState<DhikrItem>(DHIKR_PRESETS[0]);
   const [target, setTarget] = useState<number>(33);
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = useTasbihTodayKey();
   const [counts, setCounts] = useState<Record<string, number>>(() => loadTasbihCounts());
-  const [todayTotal, setTodayTotal] = useState<number>(() => loadTasbihDayTotal(new Date().toISOString().slice(0, 10)));
+  const [totalState, setTotalState] = useState(() => {
+    const key = getTasbihTodayKey();
+    return { date: key, value: loadTasbihDayTotalWithMigration(key) };
+  });
   const countsRef = useRef(counts);
-  const todayTotalRef = useRef(todayTotal);
   const { saveUndoState } = useUndoToast();
+
+  // Re-derive the "Today" total whenever the local day rolls over so the card
+  // shows the new day's count instead of yesterday's cumulative value. The
+  // value is computed during render (never in an effect), tagged with the day
+  // it belongs to.
+  const todayTotal = totalState.date === todayKey
+    ? totalState.value
+    : loadTasbihDayTotalWithMigration(todayKey);
+
+  const todayTotalRef = useRef(todayTotal);
+  // Keep the ref on the latest committed total for events that fire before a re-render. This must happen in an
+  // effect, not during render: writing a ref while rendering is forbidden by React (react-hooks/refs) and unsafe
+  // under concurrent rendering. `handleTap` advances the ref synchronously on each tap, so rapid taps never read a
+  // stale value even though this sync lands a commit later.
+  useEffect(() => {
+    todayTotalRef.current = todayTotal;
+  }, [todayTotal]);
 
   const currentCount = counts[selectedDhikr.id] || 0;
 
@@ -136,16 +249,19 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
     setCounts(nextCounts);
     void saveTasbihCountAsync(selectedDhikr.id, nextCount);
 
-    const nextDaily = todayTotalRef.current + 1;
-    todayTotalRef.current = nextDaily;
-    setTodayTotal(nextDaily);
-    void saveTasbihDayTotalAsync(todayKey, 1);
+    const rollover = computeTasbihTapRollover({
+      stateKey: totalState.date,
+      stateTotal: todayTotalRef.current,
+    });
+    todayTotalRef.current = rollover.nextTotal;
+    setTotalState({ date: rollover.key, value: rollover.nextTotal });
+    void saveTasbihDayTotalAsync(rollover.key, 1);
 
     // Give an extra success impact if target reached
     if (nextCount > 0 && nextCount % target === 0) {
       haptic('success');
     }
-  }, [selectedDhikr.id, target, haptic, todayKey]);
+  }, [selectedDhikr.id, target, haptic, totalState.date]);
 
   const handleReset = useCallback(() => {
     haptic('warning');

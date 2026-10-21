@@ -19,6 +19,7 @@ import {
   seekTo,
   stop,
 } from './quranAudio';
+import { t } from './i18n';
 
 export interface SystemMediaMetadata {
   title: string;
@@ -185,13 +186,13 @@ export function formatNowPlayingMetadata(
 } {
   if (!playback) {
     return {
-      title: 'The Holy Quran',
-      artist: 'Quran Audio',
+      title: t('The Holy Quran'),
+      artist: t('Quran Audio'),
       albumTitle: 'Islamic',
     };
   }
 
-  const reciter = playback.reciterName || 'Quran Reciter';
+  const reciter = playback.reciterName || t('Quran Reciter');
   const surahNum = playback.surah;
   const ayahNum = playback.ayah;
 
@@ -230,7 +231,7 @@ export function formatNowPlayingMetadata(
     return {
       title: `${baseSurah} — Arabic (${shortReciter})`,
       artist: reciter,
-      albumTitle: 'The Noble Quran · القران الكريم',
+      albumTitle: t('The Noble Quran · القران الكريم'),
       surahEnglishName: engName,
       surahArabicName: arName,
     };
@@ -238,7 +239,7 @@ export function formatNowPlayingMetadata(
 
   // Non-Quran / custom items (e.g. 99 Names)
   return {
-    title: playback.title || 'Quran Audio',
+    title: playback.title || t('Quran Audio'),
     artist: reciter,
     albumTitle: 'Islamic',
   };
@@ -574,8 +575,8 @@ export async function ensureSystemMediaNotificationChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
   try {
     await Notifications.setNotificationChannelAsync('expo_audio_channel', {
-      name: 'Quran Audio Player',
-      description: 'Media playback and lock screen controls',
+      name: t('Quran Audio Player'),
+      description: t('Media playback and lock screen controls'),
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,
@@ -587,8 +588,8 @@ export async function ensureSystemMediaNotificationChannels(): Promise<void> {
     });
 
     await Notifications.setNotificationChannelAsync('now-playing', {
-      name: 'Now Playing',
-      description: 'Media playback controls for Quran audio',
+      name: t('Now Playing'),
+      description: t('Media playback controls for Quran audio'),
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,

@@ -53,6 +53,16 @@ function notifyPositionListeners(): void {
 let inMemoryMarker: ReadingMarker | null | undefined = undefined;
 let inMemoryPosition: ReadingPosition | null | undefined = undefined;
 
+function restoreQuranCache<T extends object>(key: string, previous: T | null): void {
+  try {
+    if (previous === null) {
+      deleteQuranCache(key);
+    } else {
+      saveQuranCache(key, previous);
+    }
+  } catch {}
+}
+
 export function getReadingMarkerSync(): ReadingMarker | null {
   if (inMemoryMarker !== undefined) return inMemoryMarker;
   try {
@@ -156,21 +166,48 @@ export async function saveReadingPosition(surah: number, ayah: number, page?: nu
     page: resolvedPage,
     savedAt: Date.now(),
   };
+  const previousPosition = inMemoryPosition;
+  const previousCached = loadQuranCache<ReadingPosition>(STORAGE_KEY);
   inMemoryPosition = position;
   notifyPositionListeners();
+  let cacheSaved = false;
   try {
-    saveQuranCache(STORAGE_KEY, position);
-  } catch {}
+    cacheSaved = saveQuranCache(STORAGE_KEY, position);
+  } catch {
+    cacheSaved = false;
+  }
+  if (!cacheSaved) {
+    restoreQuranCache(STORAGE_KEY, previousCached);
+    inMemoryPosition = previousPosition;
+    notifyPositionListeners();
+    return false;
+  }
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(position));
     return true;
   } catch {
+    restoreQuranCache(STORAGE_KEY, previousCached);
+    inMemoryPosition = previousPosition;
+    notifyPositionListeners();
     return false;
   }
 }
 
 export async function getReadingPosition(): Promise<ReadingPosition | null> {
   try {
+    const cached = loadQuranCache<ReadingPosition>(STORAGE_KEY);
+    if (cached && typeof cached.savedAt === 'number' && isValidReadingPosition(cached)) {
+      const page =
+        typeof cached.page === 'number' && cached.page >= 1 && cached.page <= 604
+          ? cached.page
+          : getMushafPageForAyah(cached.surah, cached.ayah);
+      const pos: ReadingPosition = { ...cached, page };
+      inMemoryPosition = pos;
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+      } catch {}
+      return pos;
+    }
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
     if (!stored) {
       if (inMemoryPosition === undefined) inMemoryPosition = null;
@@ -205,15 +242,28 @@ export async function getReadingPosition(): Promise<ReadingPosition | null> {
 }
 
 export async function clearReadingPosition(): Promise<boolean> {
+  const previousPosition = inMemoryPosition;
+  const previousCached = loadQuranCache<ReadingPosition>(STORAGE_KEY);
   inMemoryPosition = null;
   notifyPositionListeners();
+  let cacheDeleted = false;
   try {
-    deleteQuranCache(STORAGE_KEY);
-  } catch {}
+    cacheDeleted = deleteQuranCache(STORAGE_KEY);
+  } catch {
+    cacheDeleted = false;
+  }
+  if (!cacheDeleted) {
+    inMemoryPosition = previousPosition;
+    notifyPositionListeners();
+    return false;
+  }
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
     return true;
   } catch {
+    restoreQuranCache(STORAGE_KEY, previousCached);
+    inMemoryPosition = previousPosition;
+    notifyPositionListeners();
     return false;
   }
 }
@@ -235,22 +285,48 @@ export async function saveReadingMarker(surah: number, ayah: number, page?: numb
     savedAt: Date.now(),
     manual: true,
   };
+  const previousMarker = inMemoryMarker;
+  const previousCached = loadQuranCache<ReadingMarker>(MARKER_KEY);
   inMemoryMarker = marker;
   notifyPositionListeners();
+  let cacheSaved = false;
   try {
-    saveQuranCache(MARKER_KEY, marker);
-  } catch {}
+    cacheSaved = saveQuranCache(MARKER_KEY, marker);
+  } catch {
+    cacheSaved = false;
+  }
+  if (!cacheSaved) {
+    restoreQuranCache(MARKER_KEY, previousCached);
+    inMemoryMarker = previousMarker;
+    notifyPositionListeners();
+    return false;
+  }
   try {
     await AsyncStorage.setItem(MARKER_KEY, JSON.stringify(marker));
     return true;
   } catch {
-    // If storage write fails (e.g. disk full), optimistic inMemoryMarker is retained
+    restoreQuranCache(MARKER_KEY, previousCached);
+    inMemoryMarker = previousMarker;
+    notifyPositionListeners();
     return false;
   }
 }
 
 export async function getReadingMarker(): Promise<ReadingMarker | null> {
   try {
+    const cached = loadQuranCache<ReadingMarker>(MARKER_KEY);
+    if (cached && typeof cached.savedAt === 'number' && isValidReadingPosition(cached)) {
+      const page =
+        typeof cached.page === 'number' && cached.page >= 1 && cached.page <= 604
+          ? cached.page
+          : getMushafPageForAyah(cached.surah, cached.ayah);
+      const marker = { ...cached, page, manual: true } as ReadingMarker;
+      inMemoryMarker = marker;
+      try {
+        await AsyncStorage.setItem(MARKER_KEY, JSON.stringify(marker));
+      } catch {}
+      return marker;
+    }
     const stored = await AsyncStorage.getItem(MARKER_KEY);
     if (!stored) {
       if (inMemoryMarker === undefined) inMemoryMarker = null;
@@ -282,15 +358,28 @@ export async function getReadingMarker(): Promise<ReadingMarker | null> {
 }
 
 export async function clearReadingMarker(): Promise<boolean> {
+  const previousMarker = inMemoryMarker;
+  const previousCached = loadQuranCache<ReadingMarker>(MARKER_KEY);
   inMemoryMarker = null;
   notifyPositionListeners();
+  let cacheDeleted = false;
   try {
-    deleteQuranCache(MARKER_KEY);
-  } catch {}
+    cacheDeleted = deleteQuranCache(MARKER_KEY);
+  } catch {
+    cacheDeleted = false;
+  }
+  if (!cacheDeleted) {
+    inMemoryMarker = previousMarker;
+    notifyPositionListeners();
+    return false;
+  }
   try {
     await AsyncStorage.removeItem(MARKER_KEY);
     return true;
   } catch {
+    restoreQuranCache(MARKER_KEY, previousCached);
+    inMemoryMarker = previousMarker;
+    notifyPositionListeners();
     return false;
   }
 }

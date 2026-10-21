@@ -55,6 +55,10 @@ assert.deepEqual(JSON.parse(await storage.getItem()), recovered);
 const settingsSource = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 assert.match(settingsSource, /const updateSettings = useCallback\(/);
 assert.doesNotMatch(settingsSource, /setThemeMode:\s*\([^)]*\)\s*=>\s*setSettings\(\(prev\)/);
-assert.match(settingsSource, /await enqueueWrite\(nextClean,\s*\(raw\)/);
+// The callable was renamed during a legitimate refactor: the shared write queue is now `enqueueMutation`, which
+// takes the readback verifier as its third argument. The requirement is unchanged - the language write and the
+// verification of what it wrote happen inside ONE queued task.
+assert.match(settingsSource, /await enqueueMutation\(/);
+assert.match(settingsSource, /Storage readback verification mismatch/);
 
 console.log('✓ serialized settings writer keeps write+readback atomic, recovers after rejection, and production setters snapshot synchronously');

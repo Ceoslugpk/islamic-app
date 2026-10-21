@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import ts from 'typescript';
+import { compileEsmProductionModule } from './production_module_fallback.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const SRC_LIB = path.join(REPO_ROOT, 'src/lib');
@@ -43,19 +44,19 @@ export function setupHarness() {
   fs.writeFileSync(path.join(TMP_DIR, 'schema.json'), JSON.stringify(SCHEMA, null, 2));
 
   // 2. Transpile helper
+  //    Delegates to the shared production-module compiler so that any relative
+  //    ./ import from src/lib that is not an explicit stub is compiled from real
+  //    source on demand. Newly added internal modules therefore resolve without
+  //    the suite needing to enumerate them.
   function transpileFile(filename, rewrites, outName) {
-    let src = fs.readFileSync(path.join(SRC_LIB, filename), 'utf8');
-    for (const [from, to] of rewrites) {
-      if (!src.includes(from)) {
-        throw new Error(`Rewrite target not found in ${filename}: "${from}"`);
-      }
-      src = src.replace(from, to);
-    }
-    const out = ts.transpileModule(src, {
-      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-      fileName: filename,
-    }).outputText;
-    fs.writeFileSync(path.join(TMP_DIR, outName), out);
+    compileEsmProductionModule({
+      root: REPO_ROOT,
+      tmpDir: TMP_DIR,
+      sourceRelativePath: `src/lib/${filename}`,
+      source: fs.readFileSync(path.join(SRC_LIB, filename), 'utf8'),
+      outputName: outName,
+      replacements: rewrites,
+    });
   }
 
   // 3. Stubs

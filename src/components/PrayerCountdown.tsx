@@ -8,6 +8,7 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { AppText } from './ui/AppText';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
@@ -251,7 +252,7 @@ export function PrayerCountdown({
         style={styles.tilesContainer}
         accessibilityRole="text"
         accessibilityLiveRegion="none"
-        accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
+        accessibilityLabel={t('Countdown {{time}}', { time: `${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}` })}
       >
         {/* Hours */}
         <View style={[styles.tileBox, { backgroundColor: tileBg || 'rgba(6, 40, 33, 0.7)', borderColor: tileBorder || '#786234' }]}>
@@ -259,7 +260,7 @@ export function PrayerCountdown({
             <AnimatedDigit digit={digits.h1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
             <AnimatedDigit digit={digits.h2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
           </View>
-          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>HRS</AppText>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>{t('HRS')}</AppText>
         </View>
 
         <AppText variant="caption" style={[styles.tileColon, { color: separatorColor || labelColor || '#8EB3A5' }]}>:</AppText>
@@ -270,7 +271,7 @@ export function PrayerCountdown({
             <AnimatedDigit digit={digits.m1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
             <AnimatedDigit digit={digits.m2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
           </View>
-          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>MIN</AppText>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>{t('MIN')}</AppText>
         </View>
 
         <AppText variant="caption" style={[styles.tileColon, { color: separatorColor || labelColor || '#8EB3A5' }]}>:</AppText>
@@ -281,7 +282,7 @@ export function PrayerCountdown({
             <AnimatedDigit digit={digits.s1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
             <AnimatedDigit digit={digits.s2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
           </View>
-          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>SEC</AppText>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>{t('SEC')}</AppText>
         </View>
       </View>
     );
@@ -293,7 +294,7 @@ export function PrayerCountdown({
       style={styles.container}
       accessibilityRole="text"
       accessibilityLiveRegion="none"
-      accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
+      accessibilityLabel={t('Countdown {{time}}', { time: `${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}` })}
     >
       {/* Hours */}
       <View style={styles.unitPair}>

@@ -23,7 +23,7 @@ interface PackingItem {
   note: string;
 }
 
-const PACKING_ITEMS: PackingItem[] = [
+export const PACKING_ITEMS: PackingItem[] = [
   { id: 'p1', category: 'Ihram & Clothing', item: 'Two sets of white Ihram towels', note: '100% cotton or bamboo, absorbent and durable for men' },
   { id: 'p2', category: 'Ihram & Clothing', item: 'Ihram belt with secure pouch', note: 'For keeping passport, cash, hotel key card, and phone' },
   { id: 'p3', category: 'Ihram & Clothing', item: 'Safety pins / heavy-duty clips', note: 'To secure the upper sheet (Rida) in place against strong winds' },
@@ -51,7 +51,7 @@ interface RecommendedBook {
   description: string;
 }
 
-const RECOMMENDED_BOOKS: RecommendedBook[] = [
+export const RECOMMENDED_BOOKS: RecommendedBook[] = [
   {
     title: 'The Prophet\'s Hajj (Hajjat al-Nabi ﷺ)',
     author: 'Shaykh Muhammad Nasiruddin al-Albani',
@@ -84,7 +84,7 @@ interface CommonMistake {
   correctAction: string;
 }
 
-const COMMON_MISTAKES: CommonMistake[] = [
+export const COMMON_MISTAKES: CommonMistake[] = [
   {
     topic: 'Tawaf Boundary',
     mistake: 'Walking inside the semi-circular wall (Hijr Ismail / Hateem) during Tawaf circuits.',
@@ -117,7 +117,7 @@ const COMMON_MISTAKES: CommonMistake[] = [
   },
 ];
 
-const FIRST_TIMER_TIPS = [
+export const FIRST_TIMER_TIPS = [
   {
     title: 'Hydration & Nutrition',
     detail: 'Cold and room-temperature Zamzam barrels are situated throughout the Haram. Drink regularly in small amounts. Carry dates or dry nuts in your pouch for steady sustained energy.',
@@ -419,7 +419,7 @@ export default function UmrahResourcesScreen({
                 </View>
 
                 <AppText variant="body" style={styles.mistakeText}>
-                  {t('Mistake')}: {item.mistake}
+                  {t('Mistake')}: {t(item.mistake)}
                 </AppText>
 
                 <Hairline style={{ marginVertical: 8 }} />
@@ -427,7 +427,7 @@ export default function UmrahResourcesScreen({
                 <View style={styles.correctHeader}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={tokens.success} />
                   <AppText variant="body" tone="faint" style={styles.correctText}>
-                    {t('Correct Practice')}: {item.correctAction}
+                    {t('Correct Practice')}: {t(item.correctAction)}
                   </AppText>
                 </View>
               </PremiumCard>
@@ -451,10 +451,10 @@ export default function UmrahResourcesScreen({
                   {t(book.focus).toUpperCase()}
                 </AppText>
                 <AppText variant="title" style={styles.bookTitle}>
-                  {book.title}
+                  {t(book.title)}
                 </AppText>
                 <AppText variant="caption" tone="faint" style={styles.bookAuthor}>
-                  {t('By')} {book.author}
+                  {t('By')} {t(book.author)}
                 </AppText>
                 <AppText variant="body" tone="faint" style={styles.bookDesc}>
                   {t(book.description)}

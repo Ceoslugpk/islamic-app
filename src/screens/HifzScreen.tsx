@@ -21,6 +21,7 @@ import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { HifzStatus, saveHifzStatus, loadHifzStatuses } from '../lib/db';
 import { EmptyState } from '../components/EmptyState';
 import { HifzPracticeScreen } from './HifzPracticeScreen';
+import { InteractiveSurface } from '../components/InteractiveSurface';
 
 type FilterTab = 'All' | 'Memorized' | 'Revising' | 'Not started';
 
@@ -165,7 +166,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
     const statusLabel = status === 'memorized' ? t('Memorized') : status === 'revising' ? t('Revising') : t('Not started');
 
     return (
-      <TouchableOpacity
+      <InteractiveSurface
         style={[
           styles.rowCard,
           getCardShadow(mode),
@@ -175,6 +176,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           },
         ]}
         onPress={() => handleCycleStatus(item.number)}
+        activeOpacity={0.2}
         accessibilityRole="button"
         accessibilityLabel={`${t('Surah')} ${item.number} ${item.englishName}. ${t('Status')}: ${statusLabel}. ${t('Tap to cycle')}.`}
       >
@@ -225,7 +227,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             {t('Tap to cycle')}
           </AppText>
         </View>
-      </TouchableOpacity>
+      </InteractiveSurface>
     );
   };
 

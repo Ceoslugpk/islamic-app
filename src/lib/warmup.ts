@@ -18,6 +18,7 @@ import { fetchSurahList, fetchSurahListForLanguage, fetchWithTimeout } from './q
 import { getQuranTranslationLanguage } from './quranLanguageState';
 import { loadQuranPreloadRequested } from './settings';
 import { isAppOnline } from './useConnectivity';
+import { t } from './i18n';
 
 const WARMUP_DONE_KEY = 'warmup-done-v1';
 const WARMUP_VERSION = 1;
@@ -348,7 +349,7 @@ export async function startHadithWarmup(options?: {
             collectionName: col.name?.en || col.slug,
             bookIndex: bIdx,
             bookNumber: book.bookNumber,
-            bookName: book.name?.en || `Book ${book.bookNumber}`,
+            bookName: book.name?.en || t('Book {{number}}', { number: book.bookNumber }),
             offset,
             totalHadithsInBook: book.hadithCount,
             completedCollections: completedCols,
@@ -602,7 +603,7 @@ export async function runFirstLaunchWarmup(options?: {
 
   const updateProgress = (stepIndex: number, stepLabel: string, error?: string) => {
     const progress: WarmupProgress = {
-      step: stepLabel,
+      step: t(stepLabel),
       completed: [...completed],
       total: steps.length,
       currentIndex: stepIndex,

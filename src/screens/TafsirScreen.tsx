@@ -35,6 +35,42 @@ interface TafsirScreenProps {
   onOpenReader?: (surah: number, ayah: number) => void;
 }
 
+type TafsirItem = { ayahNumber: number; text: string };
+
+export interface TafsirDisplayItem {
+  ayahNumber: number;
+  arabicText: string | null;
+  text: string | null;
+}
+
+export function buildTafsirDisplayItems(
+  surahDetail: Pick<SurahDetail, 'ayahs'> | null,
+  tafsirList: TafsirItem[],
+): TafsirDisplayItem[] {
+  const arabicByAyah = new Map<number, string>();
+  for (const ayah of surahDetail?.ayahs ?? []) {
+    if (Number.isInteger(ayah.numberInSurah) && typeof ayah.text === 'string' && ayah.text.trim()) {
+      arabicByAyah.set(ayah.numberInSurah, ayah.text);
+    }
+  }
+
+  const tafsirByAyah = new Map<number, string>();
+  for (const item of tafsirList) {
+    if (Number.isInteger(item.ayahNumber) && typeof item.text === 'string' && item.text.trim()) {
+      tafsirByAyah.set(item.ayahNumber, item.text);
+    }
+  }
+
+  const ayahNumbers = new Set([...arabicByAyah.keys(), ...tafsirByAyah.keys()]);
+  return Array.from(ayahNumbers)
+    .sort((a, b) => a - b)
+    .map((ayahNumber) => ({
+      ayahNumber,
+      arabicText: arabicByAyah.get(ayahNumber) ?? null,
+      text: tafsirByAyah.get(ayahNumber) ?? null,
+    }));
+}
+
 export default function TafsirScreen({
   surahNumber = 1,
   onBack,
@@ -156,8 +192,9 @@ export default function TafsirScreen({
     setTafsirSourcePickerOpen(false);
   };
 
-  const renderAyahItem = ({ item, index }: { item: { ayahNumber: number; text: string }; index: number }) => {
-    const arabicAyah = surahDetail?.ayahs[index]?.text || '';
+  const displayItems = buildTafsirDisplayItems(surahDetail, tafsirList);
+
+  const renderAyahItem = ({ item }: { item: TafsirDisplayItem }) => {
     const isArabic = currentTafsirSource.languageCode === 'ar';
     return (
       <View
@@ -199,11 +236,15 @@ export default function TafsirScreen({
           )}
         </View>
 
-        {arabicAyah ? (
+        {item.arabicText ? (
           <ArabicText size={22} style={styles.arabicVerse}>
-            {arabicAyah}
+            {item.arabicText}
           </ArabicText>
-        ) : null}
+        ) : (
+          <AppText variant="caption" tone="faint" style={styles.unavailableText}>
+            {t('Arabic')}: {t('Translation not available')}
+          </AppText>
+        )}
 
         <Hairline style={styles.cardHairline} />
 
@@ -211,7 +252,7 @@ export default function TafsirScreen({
           <AppText variant="eyebrow" tone="faint" style={styles.tafsirLabel}>
             {currentTafsirSource.name} ({currentTafsirSource.language})
           </AppText>
-          {isArabic ? (
+          {item.text ? isArabic ? (
             <ArabicText size={18} style={styles.tafsirBody}>
               {item.text}
             </ArabicText>
@@ -221,6 +262,10 @@ export default function TafsirScreen({
               currentTafsirSource.languageCode === 'ar' || isRtlScript(currentTafsirSource.languageCode) ? { textAlign: 'right', writingDirection: 'rtl' } : { textAlign: 'left', writingDirection: 'ltr' }
             ]}>
               {item.text}
+            </AppText>
+          ) : (
+            <AppText variant="caption" tone="faint" style={styles.unavailableText}>
+              {t('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.')}
             </AppText>
           )}
         </View>
@@ -335,7 +380,7 @@ export default function TafsirScreen({
           />
         ) : (
           <FlatList
-            data={tafsirList}
+            data={displayItems}
             keyExtractor={(item) => String(item.ayahNumber)}
             renderItem={renderAyahItem}
             contentContainerStyle={[
@@ -694,6 +739,9 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     lineHeight: 30,
+  },
+  unavailableText: {
+    lineHeight: 24,
   },
   modalOverlay: {
     flex: 1,

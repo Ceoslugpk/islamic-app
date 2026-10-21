@@ -24,6 +24,7 @@ import { useHaptics } from '../lib/haptics';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, getCachedPrayerTimes, todayDdmmyyyy, DayTimings, getNextPrayer } from '../lib/prayerTimes';
 import { formatTime } from '../lib/timeFormat';
+import { getLocalDateKey } from '../lib/dateKey';
 import { usePrayerWatcher } from '../lib/usePrayerWatcher';
 import { configureAudio } from '../lib/audio';
 import {
@@ -259,7 +260,7 @@ const HomeScreen = React.memo(function HomeScreen({
   const [now, setNow] = useState(new Date());
   const [completed, setCompleted] = useState<Record<string, boolean>>(() => {
     const currentDate = new Date();
-    const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    const iso = getLocalDateKey(currentDate);
     return getSalahEntries(iso);
   });
   const [salahHistory, setSalahHistory] = useState<Record<string, Record<string, boolean>>>(() => {
@@ -276,7 +277,7 @@ const HomeScreen = React.memo(function HomeScreen({
 
   function togglePrayer(prayer: string) {
     const currentDate = new Date();
-    const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    const iso = getLocalDateKey(currentDate);
     const nextVal = !completed[prayer];
     markSalahCompleted(iso, prayer, nextVal);
     setCompleted((prev) => ({ ...prev, [prayer]: nextVal }));
@@ -296,7 +297,7 @@ const HomeScreen = React.memo(function HomeScreen({
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const iso = getLocalDateKey(d);
       const isToday = i === 0;
       const dayEntries = isToday ? completed : (salahHistory[iso] || {});
       const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -493,7 +494,7 @@ const HomeScreen = React.memo(function HomeScreen({
     if (lastDateStrRef.current !== todayStr) {
       lastDateStrRef.current = todayStr;
       load(false, false);
-      const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const iso = getLocalDateKey(now);
       setCompleted(getSalahEntries(iso));
       const history = getSalahHistory(30);
       setSalahHistory(history);

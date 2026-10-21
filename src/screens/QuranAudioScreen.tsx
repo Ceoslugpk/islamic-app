@@ -85,6 +85,14 @@ type AudioTab =
   | 'queue'
   | 'settings';
 
+export function getLocalizedQuickQueueLabel(label: string): string {
+  return t(label);
+}
+
+export function getAudioSampleTitle(): string {
+  return t('Al-Faatiha 1:1');
+}
+
 interface QuranAudioScreenProps {
   onBack?: () => void;
 }
@@ -316,7 +324,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
       await playAyah(
         reciter.identifier,
         url,
-        'Al-Faatiha 1:1',
+        getAudioSampleTitle(),
         reciter.englishName,
         1,
         1
@@ -1471,7 +1479,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       >
                         <Ionicons name="add" size={14} color={colors.accent} />
                         <AppText variant="caption" style={styles.quickAddText}>
-                          {item.name}
+                          {getLocalizedQuickQueueLabel(item.name)}
                         </AppText>
                       </TouchableOpacity>
                     ))}

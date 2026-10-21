@@ -513,6 +513,8 @@ const nonOverlapDefects = diagState.deriveProbeDefects(siblingA, { siblings: [si
 assert.equal(nonOverlapDefects.siblingOverlap.flag, false, 'Non-overlapping siblings must report siblingOverlap: false');
 
 // 4.6 rtlTextAlignMismatch
+// SCRIPT-AWARE: the rule fires for text in an RTL script (Arabic/Urdu). Latin/numeric content in an RTL
+// locale is deliberately right-aligned with LTR direction and must stay silent.
 mockActiveLanguage = 'ar';
 const arMismatch = diagState.deriveProbeDefects(
   {
@@ -523,10 +525,30 @@ const arMismatch = diagState.deriveProbeDefects(
   },
   {
     isText: true,
-    resolvedStyleTextAlign: 'left', // RTL language with left alignment = defect
+    textScript: 'arabic',
+    resolvedStyleTextAlign: 'left', // RTL language with left alignment = defect for RTL-script text
   }
 );
-assert.equal(arMismatch.rtlTextAlignMismatch.flag, true, 'RTL with textAlign: left must trigger mismatch');
+assert.equal(arMismatch.rtlTextAlignMismatch.flag, true, 'RTL-script text with textAlign: left must trigger mismatch');
+
+const arMismatchLatin = diagState.deriveProbeDefects(
+  {
+    id: 'Home::AppText::ar1-latin',
+    kind: 'AppText',
+    screen: 'Home',
+    isText: true,
+  },
+  {
+    isText: true,
+    textScript: 'latin',
+    resolvedStyleTextAlign: 'left',
+  }
+);
+assert.equal(
+  arMismatchLatin.rtlTextAlignMismatch.flag,
+  false,
+  'Latin text left-aligned in an RTL locale must NOT trigger the mismatch (script-aware rule)'
+);
 
 const arWritingDirMismatch = diagState.deriveProbeDefects(
   {
@@ -537,12 +559,13 @@ const arWritingDirMismatch = diagState.deriveProbeDefects(
   },
   {
     isText: true,
+    textScript: 'arabic',
     resolvedStyleWritingDirection: 'ltr',
   }
 );
-// T2: RTL with only writingDirection: ltr is softer suspicious signal, not hard mismatch
-assert.equal(arWritingDirMismatch.rtlTextAlignMismatch.flag, false, 'RTL with only writingDirection: ltr must not be hard mismatch');
-assert.equal(arWritingDirMismatch.rtlWritingDirectionSuspicious.flag, true, 'RTL with writingDirection: ltr must trigger rtlWritingDirectionSuspicious: true');
+// T2: RTL-script text with only writingDirection: ltr is a suspicious signal, not a hard mismatch
+assert.equal(arWritingDirMismatch.rtlTextAlignMismatch.flag, false, 'RTL-script text with only writingDirection: ltr must not be a hard mismatch');
+assert.equal(arWritingDirMismatch.rtlWritingDirectionSuspicious.flag, true, 'RTL-script text with writingDirection: ltr must trigger rtlWritingDirectionSuspicious: true');
 
 const arValid = diagState.deriveProbeDefects(
   {

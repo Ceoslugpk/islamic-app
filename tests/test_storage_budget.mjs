@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import ts from 'typescript';
+import { compileEsmProductionModule } from './production_module_fallback.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'islamic-storage-budget-'));
@@ -57,12 +57,14 @@ const sqliteAdapter = {
 
 fs.writeFileSync(path.join(TMP, 'sqliteAdapter.mjs'), 'export default globalThis.__sqliteAdapter;');
 globalThis.__sqliteAdapter = sqliteAdapter;
-const dbNativeSource = fs.readFileSync(path.join(ROOT, 'src/lib/db.native.ts'), 'utf8')
-  .replace("import * as SQLite from 'expo-sqlite';", "import SQLite from './sqliteAdapter.mjs';");
-fs.writeFileSync(path.join(TMP, 'db.native.mjs'), ts.transpileModule(dbNativeSource, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText);
-const db = await import(path.join(TMP, 'db.native.mjs'));
+const db = await import(compileEsmProductionModule({
+  root: ROOT,
+  tmpDir: TMP,
+  sourceRelativePath: 'src/lib/db.native.ts',
+  source: fs.readFileSync(path.join(ROOT, 'src/lib/db.native.ts'), 'utf8'),
+  outputName: 'db.native.mjs',
+  replacements: [["import * as SQLite from 'expo-sqlite';", "import SQLite from './sqliteAdapter.mjs';"]],
+}));
 
 const trueBytes = () => sqlite.prepare(
   "SELECT COALESCE(SUM(length(payload)), 0) AS total FROM quran_cache WHERE key != 'quran_cache_bytes'"
@@ -163,12 +165,15 @@ fs.writeFileSync(path.join(TMP, 'webStorage.mjs'), `
     getAll: (prefix) => [...map.entries()].filter(([key]) => key.startsWith(prefix)).map(([key, value]) => ({ key, value })),
   };
 `);
-const dbWebSource = fs.readFileSync(path.join(ROOT, 'src/lib/db.ts'), 'utf8')
-  .replace("import { webKV } from './webStorage';", "import { webKV } from './webStorage.mjs';");
-fs.writeFileSync(path.join(TMP, 'db.web.mjs'), ts.transpileModule(dbWebSource, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText);
-const web = await import(path.join(TMP, 'db.web.mjs'));
+const dbWebSource = fs.readFileSync(path.join(ROOT, 'src/lib/db.ts'), 'utf8');
+const web = await import(compileEsmProductionModule({
+  root: ROOT,
+  tmpDir: TMP,
+  sourceRelativePath: 'src/lib/db.ts',
+  source: dbWebSource,
+  outputName: 'db.web.mjs',
+  replacements: [["import { webKV } from './webStorage';", "import { webKV } from './webStorage.mjs';"]],
+}));
 web.saveQuranCache('surah:web:1', { text: 'web' });
 assert.equal(web.getQuranCacheTotalBytes(), JSON.stringify({ text: 'web' }).length);
 web.deleteQuranCache('surah:web:1');

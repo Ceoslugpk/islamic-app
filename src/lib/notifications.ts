@@ -15,9 +15,11 @@ import {
 import { stopAdhan } from './audio';
 import { isQuranDailyGoalCompleted } from './quranProgress';
 import { t } from './i18n';
+import { getLocalDateKey } from './dateKey';
 import type { EventSubscription } from 'expo-notifications';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
+const SNOOZE_TARGET_EPOCH_MS_KEY = 'snoozeTargetEpochMs';
 
 /**
  * Local notification scheduling (permissions, categories, scheduling, cancel) is
@@ -94,7 +96,7 @@ export async function configureNotifications() {
     try {
       // 1. Full adhan sound + vibration (default high priority)
       await Notifications.setNotificationChannelAsync('prayer-times-adhan', {
-        name: 'Prayer times (Adhan & Vibration)',
+        name: t('Notification channel — Prayer times (Adhan & Vibration)'),
         importance: Notifications.AndroidImportance.MAX,
         sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
@@ -105,7 +107,7 @@ export async function configureNotifications() {
 
       // 2. Sound only channel (no vibration)
       await Notifications.setNotificationChannelAsync('prayer-times-sound-only', {
-        name: 'Prayer times (Sound only)',
+        name: t('Notification channel — Prayer times (Sound only)'),
         importance: Notifications.AndroidImportance.HIGH,
         sound: 'default',
         enableVibrate: false,
@@ -115,7 +117,7 @@ export async function configureNotifications() {
 
       // 3. Vibration only channel (silent sound)
       await Notifications.setNotificationChannelAsync('prayer-times-vibrate-only', {
-        name: 'Prayer times (Vibration only)',
+        name: t('Notification channel — Prayer times (Vibration only)'),
         importance: Notifications.AndroidImportance.HIGH,
         sound: null as any,
         vibrationPattern: [0, 250, 250, 250],
@@ -126,7 +128,7 @@ export async function configureNotifications() {
 
       // 4. Silent channel
       await Notifications.setNotificationChannelAsync('prayer-times-silent', {
-        name: 'Prayer times (Silent)',
+        name: t('Notification channel — Prayer times (Silent)'),
         importance: Notifications.AndroidImportance.DEFAULT,
         sound: null as any,
         enableVibrate: false,
@@ -135,7 +137,7 @@ export async function configureNotifications() {
 
       // 5. Quran reminder channel
       await Notifications.setNotificationChannelAsync('quran-reminders', {
-        name: 'Quran Reminders',
+        name: t('Notification channel — Quran reminders'),
         importance: Notifications.AndroidImportance.HIGH,
         sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
@@ -154,17 +156,17 @@ export async function configureNotifications() {
     await Notifications.setNotificationCategoryAsync('prayer-at', [
       {
         identifier: 'mark-complete',
-        buttonTitle: 'Mark Prayed',
+        buttonTitle: t('Mark Prayed'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'stop-adhan',
-        buttonTitle: 'Stop Adhan',
+        buttonTitle: t('Stop Adhan'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'prayer-snooze',
-        buttonTitle: 'Snooze (10m)',
+        buttonTitle: t('Snooze 10m'),
         options: { opensAppToForeground: false },
       },
     ]);
@@ -173,12 +175,12 @@ export async function configureNotifications() {
     await Notifications.setNotificationCategoryAsync('prayer-before', [
       {
         identifier: 'open-prayer',
-        buttonTitle: 'Open Prayer',
+        buttonTitle: t('Open Prayer'),
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'prayer-snooze',
-        buttonTitle: 'Snooze (10m)',
+        buttonTitle: t('Snooze 10m'),
         options: { opensAppToForeground: false },
       },
     ]);
@@ -187,22 +189,22 @@ export async function configureNotifications() {
     await Notifications.setNotificationCategoryAsync('prayer', [
       {
         identifier: 'mark-complete',
-        buttonTitle: 'Mark Prayed',
+        buttonTitle: t('Mark Prayed'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'stop-adhan',
-        buttonTitle: 'Stop Adhan',
+        buttonTitle: t('Stop Adhan'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'prayer-snooze',
-        buttonTitle: 'Snooze (10m)',
+        buttonTitle: t('Snooze 10m'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'open-prayer',
-        buttonTitle: 'Open Prayer',
+        buttonTitle: t('Open Prayer'),
         options: { opensAppToForeground: true },
       },
     ]);
@@ -211,17 +213,17 @@ export async function configureNotifications() {
     await Notifications.setNotificationCategoryAsync('quran', [
       {
         identifier: 'read-now',
-        buttonTitle: 'Read Now',
+        buttonTitle: t('Read Now'),
         options: { opensAppToForeground: true },
       },
       {
         identifier: 'quran-snooze',
-        buttonTitle: 'Snooze (10m)',
+        buttonTitle: t('Snooze 10m'),
         options: { opensAppToForeground: false },
       },
       {
         identifier: 'quran-dismiss',
-        buttonTitle: 'Dismiss',
+        buttonTitle: t('Dismiss'),
         options: { opensAppToForeground: false },
       },
     ]);
@@ -352,8 +354,9 @@ export async function getScheduledNotificationsHealth(): Promise<{ today: number
           today++;
         }
       } else {
-        today++;
-        tomorrow++;
+        // Time-interval, unknown, and malformed triggers do not establish
+        // daily coverage. In particular, a snooze must not make the health
+        // check look healthy when a daily reminder is missing.
       }
     }
 
@@ -386,7 +389,7 @@ export function getNextPrayerFromTimings(timings: DayTimings): { name: string; t
 
   // After Isha, next is tomorrow's Fajr
   if (timings.timings.Fajr && timings.timings.Fajr.includes(':')) {
-    return { name: 'Fajr (tomorrow)', time: timings.timings.Fajr };
+    return { name: t('Fajr (tomorrow)'), time: timings.timings.Fajr };
   }
   return null;
 }
@@ -578,6 +581,7 @@ export const NOTIFICATION_RESCHEDULE_TIMEOUT_MS = 10_000;
 
 interface RescheduleRun {
   cancelled: boolean;
+  destructiveStarted: boolean;
 }
 
 function withRescheduleTimeout<T>(
@@ -616,27 +620,40 @@ export function rescheduleIfNeeded(
   quranReminderTime: string = '20:00',
   quranGoal?: QuranGoalConfig
 ): Promise<boolean> {
-  const run: RescheduleRun = { cancelled: false };
-  const task = rescheduleTail.then(() => withRescheduleTimeout(
-    rescheduleIfNeededInternal(
-      location,
-      methodId,
-      remindersEnabled,
-      reminderOffsetMinutes,
-      quranReminderEnabled,
-      madhab,
-      prayerConfigs,
-      quranReminderTime,
-      quranGoal,
-      run,
-    ),
+  const run: RescheduleRun = { cancelled: false, destructiveStarted: false };
+  let releaseBeforeNativeWork: (() => void) | null = null;
+  const abandonedBeforeNativeWork = new Promise<void>((resolve) => {
+    releaseBeforeNativeWork = resolve;
+  });
+  const previousTail = rescheduleTail;
+  const internal = previousTail.then(() => rescheduleIfNeededInternal(
+    location,
+    methodId,
+    remindersEnabled,
+    reminderOffsetMinutes,
+    quranReminderEnabled,
+    madhab,
+    prayerConfigs,
+    quranReminderTime,
+    quranGoal,
+    run,
+  ));
+  const task = previousTail.then(() => withRescheduleTimeout(
+    internal,
     () => {
-      // The native bridge call cannot be cancelled. Mark this run abandoned so
-      // its continuation becomes a no-op if the bridge eventually settles.
       run.cancelled = true;
+      // A run that has not started scheduled-notification mutation is safe to
+      // abandon from the queue. Once mutation starts, keep the tail blocked
+      // until cancel → schedule reconciliation has completed.
+      if (!run.destructiveStarted) releaseBeforeNativeWork?.();
     },
   ));
-  rescheduleTail = task.then(() => undefined, () => undefined);
+  // The timeout only bounds the caller's wait. The queue remains serialized
+  // across all native state mutation, even after a caller has timed out.
+  rescheduleTail = Promise.race([
+    internal.then(() => undefined, () => undefined),
+    abandonedBeforeNativeWork,
+  ]);
   return task;
 }
 
@@ -650,15 +667,14 @@ async function rescheduleIfNeededInternal(
   prayerConfigs: PrayerConfigs = DEFAULT_PRAYER_CONFIGS,
   quranReminderTime: string = '20:00',
   quranGoal?: QuranGoalConfig,
-  run: RescheduleRun = { cancelled: false },
+  run: RescheduleRun = { cancelled: false, destructiveStarted: false },
 ): Promise<boolean> {
   if (run.cancelled) return false;
 
   if (!remindersEnabled && !quranReminderEnabled) {
-    await cancelPrayerNotifications(() => !run.cancelled);
-    if (run.cancelled) return false;
+    run.destructiveStarted = true;
+    await cancelPrayerNotifications();
     await cancelQuranReminder();
-    if (run.cancelled) return false;
     await clearStoredFingerprint();
     return false;
   }
@@ -728,28 +744,32 @@ async function rescheduleIfNeededInternal(
     );
     if (run.cancelled) return false;
 
-    await cancelPrayerNotifications(() => !run.cancelled);
-    if (run.cancelled) return false;
+    // From this point the native notification set is being replaced. Do not
+    // abort between cancel and schedule: the timeout caller may stop waiting,
+    // but the in-flight native work must finish and reconcile the set.
+    run.destructiveStarted = true;
+    await cancelPrayerNotifications();
     await cancelQuranReminder();
-    if (run.cancelled) return false;
     if (remindersEnabled && prayerData) {
-      await schedulePrayerNotifications(prayerData, reminderOffsetMinutes, location.label, prayerConfigs, () => !run.cancelled);
-      if (run.cancelled) return false;
+      await schedulePrayerNotifications(prayerData, reminderOffsetMinutes, location.label, prayerConfigs);
     }
     if (quranReminderEnabled) {
       await scheduleQuranReminder(quranReminderTime, quranGoal);
-      if (run.cancelled) return false;
     }
 
     // Explicitly ensure any pending snooze remains scheduled after reschedule
     const afterScheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
-    if (run.cancelled) return false;
     const scheduledIds = new Set(afterScheduled.map((n) => n.identifier));
     for (const snooze of pendingSnoozes) {
-      if (run.cancelled) return false;
       if (!scheduledIds.has(snooze.identifier)) {
         const trigger = snooze.trigger as any;
-        const seconds = typeof trigger?.seconds === 'number' ? trigger.seconds : 600;
+        const snoozeData = snooze.content?.data as { [SNOOZE_TARGET_EPOCH_MS_KEY]?: unknown } | undefined;
+        const targetEpochMs = Number(snoozeData?.[SNOOZE_TARGET_EPOCH_MS_KEY]);
+        const fallbackSeconds = typeof trigger?.seconds === 'number' ? trigger.seconds : 600;
+        const seconds = Number.isFinite(targetEpochMs)
+          ? Math.ceil((targetEpochMs - Date.now()) / 1000)
+          : fallbackSeconds;
+        if (seconds <= 0) continue;
         await Notifications.scheduleNotificationAsync({
           content: {
             title: snooze.content.title ?? undefined,
@@ -764,7 +784,6 @@ async function rescheduleIfNeededInternal(
             seconds: Math.max(1, seconds),
           },
         }).catch(() => {});
-        if (run.cancelled) return false;
       }
     }
     await storeFingerprint(currentFp);
@@ -800,7 +819,7 @@ export async function schedulePrayerNotifications(
     { name: 'Isha', time: timings.timings.Isha },
   ];
 
-  const label = sanitizeLocationLabel(locationLabel) || 'Your Location';
+  const label = sanitizeLocationLabel(locationLabel) || t('Your Location');
 
   for (const p of prayers) {
     if (shouldContinue && !shouldContinue()) return ids;
@@ -837,8 +856,11 @@ export async function schedulePrayerNotifications(
       try {
         const beforeId = await Notifications.scheduleNotificationAsync({
           content: {
-            title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
-            body: `${label} · ${p.time}`,
+            title: t('🕌 {{prayer}} in {{minutes}} minutes', {
+              prayer: t(p.name),
+              minutes: reminderOffsetMinutes,
+            }),
+            body: t('{{location}} · {{time}}', { location: label, time: p.time }),
             data: { prayer: p.name, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
             categoryIdentifier: 'prayer-before',
             sound: config.adhan ? 'default' : undefined,
@@ -862,8 +884,8 @@ export async function schedulePrayerNotifications(
     try {
       const atId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: `🕌 ${p.name}`,
-          body: `It's time for ${p.name}.`,
+          title: t('🕌 {{prayer}}', { prayer: t(p.name) }),
+          body: t("It's time for {{prayer}}.", { prayer: t(p.name) }),
           data: {
             prayer: p.name,
             type: 'prayer-at',
@@ -943,11 +965,14 @@ export async function scheduleQuranReminder(
 
     const position = await getContinueReadingPosition();
     const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
-    const title = '📖 Continue your Quran';
+    const title = t('📖 Continue your Quran');
     const body =
       position && surah
-        ? `You stopped at ${surah.englishName} ${position.surah}:${position.ayah}.`
-        : 'Open the Quran and keep your daily reading habit alive.';
+        ? t('You stopped at {{surah}} {{reference}}.', {
+            surah: surah.englishName,
+            reference: `${position.surah}:${position.ayah}`,
+          })
+        : t('Open the Quran and keep your daily reading habit alive.');
     const data: Record<string, unknown> = { type: 'quran-reminder' };
     if (position) {
       data.url = buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah });
@@ -1096,9 +1121,7 @@ export function setupNotificationResponseHandler(
       if (actionIdentifier === 'mark-complete' || actionIdentifier === 'mark-prayed') {
         if (data?.prayer) {
           const currentDate = new Date();
-          const dateStr =
-            data.date ||
-            `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+          const dateStr = data.date || getLocalDateKey(currentDate);
           markSalahCompleted(dateStr, data.prayer, true);
           stopAdhan().catch(() => {});
           try {
@@ -1120,11 +1143,17 @@ export function setupNotificationResponseHandler(
       if (actionIdentifier === 'prayer-snooze') {
         stopAdhan().catch(() => {});
         const prayerName = data?.prayer || 'Prayer';
+        const snoozeTargetEpochMs = Date.now() + 600_000;
         Notifications.scheduleNotificationAsync({
           content: {
-            title: `🕌 ${prayerName} (Snoozed 10m)`,
-            body: `Reminder for ${prayerName} prayer.`,
-            data: { prayer: prayerName, type: 'prayer-snooze', url: buildDeepLink({ type: 'tracker' }) },
+            title: t('🕌 {{prayer}} (Snoozed {{minutes}}m)', { prayer: t(prayerName), minutes: 10 }),
+            body: t('Reminder for {{prayer}} prayer.', { prayer: t(prayerName) }),
+            data: {
+              prayer: prayerName,
+              type: 'prayer-snooze',
+              url: buildDeepLink({ type: 'tracker' }),
+              [SNOOZE_TARGET_EPOCH_MS_KEY]: snoozeTargetEpochMs,
+            },
             categoryIdentifier: 'prayer',
             sound: 'default',
           },
@@ -1148,11 +1177,12 @@ export function setupNotificationResponseHandler(
 
       // Action: Snooze Quran Reminder (10m)
       if (actionIdentifier === 'quran-snooze') {
+        const snoozeTargetEpochMs = Date.now() + 600_000;
         Notifications.scheduleNotificationAsync({
           content: {
-            title: '📖 Continue your Quran (Snoozed 10m)',
-            body: 'Open the Quran and keep your daily reading habit alive.',
-            data: { ...data, type: 'quran-snooze' },
+            title: t('📖 Continue your Quran (Snoozed 10m)'),
+            body: t('Open the Quran and keep your daily reading habit alive.'),
+            data: { ...data, type: 'quran-snooze', [SNOOZE_TARGET_EPOCH_MS_KEY]: snoozeTargetEpochMs },
             categoryIdentifier: 'quran',
             sound: 'default',
           },
@@ -1199,11 +1229,17 @@ export async function snoozePrayer(prayerName?: string, minutes = 10): Promise<b
   if (!isNotificationSchedulingSupported()) return false;
   try {
     const name = prayerName || 'Prayer';
+    const snoozeTargetEpochMs = Date.now() + Math.max(1, minutes * 60) * 1000;
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🕌 ${name} (Snoozed ${minutes}m)`,
-        body: `Reminder for ${name} prayer.`,
-        data: { prayer: name, type: 'prayer-snooze', url: buildDeepLink({ type: 'tracker' }) },
+        title: t('🕌 {{prayer}} (Snoozed {{minutes}}m)', { prayer: t(name), minutes }),
+        body: t('Reminder for {{prayer}} prayer.', { prayer: t(name) }),
+        data: {
+          prayer: name,
+          type: 'prayer-snooze',
+          url: buildDeepLink({ type: 'tracker' }),
+          [SNOOZE_TARGET_EPOCH_MS_KEY]: snoozeTargetEpochMs,
+        },
         categoryIdentifier: 'prayer',
         sound: 'default',
       },
@@ -1230,8 +1266,10 @@ export async function sendTestPrayerNotification(
   try {
     return await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🕌 Test: ${prayerName} Prayer Alert`,
-        body: `This is a test notification for ${prayerName} to verify sound, vibration & action buttons.`,
+        title: t('Test: {{prayer}} Prayer Alert', { prayer: t(prayerName) }),
+        body: t('This is a test notification for {{prayer}} to verify sound, vibration & action buttons.', {
+          prayer: t(prayerName),
+        }),
         data: { prayer: prayerName, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
         categoryIdentifier: 'prayer-at',
         sound: channelId === 'prayer-times-silent' || channelId === 'prayer-times-vibrate-only' ? undefined : 'default',
@@ -1260,8 +1298,11 @@ export async function sendTestPrePrayerNotification(
   try {
     return await Notifications.scheduleNotificationAsync({
       content: {
-        title: `🕌 Test: ${prayerName} in ${offsetMinutes} minutes`,
-        body: 'Upcoming prayer notice to prepare for Salah.',
+        title: t('🕌 Test: {{prayer}} in {{minutes}} minutes', {
+          prayer: t(prayerName),
+          minutes: offsetMinutes,
+        }),
+        body: t('Upcoming prayer notice to prepare for Salah.'),
         data: { prayer: prayerName, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
         categoryIdentifier: 'prayer-before',
         sound: 'default',
@@ -1291,15 +1332,18 @@ export async function sendTestQuranNotification(): Promise<string | null> {
     const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
     const body =
       position && surah
-        ? `You stopped at ${surah.englishName} ${position.surah}:${position.ayah}.`
-        : 'Open the Quran and keep your daily reading habit alive.';
+        ? t('You stopped at {{surah}} {{reference}}.', {
+            surah: surah.englishName,
+            reference: `${position.surah}:${position.ayah}`,
+          })
+        : t('Open the Quran and keep your daily reading habit alive.');
     const data: Record<string, unknown> = { type: 'quran-reminder' };
     if (position) {
       data.url = buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah });
     }
     return await Notifications.scheduleNotificationAsync({
       content: {
-        title: '📖 Test: Quran Reading Reminder',
+        title: t('📖 Test: Quran Reading Reminder'),
         body,
         data,
         categoryIdentifier: 'quran',

@@ -326,9 +326,10 @@ const centerUrdu = diagState.deriveProbeDefects(
 assert.equal(centerUrdu.rtlTextAlignMismatch.flag, false, 'center text in RTL must NOT flag rtlTextAlignMismatch');
 assert.equal(centerUrdu.rtlWritingDirectionSuspicious.flag, false, 'center text in RTL must NOT flag rtlWritingDirectionSuspicious');
 
-// 2. Right-aligned text with explicit LTR writing direction (the 37 Urdu run items)
-// Right alignment is directionally correct for RTL, but LTR writing direction may disrupt bidi ordering.
-// Must be classified as softer suspicious signal, NOT hard defect!
+// 2. Right-aligned text with explicit LTR writing direction.
+// SCRIPT-AWARE (device evidence, 2026-10-21): a real Urdu session produced 58 of these flags and EVERY
+// one was Latin-script text receiving the app's intended right-aligned + LTR treatment inside an RTL
+// layout. The rule therefore fires only for text in an RTL script, which is the real anomaly.
 const rightLtrUrdu = diagState.deriveProbeDefects(
   {
     id: 'Settings::AppText::right-ltr#2',
@@ -338,17 +339,41 @@ const rightLtrUrdu = diagState.deriveProbeDefects(
   },
   {
     isText: true,
+    textScript: 'urdu',
     resolvedStyleTextAlign: 'right',
     resolvedStyleWritingDirection: 'ltr',
   }
 );
 assert.equal(rightLtrUrdu.rtlTextAlignMismatch.flag, false, 'right-aligned text in RTL must NOT flag hard rtlTextAlignMismatch');
-assert.equal(rightLtrUrdu.rtlWritingDirectionSuspicious.flag, true, 'right-aligned text with LTR writing direction must flag rtlWritingDirectionSuspicious');
+assert.equal(rightLtrUrdu.rtlWritingDirectionSuspicious.flag, true, 'RTL-script text with LTR writing direction must flag rtlWritingDirectionSuspicious');
 assert.ok(
   rightLtrUrdu.rtlWritingDirectionSuspicious.reason?.includes("textAlign='right'") &&
   rightLtrUrdu.rtlWritingDirectionSuspicious.reason?.includes("writingDirection='ltr'"),
   'Reason must record verbatim compared values'
 );
+
+// 2b. The false-positive cohort must stay SILENT: Latin/numeric content in an RTL locale is deliberately
+// rendered right-aligned with LTR writing direction.
+const rightLtrLatin = diagState.deriveProbeDefects(
+  {
+    id: 'Settings::AppText::right-ltr-latin#2b',
+    kind: 'AppText',
+    screen: 'Settings',
+    isText: true,
+  },
+  {
+    isText: true,
+    textScript: 'latin',
+    resolvedStyleTextAlign: 'right',
+    resolvedStyleWritingDirection: 'ltr',
+  }
+);
+assert.equal(
+  rightLtrLatin.rtlWritingDirectionSuspicious.flag,
+  false,
+  'Latin content right-aligned with LTR direction in an RTL locale is intended and must NOT be flagged'
+);
+assert.equal(rightLtrLatin.rtlTextAlignMismatch.flag, false, 'and it must not be reported as a hard mismatch either');
 
 // 3. Left-aligned text in RTL locale (the 5 Urdu run items - original complaint)
 // Hard defect: left alignment actively breaks RTL flow!
@@ -361,16 +386,37 @@ const leftLtrUrdu = diagState.deriveProbeDefects(
   },
   {
     isText: true,
+    textScript: 'urdu',
     resolvedStyleTextAlign: 'left',
     resolvedStyleWritingDirection: 'ltr',
   }
 );
-assert.equal(leftLtrUrdu.rtlTextAlignMismatch.flag, true, 'left-aligned text in RTL must flag hard rtlTextAlignMismatch');
+assert.equal(leftLtrUrdu.rtlTextAlignMismatch.flag, true, 'left-aligned RTL-script text in RTL must flag hard rtlTextAlignMismatch');
 assert.equal(leftLtrUrdu.rtlWritingDirectionSuspicious.flag, false, 'left-aligned text hard defect does not duplicate in suspicious signal');
 assert.ok(
   leftLtrUrdu.rtlTextAlignMismatch.reason?.includes("textAlign='left'") &&
   leftLtrUrdu.rtlTextAlignMismatch.reason?.includes("writingDirection='ltr'"),
   'Reason must record verbatim compared values'
+);
+// 3b. Same shape, Latin script: not the user's complaint, and flagging it buried the one real defect.
+const leftLtrLatin = diagState.deriveProbeDefects(
+  {
+    id: 'Settings::AppText::left-ltr-latin#3b',
+    kind: 'AppText',
+    screen: 'Settings',
+    isText: true,
+  },
+  {
+    isText: true,
+    textScript: 'latin',
+    resolvedStyleTextAlign: 'left',
+    resolvedStyleWritingDirection: 'ltr',
+  }
+);
+assert.equal(
+  leftLtrLatin.rtlTextAlignMismatch.flag,
+  false,
+  'Latin text left-aligned in an RTL locale is not flagged (script-aware rule)'
 );
 
 // 4. Fully compliant RTL text (right + rtl)
@@ -433,11 +479,13 @@ diagState.recordProbeLayout('probe-center', 'AppText', 'Settings', { x: 0, y: 0,
 });
 diagState.recordProbeLayout('probe-right-ltr', 'AppText', 'Settings', { x: 0, y: 20, width: 100, height: 20 }, {
   isText: true,
+  textScript: 'urdu',
   resolvedStyleTextAlign: 'right',
   resolvedStyleWritingDirection: 'ltr',
 });
 diagState.recordProbeLayout('probe-left-ltr', 'AppText', 'Settings', { x: 0, y: 40, width: 100, height: 20 }, {
   isText: true,
+  textScript: 'urdu',
   resolvedStyleTextAlign: 'left',
   resolvedStyleWritingDirection: 'ltr',
 });

@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 export interface TafsirSource {
   id: string;
   name: string;
@@ -8,7 +10,7 @@ export interface TafsirSource {
   note: string;
 }
 
-export const TAFSIR_SOURCES: TafsirSource[] = [
+const RAW_TAFSIR_SOURCES: TafsirSource[] = [
   {
     id: 'jalalayn',
     name: 'Tafsir al-Jalalayn',
@@ -75,6 +77,23 @@ export const TAFSIR_SOURCES: TafsirSource[] = [
   { id: 'api-tabari-ar', name: 'Tafsir al-Tabari (Arabic)', identifier: 'api:tafsir-al-tabari', language: 'Arabic', languageCode: 'ar', author: 'Al-Tabari', note: 'Foundational classical Arabic tafsir' },
   { id: 'api-qurtubi-ar', name: 'Tafsir al-Qurtubi (Arabic)', identifier: 'api:tafsir-al-qurtubi', language: 'Arabic', languageCode: 'ar', author: 'Al-Qurtubi', note: 'Classic legal-focused Arabic tafsir' },
 ];
+
+function localizeTafsirSource(source: TafsirSource): TafsirSource {
+  return {
+    ...source,
+    get name() {
+      return t(source.name);
+    },
+    get language() {
+      return t(source.language);
+    },
+    get author() {
+      return t(source.author);
+    },
+  };
+}
+
+export const TAFSIR_SOURCES: TafsirSource[] = RAW_TAFSIR_SOURCES.map(localizeTafsirSource);
 
 export function getTafsirSourceById(id: string): TafsirSource | undefined {
   return TAFSIR_SOURCES.find((s) => s.id === id);

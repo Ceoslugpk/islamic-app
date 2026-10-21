@@ -568,6 +568,8 @@ export interface DiagnosticReport {
   /** App-state domain: language-switch attempts, language/direction verdict, stuck controls. */
   appState: DiagnosticAppState;
   coverage: DiagnosticCoverage;
+  /** Plain-language statement of what this session's captured evidence can support. */
+  coverageVerdict: string;
   summary: {
     probeCount: number;
     totalDefects: number;
@@ -769,6 +771,12 @@ let probeStore: Record<string, AutoProbeRecord> = {};
 let probeLRUOrder: string[] = [];
 
 export const MAX_AUTO_PROBES = 400;
+/**
+ * Text layout can arrive before its matching onLayout event. Keep only a bounded
+ * number of those orphaned metric sets until a layout record appears; an element
+ * that never lays out must not grow this store without limit.
+ */
+export const MAX_PENDING_TEXT_LAYOUTS = MAX_AUTO_PROBES;
 export const MAX_INTERACTION_ENTRIES = 200;
 export const MAX_NETWORK_ENTRIES = 200;
 export const MAX_ERROR_ENTRIES = 50;
@@ -789,6 +797,8 @@ const probeThemeHistory = new Map<
 
 let activeThemeMode: 'light' | 'dark' = 'light';
 let activeLanguageMode: string | null = null;
+const pendingTextLayouts = new Map<string, DiagnosticTextLineMetric[]>();
+let pendingTextLayoutOrder: string[] = [];
 
 export function setDiagnosticActiveTheme(theme: 'light' | 'dark'): void {
   activeThemeMode = theme;
@@ -860,6 +870,8 @@ export function resetDiagnosticProbes(): void {
   probeMutationSeq = 0;
   probeStore = {};
   probeLRUOrder = [];
+  pendingTextLayouts.clear();
+  pendingTextLayoutOrder = [];
   interactionLedger = [];
   networkLedger = [];
   errorLedger = [];
@@ -914,8 +926,8 @@ export function getControlRegistry(): DiagnosticControlRecord[] {
 }
 
 /**
- * Records an interactive control and its current disabled state. Safe to call during
- * render (it is idempotent per id); a no-op when the gate is off.
+ * Records an interactive control and its current disabled state after the owning
+ * control has committed. A no-op when the gate is off.
  */
 export function recordControlState(
   controlId: string,
@@ -1767,32 +1779,40 @@ export function deriveProbeDefects(
     }
   }
 
-  // 1b. lineBoxTooTight: only explicit line heights are judged. An unknown
-  // lineHeight is not a defect because platform defaults cannot be reconstructed.
+  // 1b. lineBoxTooTight: judge the line box that is actually RENDERED, not the one the
+  // caller asked for. A component may request a tight lineHeight that the shared text
+  // primitive then raises to the script floor (AppText does exactly this for Arabic and
+  // Urdu text), so flagging the request reports the floor working correctly as a defect.
+  // On device that mistake produced 25 false positives out of 25.
   let lineBoxTooTight: DefectItem;
   if (!isText) {
     lineBoxTooTight = { flag: null, reason: 'Not a text element' };
-  } else if (!finiteNumber(resolvedFontSize) || !finiteNumber(explicitLineHeight) || resolvedFontSize <= 0) {
-    lineBoxTooTight = { flag: null, reason: 'Explicit fontSize and lineHeight unavailable' };
+  } else if (!finiteNumber(resolvedFontSize) || resolvedFontSize <= 0) {
+    lineBoxTooTight = { flag: null, reason: 'fontSize unavailable' };
   } else {
-    const minimum = minimumLineHeight(resolvedFontSize, textScript, textCategory);
-    const ratio = explicitLineHeight / resolvedFontSize;
-    const details = {
-      fontSize: resolvedFontSize,
-      explicitLineHeight,
-      minimumLineHeight: minimum,
-      ratio: Math.round(ratio * 100) / 100,
-      script: textScript,
-      fontFamily: fontFamily || 'unknown',
-      resolvedLineHeight: finiteNumber(resolvedLineHeight) ? resolvedLineHeight : (resolvedLineHeight || 'auto'),
-    };
-    lineBoxTooTight = explicitLineHeight < minimum
-      ? {
-          flag: true,
-          reason: `Explicit lineHeight=${explicitLineHeight}dp is ${ratio.toFixed(2)}x fontSize=${resolvedFontSize}; minimum=${minimum}dp for ${textScript}`,
-          details,
-        }
-      : { flag: false, details };
+    const renderedLineHeight = finiteNumber(resolvedLineHeight) ? resolvedLineHeight : explicitLineHeight;
+    if (!finiteNumber(renderedLineHeight)) {
+      lineBoxTooTight = { flag: null, reason: 'No resolved or explicit lineHeight to judge' };
+    } else {
+      const minimum = minimumLineHeight(resolvedFontSize, textScript, textCategory);
+      const ratio = renderedLineHeight / resolvedFontSize;
+      const details = {
+        fontSize: resolvedFontSize,
+        explicitLineHeight,
+        minimumLineHeight: minimum,
+        ratio: Math.round(ratio * 100) / 100,
+        script: textScript,
+        fontFamily: fontFamily || 'unknown',
+        resolvedLineHeight: finiteNumber(resolvedLineHeight) ? resolvedLineHeight : (resolvedLineHeight || 'auto'),
+      };
+      lineBoxTooTight = renderedLineHeight < minimum
+        ? {
+            flag: true,
+            reason: `Rendered lineHeight=${renderedLineHeight}dp is ${ratio.toFixed(2)}x fontSize=${resolvedFontSize}; minimum=${minimum}dp for ${textScript}`,
+            details,
+          }
+        : { flag: false, details };
+    }
   }
 
   // 1c. textClipped: line boxes are cut by the measured Text container.
@@ -2017,6 +2037,13 @@ export function deriveProbeDefects(
     const isRtl = isI18nRTL();
     const align = (options?.resolvedStyleTextAlign ?? probe.resolvedStyleTextAlign)?.toLowerCase();
     const dir = (options?.resolvedStyleWritingDirection ?? probe.resolvedStyleWritingDirection)?.toLowerCase();
+    // Script-awareness is what keeps these two rules useful. This app deliberately gives
+    // LATIN and numeric content right alignment with LTR writing direction inside an RTL
+    // locale, and RTL-script content right alignment inside an LTR locale. Firing on those
+    // correct combinations produced 58 of 92 defects on device - all of them Latin - which
+    // buried the one genuine RTL-script anomaly. Flag only an anomaly for the script the
+    // text is actually in.
+    const isRtlScript = textScript === 'arabic' || textScript === 'urdu';
 
     if (!align && !dir) {
       rtlTextAlignMismatch = { flag: null, reason: 'Alignment and writing direction unresolved' };
@@ -2026,39 +2053,40 @@ export function deriveProbeDefects(
       rtlTextAlignMismatch = { flag: false };
       rtlWritingDirectionSuspicious = { flag: false };
     } else if (isRtl) {
-      if (align === 'left') {
-        // Hard defect: left-aligned text in RTL locale (original user complaint)
+      if (align === 'left' && isRtlScript) {
+        // Hard defect: RTL-script text left-aligned in an RTL locale
         rtlTextAlignMismatch = {
           flag: true,
-          reason: `RTL locale has LTR alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+          reason: `RTL-script text (script='${textScript}') is left-aligned in an RTL locale (textAlign='${align}', writingDirection='${dir || 'unset'}')`,
         };
         rtlWritingDirectionSuspicious = { flag: false };
-      } else if (dir === 'ltr') {
-        // Softer signal: right-aligned or default text with explicit LTR writing direction
+      } else if (dir === 'ltr' && isRtlScript) {
+        // Hard defect: RTL-script text carrying an explicit LTR writing direction
         rtlTextAlignMismatch = { flag: false };
         rtlWritingDirectionSuspicious = {
           flag: true,
-          reason: `RTL locale has LTR writing direction (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+          reason: `RTL-script text (script='${textScript}') carries LTR writing direction in an RTL locale (textAlign='${align || 'unset'}', writingDirection='${dir}')`,
         };
       } else {
+        // Latin/numeric content in an RTL locale: right alignment with LTR direction is
+        // the intended treatment, not a defect.
         rtlTextAlignMismatch = { flag: false };
         rtlWritingDirectionSuspicious = { flag: false };
       }
     } else {
-      // LTR locale
-      if (align === 'right') {
-        // Hard defect: right-aligned text in LTR locale
+      // LTR locale: mirror the reasoning - Latin content right-aligned or RTL-directed is
+      // the anomaly; RTL-script content right-aligned is correct.
+      if (align === 'right' && !isRtlScript) {
         rtlTextAlignMismatch = {
           flag: true,
-          reason: `LTR locale has RTL alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+          reason: `Latin text is right-aligned in an LTR locale (textAlign='${align}', writingDirection='${dir || 'unset'}')`,
         };
         rtlWritingDirectionSuspicious = { flag: false };
-      } else if (dir === 'rtl') {
-        // Softer signal: left-aligned or default text with explicit RTL writing direction
+      } else if (dir === 'rtl' && !isRtlScript) {
         rtlTextAlignMismatch = { flag: false };
         rtlWritingDirectionSuspicious = {
           flag: true,
-          reason: `LTR locale has RTL writing direction (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+          reason: `Latin text carries RTL writing direction in an LTR locale (textAlign='${align || 'unset'}')`,
         };
       } else {
         rtlTextAlignMismatch = { flag: false };
@@ -2211,6 +2239,8 @@ export function resetDiagnosticMeasurements(): void {
   measurementsStore = createInitialStore();
   probeStore = {};
   probeLRUOrder = [];
+  pendingTextLayouts.clear();
+  pendingTextLayoutOrder = [];
   interactionLedger = [];
   networkLedger = [];
   errorLedger = [];
@@ -2371,6 +2401,95 @@ function updateOverflowAndStatus(record: TargetLayoutRecord): void {
     record.clippingStatus = 'unavailable';
     record.measurementUnavailable = true;
   }
+}
+
+function normalizeTextLineMetrics(lines: Partial<DiagnosticTextLineMetric>[]): DiagnosticTextLineMetric[] {
+  const normalize = (value: unknown): number | null => {
+    if (!finiteNumber(value)) return null;
+    return Math.round(value * 10) / 10;
+  };
+
+  return lines.map((line) => ({
+    x: normalize(line.x),
+    y: normalize(line.y),
+    width: normalize(line.width),
+    height: normalize(line.height),
+    ascender: normalize(line.ascender),
+    descender: normalize(line.descender),
+  }));
+}
+
+function stashPendingTextLayout(id: string, lines: DiagnosticTextLineMetric[]): void {
+  // Refreshing an id makes it newest without allowing duplicate order entries.
+  const existingIndex = pendingTextLayoutOrder.indexOf(id);
+  if (existingIndex >= 0) {
+    pendingTextLayoutOrder.splice(existingIndex, 1);
+  } else if (pendingTextLayouts.size >= MAX_PENDING_TEXT_LAYOUTS) {
+    const oldestId = pendingTextLayoutOrder.shift();
+    if (oldestId) pendingTextLayouts.delete(oldestId);
+  }
+
+  pendingTextLayouts.set(id, lines);
+  pendingTextLayoutOrder.push(id);
+}
+
+function takePendingTextLayout(id: string): DiagnosticTextLineMetric[] | undefined {
+  const lines = pendingTextLayouts.get(id);
+  if (!lines) return undefined;
+  pendingTextLayouts.delete(id);
+  const index = pendingTextLayoutOrder.indexOf(id);
+  if (index >= 0) pendingTextLayoutOrder.splice(index, 1);
+  return lines;
+}
+
+function liveProbeSiblings(probe: Partial<AutoProbeRecord>): Partial<AutoProbeRecord>[] {
+  return Object.values(probeStore).filter((other) =>
+    other.id !== probe.id &&
+    !other.staleAfterUnmount &&
+    other.screen === probe.screen &&
+    other.frameWidth === probe.frameWidth &&
+    other.frameHeight === probe.frameHeight
+  );
+}
+
+function deriveStoredProbeDefects(probe: AutoProbeRecord, forceText = false): ProbeDefects {
+  return deriveProbeDefects(probe, {
+    isText: forceText || Boolean(probe.isText),
+    numberOfLines: probe.numberOfLines,
+    reportedLineCount: probe.reportedLineCount,
+    reportedTotalLineHeight: probe.reportedTotalLineHeight,
+    resolvedFontSize: probe.resolvedFontSize,
+    resolvedLineHeight: probe.resolvedLineHeight,
+    explicitLineHeight: probe.explicitLineHeight,
+    fontFamily: probe.fontFamily,
+    textScript: probe.textScript,
+    textCategory: probe.textCategory,
+    textLines: probe.textLines,
+    measuredContainerHeight: probe.measuredContainerHeight,
+    containerFixedStyleHeight: probe.containerFixedStyleHeight,
+    resolvedStyleTextAlign: probe.resolvedStyleTextAlign,
+    resolvedStyleWritingDirection: probe.resolvedStyleWritingDirection,
+    hasScrollableAncestor: probe.hasScrollableAncestor,
+    scrollable: probe.scrollable,
+    horizontalScrollableAncestor: probe.horizontalScrollableAncestor,
+    siblings: liveProbeSiblings(probe),
+  });
+}
+
+function applyProbeTextLayout(probe: AutoProbeRecord, textLines: DiagnosticTextLineMetric[]): void {
+  const reportedLineCount = textLines.length;
+  const reportedTotalLineHeight = textLines.reduce(
+    (sum, line) => sum + (finiteNumber(line.height) ? line.height : 0),
+    0,
+  );
+
+  probe.reportedLineCount = reportedLineCount;
+  probe.reportedTotalLineHeight = reportedTotalLineHeight;
+  probe.textLines = textLines;
+  // This is intentionally applied after onLayout has created the probe. The
+  // container height is then the real layout height, not an unavailable guess.
+  probe.measuredContainerHeight = probe.height;
+  probe.defects = deriveStoredProbeDefects(probe, true);
 }
 
 export function recordParentLayout(
@@ -3015,6 +3134,7 @@ export function recordProbeLayout(
     Object.values(probeStore).forEach((other) => {
       if (
         other.id !== id &&
+        !other.staleAfterUnmount &&
         other.screen === screen &&
         other.frameWidth === fw &&
         other.frameHeight === fh
@@ -3158,6 +3278,11 @@ export function recordProbeLayout(
     defects,
   };
 
+  const deferredTextLines = takePendingTextLayout(id);
+  if (deferredTextLines) {
+    applyProbeTextLayout(probeStore[id], deferredTextLines);
+  }
+
   // Record history for Language and Theme matrices
   let langMap = probeLanguageHistory.get(id);
   if (!langMap) {
@@ -3196,61 +3321,14 @@ export function recordProbeTextLayout(
 ): void {
   if (!isDiagnosticModeEnabled()) return;
   incrementProbeMutationSeq();
+  const textLines = normalizeTextLineMetrics(lines);
   const probe = probeStore[id];
-  if (!probe) return;
+  if (!probe) {
+    stashPendingTextLayout(id, textLines);
+    return;
+  }
 
-  const normalize = (value: unknown): number | null => {
-    if (!finiteNumber(value)) return null;
-    return Math.round(value * 10) / 10;
-  };
-  const textLines: DiagnosticTextLineMetric[] = lines.map((line) => ({
-    x: normalize(line.x),
-    y: normalize(line.y),
-    width: normalize(line.width),
-    height: normalize(line.height),
-    ascender: normalize(line.ascender),
-    descender: normalize(line.descender),
-  }));
-  const reportedLineCount = textLines.length;
-  const reportedTotalLineHeight = textLines.reduce(
-    (sum, line) => sum + (finiteNumber(line.height) ? line.height : 0),
-    0,
-  );
-
-  probe.reportedLineCount = reportedLineCount;
-  probe.reportedTotalLineHeight = reportedTotalLineHeight;
-  probe.textLines = textLines;
-  probe.measuredContainerHeight = probe.height;
-
-  const siblings: Partial<AutoProbeRecord>[] = Object.values(probeStore).filter((other) =>
-    other.id !== id &&
-    other.screen === probe.screen &&
-    other.frameWidth === probe.frameWidth &&
-    other.frameHeight === probe.frameHeight
-  );
-
-  // Re-derive defects with updated text metrics
-  probe.defects = deriveProbeDefects(probe, {
-    isText: true,
-    numberOfLines: probe.numberOfLines,
-    reportedLineCount,
-    reportedTotalLineHeight,
-    resolvedFontSize: probe.resolvedFontSize,
-    resolvedLineHeight: probe.resolvedLineHeight,
-    explicitLineHeight: probe.explicitLineHeight,
-    fontFamily: probe.fontFamily,
-    textScript: probe.textScript,
-    textCategory: probe.textCategory,
-    textLines,
-    measuredContainerHeight: probe.height,
-    containerFixedStyleHeight: probe.containerFixedStyleHeight,
-    resolvedStyleTextAlign: probe.resolvedStyleTextAlign,
-    resolvedStyleWritingDirection: probe.resolvedStyleWritingDirection,
-    hasScrollableAncestor: probe.hasScrollableAncestor,
-    scrollable: probe.scrollable,
-    horizontalScrollableAncestor: probe.horizontalScrollableAncestor,
-    siblings,
-  });
+  applyProbeTextLayout(probe, textLines);
 
   notifyListeners();
 }
@@ -3462,10 +3540,12 @@ export function usePressProbe(
   const contextScreen = useDiagScreen();
   const screen = contextScreen || getGlobalActiveScreen() || 'App';
   const controlId = isEnabled && id ? `${screen}::${kind}::${id}` : '';
+  const disabled = Boolean(options?.disabled);
 
-  if (isEnabled && controlId) {
-    recordControlState(controlId, kind, screen, Boolean(options?.disabled));
-  }
+  useEffect(() => {
+    if (!isEnabled || !controlId) return;
+    recordControlState(controlId, kind, screen, disabled);
+  }, [isEnabled, controlId, kind, screen, disabled]);
 
   const wrappedOnPress = useCallback(
     (e?: any) => {
@@ -3718,8 +3798,47 @@ export function buildDiagnosticReport(): DiagnosticReport {
     return p.id.split(/::|#/).some((seg) => seg.startsWith('diag-'));
   };
   const rawProbes = getAutoProbes().filter((p) => !isDiagnosticSelfProbe(p));
+  // A screen can unmount after a probe records geometry. Preserve that stale
+  // snapshot in `probes`, but never let it (or a stale sibling) participate in
+  // the current defect verdict. Repair only sibling-dependent positives at
+  // export time so a sibling that became stale after the last layout event is
+  // removed without turning later-mounted siblings into retroactive defects.
+  const reportProbeDefects = new Map<string, ProbeDefects>();
+  rawProbes.forEach((probe) => {
+    if (!probe.staleAfterUnmount) {
+      const hasStaleSibling = rawProbes.some((sibling) =>
+        sibling.staleAfterUnmount &&
+        sibling.id !== probe.id &&
+        sibling.screen === probe.screen &&
+        sibling.frameWidth === probe.frameWidth &&
+        sibling.frameHeight === probe.frameHeight
+      );
+      if (
+        hasStaleSibling &&
+        (probe.defects.siblingOverlap.flag === true || probe.defects.textRectOverlap.flag === true)
+      ) {
+        // Preserve the established record-time semantics for ordinary probes:
+        // only repair the two classes that can be caused by a sibling's dead
+        // rectangle, and only when the stored result was a positive defect.
+        // This avoids turning later-mounted siblings into retroactive defects.
+        const liveDefects = deriveStoredProbeDefects(probe);
+        reportProbeDefects.set(probe.id, {
+          ...probe.defects,
+          siblingOverlap: probe.defects.siblingOverlap.flag === true
+            ? liveDefects.siblingOverlap
+            : probe.defects.siblingOverlap,
+          textRectOverlap: probe.defects.textRectOverlap.flag === true
+            ? liveDefects.textRectOverlap
+            : probe.defects.textRectOverlap,
+        });
+      } else {
+        reportProbeDefects.set(probe.id, probe.defects);
+      }
+    }
+  });
   const probes: DiagnosticProbeReportItem[] = rawProbes.map((p) => ({
     ...p,
+    defects: reportProbeDefects.get(p.id) || p.defects,
   }));
 
   // Derive defect counts and items
@@ -3740,9 +3859,10 @@ export function buildDiagnosticReport(): DiagnosticReport {
   const defectItems: DiagnosticDefectReportItem[] = [];
 
   for (const p of rawProbes) {
-    if (p.defects) {
+    const currentDefects = reportProbeDefects.get(p.id);
+    if (currentDefects) {
       (Object.keys(defectCounts) as DefectClass[]).forEach((cls) => {
-        const item = p.defects[cls];
+        const item = currentDefects[cls];
         if (item && item.flag === true) {
           defectCounts[cls]++;
           defectItems.push({
@@ -3925,6 +4045,40 @@ export function buildDiagnosticReport(): DiagnosticReport {
     unpressedScreensWithInstrumentedControls: interactiveControls.unpressedScreensWithInstrumentedControls,
   };
 
+  const capturedLanguages = new Set<string>();
+  probeLanguageHistory.forEach((captures) => {
+    captures.forEach((_capture, language) => capturedLanguages.add(language));
+  });
+  const capturedThemes = new Set<'light' | 'dark'>();
+  probeThemeHistory.forEach((captures) => {
+    captures.forEach((_capture, theme) => capturedThemes.add(theme));
+  });
+  const staleProbeCount = rawProbes.filter((probe) => probe.staleAfterUnmount).length;
+  const coverageVerdictParts = [
+    `Visited ${visitedScreens.length} of ${KNOWN_SCREENS.length} known screens.`,
+    unvisitedScreens.length > 0
+      ? `Screens not visited: ${unvisitedScreens.join(', ')}.`
+      : 'All known screens were visited.',
+    interactiveControls.totalInstrumented > 0
+      ? `Pressed ${interactiveControls.totalPressed} of ${interactiveControls.totalInstrumented} instrumented controls; unpressed controls remain untested.`
+      : 'No instrumented controls were captured, so control behavior was not tested.',
+    capturedLanguages.size === 0
+      ? 'No language geometry was captured, so language comparison is unavailable.'
+      : capturedLanguages.size === 1
+      ? '1 language captured; language geometry cannot be compared across languages.'
+      : `${capturedLanguages.size} languages captured; language geometry comparisons are available for those captures.`,
+    capturedThemes.size === 0
+      ? 'No theme geometry was captured, so theme comparison is unavailable.'
+      : capturedThemes.size === 1
+      ? '1 theme captured; theme geometry cannot be compared across themes.'
+      : `${capturedThemes.size} themes captured; theme geometry comparisons are available for those captures.`,
+    staleProbeCount > 0
+      ? `${staleProbeCount} probe snapshot(s) were stale after unmount; those snapshots are retained for diagnosis but excluded from defect counts.`
+      : 'No probe snapshots were marked stale after unmount.',
+    'This session supports conclusions only for captured probes and recorded interactions, not for unvisited screens or untested states.',
+  ];
+  const coverageVerdict = coverageVerdictParts.join(' ');
+
   return {
     timestamp: new Date().toISOString(),
     buildId: DIAGNOSTIC_BUILD_ID,
@@ -3972,6 +4126,7 @@ export function buildDiagnosticReport(): DiagnosticReport {
     },
     appState,
     coverage,
+    coverageVerdict,
     summary: {
       probeCount: probes.length,
       totalDefects,
@@ -4024,6 +4179,7 @@ export interface DiagnosticSummaryReport {
   directionHelperResult: string;
   i18nManagerIsRTL: boolean;
   coverage: DiagnosticCoverage;
+  coverageVerdict: string;
   appState: DiagnosticAppState;
   counts: {
     probes: number;
@@ -4069,6 +4225,7 @@ export function buildDiagnosticSummary(): DiagnosticSummaryReport {
     directionHelperResult: report.directionHelperResult,
     i18nManagerIsRTL: report.i18nManagerIsRTL,
     coverage: report.coverage,
+    coverageVerdict: report.coverageVerdict,
     appState: report.appState,
     counts: {
       probes: report.probeCount,

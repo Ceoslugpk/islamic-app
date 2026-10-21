@@ -67,6 +67,17 @@ const ReactExports = {
   useRef(value) { return { current: value }; },
 };
 
+// Components that use the default import (`import React from 'react'`) reach the
+// hooks through ReactDefault. Wire the real hook stand-ins onto it so a loaded
+// production component behaves the same whether it destructures or uses `React.x`.
+Object.assign(ReactDefault, {
+  useState: ReactExports.useState,
+  useEffect: ReactExports.useEffect,
+  useMemo: ReactExports.useMemo,
+  useCallback: ReactExports.useCallback,
+  useRef: ReactExports.useRef,
+});
+
 const styleSheet = {
   create(styles) { return styles; },
   absoluteFill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
@@ -111,8 +122,17 @@ function commonOverrides() {
     './ui/AppText': { AppText: appText },
     '../components/ui/AppText': { AppText: appText },
     '../lib/theme': { useTheme: () => ({ colors: inertTokens }) },
-    '../lib/i18n': { isRTL: () => false, t: (key) => key },
+    // Emulate the real translator: return the key with any {{token}} placeholders
+    // substituted, so a localization refactor does not hide the actual rendered value.
+    '../lib/i18n': { isRTL: () => false, t: interpolateStub },
   };
+}
+
+function interpolateStub(key, vars) {
+  if (!vars || typeof vars !== 'object') return key;
+  return String(key).replace(/\{\{(\w+)\}\}/g, (match, name) =>
+    Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : match
+  );
 }
 
 function parseImports(source) {
@@ -133,7 +153,7 @@ function parseImports(source) {
     });
 }
 
-async function loadProductionComponent(relativePath, overrides) {
+async function loadModule(relativePath, overrides) {
   const sourcePath = path.join(REPO_ROOT, relativePath);
   const source = fs.readFileSync(sourcePath, 'utf8');
   const transpiled = ts.transpileModule(source, {
@@ -153,13 +173,33 @@ async function loadProductionComponent(relativePath, overrides) {
     if (seen.has(specifier)) continue;
     const stubName = `stub_${seen.size}.mjs`;
     const stubPath = path.join(moduleDir, stubName);
-    const specOverrides = overrides[specifier] || {};
+    const specOverrides = overrides[specifier];
+
+    // A `__realPath` override loads the real production module and re-exports it,
+    // so the suite exercises that component's actual implementation instead of a
+    // null stand-in. This matters for InteractiveSurface, whose job (a card's hit
+    // target and its inner controls as SIBLINGS, not nested) is what the
+    // accessibility cluster exists to verify.
+    if (specOverrides && specOverrides.__realPath) {
+      const realModule = await loadModule(specOverrides.__realPath, overrides);
+      const realExports = [`export * from ${JSON.stringify(realModule.outputPath)};`];
+      if (realModule.module && 'default' in realModule.module) {
+        realExports.push(`export { default } from ${JSON.stringify(realModule.outputPath)};`);
+      }
+      fs.writeFileSync(stubPath, `${realExports.join('\n')}\n`);
+      const realImportText = `from '${specifier}'`;
+      rewritten = rewritten.split(realImportText).join(`from '${stubPath}'`);
+      rewritten = rewritten.split(`from "${specifier}"`).join(`from "${stubPath}"`);
+      seen.set(specifier, stubPath);
+      continue;
+    }
+
     const lines = [];
     for (const name of new Set(names)) {
-      lines.push(`export const ${name} = globalThis.__qaOverrides[${JSON.stringify(specifier)}][${JSON.stringify(name)}] ?? globalThis.__qaStub;`);
+      lines.push(`export const ${name} = globalThis.__qaOverrides[${JSON.stringify(specifier)}]?.[${JSON.stringify(name)}] ?? globalThis.__qaStub;`);
     }
     if (hasDefault) {
-      lines.push(`export default globalThis.__qaOverrides[${JSON.stringify(specifier)}].default ?? globalThis.__qaStub;`);
+      lines.push(`export default globalThis.__qaOverrides[${JSON.stringify(specifier)}]?.default ?? globalThis.__qaStub;`);
     }
     if (!lines.length) lines.push('export default globalThis.__qaStub;');
     fs.writeFileSync(stubPath, lines.join('\n'));
@@ -168,14 +208,17 @@ async function loadProductionComponent(relativePath, overrides) {
     rewritten = rewritten.split(importText).join(replacement);
     rewritten = rewritten.split(`from "${specifier}"`).join(`from "${stubPath}"`);
     seen.set(specifier, stubPath);
-    void specOverrides;
   }
 
   const outputPath = path.join(moduleDir, 'production.mjs');
   fs.writeFileSync(outputPath, rewritten);
   globalThis.__qaStub = qaComponent();
   globalThis.__qaOverrides = { ...overrides };
-  return import(outputPath);
+  return { module: await import(outputPath), outputPath };
+}
+
+async function loadProductionComponent(relativePath, overrides) {
+  return (await loadModule(relativePath, overrides)).module;
 }
 
 function materialize(value) {
@@ -210,6 +253,9 @@ function childComponent() {
 
 const toolsOverrides = {
   ...commonOverrides(),
+  // Exercise the REAL shared primitive: it is the component that guarantees the
+  // card hit target and its inner controls stay siblings (no control-in-control).
+  '../components/InteractiveSurface': { __realPath: 'src/components/InteractiveSurface.tsx' },
   '../components/layout/TabScreen': { TabScrollView: childComponent() },
   '../components/GeometricPattern': { GeometricPattern: childComponent() },
   '../lib/homeThemeTokens': {

@@ -14,6 +14,7 @@ import { fetchWithTimeout } from './quran';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { fetchTajweedSurah } from './tajweed';
 import type { QuranScript } from './settings';
+import { t } from './i18n';
 
 export type { QuranScript };
 
@@ -26,23 +27,39 @@ export interface ScriptOption {
 export const QURAN_SCRIPTS: ScriptOption[] = [
   {
     id: 'uthmani',
-    label: 'Uthmani',
-    description: 'Madinah mushaf (default)',
+    get label() {
+      return t('Uthmani');
+    },
+    get description() {
+      return t('Madinah mushaf (default)');
+    },
   },
   {
     id: 'imlaei',
-    label: 'Imlaei',
-    description: 'Modern Arabic spelling',
+    get label() {
+      return t('Imlaei');
+    },
+    get description() {
+      return t('Modern Arabic spelling');
+    },
   },
   {
     id: 'indopak',
-    label: 'Indo-Pak',
-    description: 'South Asia conventions',
+    get label() {
+      return t('Indo-Pak');
+    },
+    get description() {
+      return t('South Asia conventions');
+    },
   },
   {
     id: 'tajweed',
-    label: 'Tajweed',
-    description: 'Colored recitation rules (islamic.app)',
+    get label() {
+      return t('Tajweed');
+    },
+    get description() {
+      return t('Colored recitation rules (islamic.app)');
+    },
   },
 ];
 

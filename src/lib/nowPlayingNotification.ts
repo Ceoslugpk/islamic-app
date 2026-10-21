@@ -17,6 +17,7 @@ import {
   formatNowPlayingMetadata,
   ensureSystemMediaNotificationChannels,
 } from './systemMediaAdapter';
+import { t } from './i18n';
 
 const NOW_PLAYING_CHANNEL_ID = 'now-playing';
 const NOW_PLAYING_CATEGORY_ID = 'now-playing-media';
@@ -73,22 +74,22 @@ async function ensureCategoryRegistered(): Promise<void> {
   const playingActions: Notifications.NotificationAction[] = [
     {
       identifier: ACTION_PREVIOUS,
-      buttonTitle: 'Previous',
+      buttonTitle: t('Previous'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_PLAY_PAUSE,
-      buttonTitle: 'Pause',
+      buttonTitle: t('Pause'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_NEXT,
-      buttonTitle: 'Next',
+      buttonTitle: t('Next'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_STOP,
-      buttonTitle: 'Stop',
+      buttonTitle: t('Stop'),
       options: { isDestructive: true, opensAppToForeground: false },
     },
   ];
@@ -96,22 +97,22 @@ async function ensureCategoryRegistered(): Promise<void> {
   const pausedActions: Notifications.NotificationAction[] = [
     {
       identifier: ACTION_PREVIOUS,
-      buttonTitle: 'Previous',
+      buttonTitle: t('Previous'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_PLAY_PAUSE,
-      buttonTitle: 'Play',
+      buttonTitle: t('Play'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_NEXT,
-      buttonTitle: 'Next',
+      buttonTitle: t('Next'),
       options: { opensAppToForeground: false },
     },
     {
       identifier: ACTION_STOP,
-      buttonTitle: 'Stop',
+      buttonTitle: t('Stop'),
       options: { isDestructive: true, opensAppToForeground: false },
     },
   ];
@@ -139,8 +140,8 @@ async function ensureChannelConfigured(): Promise<void> {
     await ensureSystemMediaNotificationChannels();
 
     await Notifications.setNotificationChannelAsync(NOW_PLAYING_CHANNEL_ID, {
-      name: 'Now Playing',
-      description: 'Media playback controls for Quran audio',
+      name: t('Now Playing'),
+      description: t('Media playback controls for Quran audio'),
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,

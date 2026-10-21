@@ -82,7 +82,7 @@ export default function ShahadaScreen({
         </PremiumCard>
 
         {/* Sections */}
-        {SHAHADA_SECTIONS.map((s, i) => (
+        {SHAHADA_SECTIONS.filter((s) => s.id !== 'declaration').map((s, i) => (
           <View key={s.id}>
             {i > 0 && <Hairline style={styles.itemDivider} />}
             <PremiumCard style={styles.itemCard} padded>

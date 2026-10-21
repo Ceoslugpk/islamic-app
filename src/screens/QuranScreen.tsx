@@ -27,7 +27,7 @@ import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { getLocalizedTranslatorName } from '../lib/quranLanguages';
-import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
+import { getLocalizedLanguageName, getLocalizedSurahName, normalizeSearchText } from '../lib/surahNamesLocalized';
 import { useConnectivity } from '../lib/useConnectivity';
 import { SurahSkeleton, Skeleton } from '../components/Skeleton';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -39,11 +39,17 @@ interface QuranScreenProps {
 
 const JUZ_LIST = Array.from({ length: 30 }, (_, i) => i + 1);
 
-const JUZ_START_SURAH: Record<number, number> = {
-  1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8,
-  11: 9, 12: 11, 13: 12, 14: 15, 15: 17, 16: 18, 17: 21, 18: 23, 19: 25, 20: 27,
-  21: 29, 22: 33, 23: 36, 24: 39, 25: 41, 26: 46, 27: 51, 28: 58, 29: 67, 30: 78,
+export const JUZ_SURAH_RANGES: Record<number, readonly [number, number]> = {
+  1: [1, 2], 2: [2, 2], 3: [2, 3], 4: [3, 4], 5: [4, 4], 6: [4, 5], 7: [5, 6], 8: [6, 7],
+  9: [7, 8], 10: [8, 9], 11: [9, 11], 12: [11, 12], 13: [12, 14], 14: [15, 16], 15: [17, 18],
+  16: [18, 20], 17: [21, 22], 18: [23, 25], 19: [25, 27], 20: [27, 29], 21: [29, 33], 22: [33, 36],
+  23: [36, 39], 24: [39, 41], 25: [41, 45], 26: [46, 51], 27: [51, 57], 28: [58, 66], 29: [67, 77],
+  30: [78, 114],
 };
+
+export function getJuzSurahRange(juz: number): readonly [number, number] {
+  return JUZ_SURAH_RANGES[juz];
+}
 
 const REVELATION_OPTIONS = [
   { value: null, label: 'All' },
@@ -74,6 +80,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
   const [selectedRevelation, setSelectedRevelation] = useState<'Meccan' | 'Medinan' | null>(null);
   const listRef = useRef<FlatList<SurahMeta>>(null);
+  const lastRefreshKeyRef = useRef(0);
 
   const loadSurahs = useCallback(async (force = false) => {
     if (!force) setLoading(true);
@@ -111,17 +118,17 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
   // Auto-refresh when connectivity returns
   useEffect(() => {
-    if (refreshKey > 0 && surahs) {
-      let mounted = true;
-      fetchSurahList(true)
-        .then((data) => {
-          if (mounted) setSurahs(data);
-        })
-        .catch(() => {});
-      return () => {
-        mounted = false;
-      };
-    }
+    if (refreshKey <= lastRefreshKeyRef.current || !surahs) return;
+    lastRefreshKeyRef.current = refreshKey;
+    let mounted = true;
+    fetchSurahList(true)
+      .then((data) => {
+        if (mounted) setSurahs(data);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
   }, [refreshKey, surahs]);
 
   // Load per-language surah names when selected language changes
@@ -143,22 +150,22 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
     if (!surahs) return [];
     let result = surahs;
 
-    const query = searchQuery.trim().toLowerCase();
+    const query = normalizeSearchText(searchQuery);
     if (query) {
       result = result.filter((s) => {
-        const tr = translatedNames?.[s.number]?.toLowerCase() || '';
+        const tr = normalizeSearchText(translatedNames?.[s.number] || '');
+        const localized = normalizeSearchText(getLocalizedSurahName(s.number, s.englishName));
         return (
-          s.englishName.toLowerCase().includes(query) ||
-          s.englishNameTranslation.toLowerCase().includes(query) ||
+          normalizeSearchText(s.englishName).includes(query) ||
+          normalizeSearchText(s.englishNameTranslation).includes(query) ||
+          localized.includes(query) ||
           tr.includes(query)
         );
       });
     }
 
     if (selectedJuz !== null) {
-      const startSurah = JUZ_START_SURAH[selectedJuz];
-      const nextJuz = selectedJuz < 30 ? selectedJuz + 1 : null;
-      const endSurah = nextJuz ? JUZ_START_SURAH[nextJuz] - 1 : 114;
+      const [startSurah, endSurah] = getJuzSurahRange(selectedJuz);
       result = result.filter((s) => s.number >= startSurah && s.number <= endSurah);
     }
 
@@ -173,7 +180,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
     const nextJuz = selectedJuz === j ? null : j;
     setSelectedJuz(nextJuz);
     if (nextJuz !== null) {
-      const targetSurah = JUZ_START_SURAH[nextJuz];
+      const targetSurah = getJuzSurahRange(nextJuz)[0];
       const index = filteredSurahs.findIndex((s) => s.number === targetSurah);
       if (index >= 0) {
         try {
@@ -537,7 +544,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 { paddingVertical: isCompact ? 11 : 14, gap: isCompact ? 10 : 12 },
               ]}
               onPress={() => onOpenSurah(item.number)}
-              accessibilityLabel={`${t('Open Surah')} ${item.englishName}`}
+              accessibilityLabel={`${t('Open Surah')} ${getLocalizedSurahName(item.number, item.englishName)}`}
             >
               <View
                 style={[
@@ -572,7 +579,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {item.englishName}
+                  {getLocalizedSurahName(item.number, item.englishName)}
                 </AppText>
                 <AppText
                   variant="caption"

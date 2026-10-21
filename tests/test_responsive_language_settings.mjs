@@ -208,7 +208,8 @@ assert.ok(
   'Language change must use core app reload and unlock language options if reload fails'
 );
 assert.ok(
-  settingsScreenCode.includes("setLanguageError(t('Still could not load. Try again later.'))"),
+  settingsScreenCode.includes("releaseLanguageSwitch(switchGeneration, t('Still could not load. Try again later.'))") &&
+    settingsScreenCode.includes('if (error) setLanguageError(error);'),
   'Language change must surface recoverable error on failure'
 );
 

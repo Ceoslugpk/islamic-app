@@ -62,6 +62,7 @@ async function loadZakatModule() {
     export function isAppLanguage(value) {
       return ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'].includes(value);
     }
+    export function t(key) { return key; }
   `);
   const file = transpileProduction('src/lib/zakat.ts', 'zakat.mjs', [
     ["from './i18n'", "from './f41-i18n.mjs'"],

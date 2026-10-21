@@ -148,6 +148,9 @@ const appTextModule = loadModule('src/components/ui/AppText.tsx', {
   '../../theme/tokens': { fontRoles: roles },
   '../../lib/i18n': i18nMock,
   '../../lib/typography': typeModule,
+  // AppText gained a useAutoProbe() import when the diagnostic recorder was wired into the shared text
+  // primitives; this stub map predated that, so the suite threw 'Unexpected import' instead of testing.
+  '../../lib/diagnostic': { useAutoProbe: () => ({ isDiagnostic: false, targetProps: {} }) },
 });
 
 const { AppText } = appTextModule;
@@ -334,17 +337,21 @@ console.log('5. Verifying dynamic alignment on text input and search primitives.
 
 // SearchField.tsx primitive
 const searchFieldSrc = read('src/components/ui/SearchField.tsx');
-assert.match(searchFieldSrc, /textAlign:\s*rtl\s*\?\s*['"]right['"]\s*:\s*['"]left['"]/,
-  'SearchField.tsx must dynamically align text right in RTL');
-assert.match(searchFieldSrc, /writingDirection:\s*rtl\s*\?\s*['"]rtl['"]\s*:\s*['"]ltr['"]/,
-  'SearchField.tsx must dynamically set writingDirection');
+// These primitives used to carry an inline `textAlign: rtl ? 'right' : 'left'` ternary. Alignment moved to the
+// shared script-aware contract (getTextAlignment in src/lib/typography), so the assertion follows the real
+// implementation instead of pinning a removed one. The intent is unchanged: RTL input must align right.
+assert.match(searchFieldSrc, /getTextAlignment\(/,
+  'SearchField.tsx must align through the shared getTextAlignment() contract');
+assert.match(searchFieldSrc, /inputAlignment/,
+  'SearchField.tsx must derive its input alignment from the contract');
 
 // InputField.tsx primitive
 const inputFieldSrc = read('src/components/ui/InputField.tsx');
-assert.match(inputFieldSrc, /textAlign:\s*rtl\s*\?\s*['"]right['"]\s*:\s*['"]left['"]/,
-  'InputField.tsx must dynamically align text right in RTL');
-assert.match(inputFieldSrc, /writingDirection:\s*rtl\s*\?\s*['"]rtl['"]\s*:\s*['"]ltr['"]/,
-  'InputField.tsx must dynamically set writingDirection: rtl ? "rtl" : "ltr"');
+// Same as SearchField above: alignment is delegated to the shared contract now.
+assert.match(inputFieldSrc, /getTextAlignment\(/,
+  'InputField.tsx must align through the shared getTextAlignment() contract');
+assert.match(inputFieldSrc, /(labelAlignment|inputAlignment|feedbackAlignment)/,
+  'InputField.tsx must derive its alignments from the contract');
 
 // LanguagePickerModal.tsx
 const langModalSrc = read('src/components/LanguagePickerModal.tsx');
@@ -535,7 +542,10 @@ for (const f of allSourceFiles) {
   const content = fs.readFileSync(f, 'utf8');
   // Look for hardcoded textAlign: 'left' (exclude TafsirScreen condition)
   if (f.endsWith('TafsirScreen.tsx')) continue;
-  if (/textAlign:\s*['"]left['"]/.test(content)) {
+  // The shared contract module declares the union type (`textAlign: 'left' | 'right'`), which is a type, not a
+  // style value - matching it here was a false positive. Only flag a real hardcoded style assignment.
+  if (f.endsWith('typography.ts')) continue;
+  if (/textAlign:\s*['"]left['"]\s*[,}]/.test(content)) {
     defectiveFiles.push(f);
   }
 }

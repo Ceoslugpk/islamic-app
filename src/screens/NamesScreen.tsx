@@ -202,7 +202,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
   const handleShareName = async (item: NameRow) => {
     const title = isProphet ? t('99 Names of the Prophet ﷺ') : t('99 Names of Allah');
     const verseText = formatVerses(item.verses);
-    const textToShare = `${title}\n\n#${item.number} ${item.arabic}\n${item.transliteration}${item.name ? ` (${item.name})` : ''}\n\n${item.meaning}${item.note ? `\n\nNote: ${item.note}` : ''}${verseText ? `\n\n${verseText}` : ''}`;
+    const textToShare = `${title}\n\n#${item.number} ${item.arabic}\n${isProphet ? t(item.transliteration) : item.transliteration}${item.name ? ` (${item.name})` : ''}\n\n${isProphet ? t(item.meaning) : item.meaning}${item.note ? `\n\n${t('Note')}: ${isProphet ? t(item.note) : item.note}` : ''}${verseText ? `\n\n${verseText}` : ''}`;
 
     if (Platform.OS === 'web') {
       try {
@@ -222,7 +222,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
       setIsSharingImage(false);
       const isAvailable = await Sharing.isAvailableAsync().catch(() => false);
       if (isAvailable) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: `Share ${item.transliteration}` });
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: `${t('Share')} ${isProphet ? t(item.transliteration) : item.transliteration}` });
       } else {
         await Share.share({ url: uri });
       }
@@ -302,7 +302,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             ]}
             numberOfLines={1}
           >
-            {item.transliteration}
+            {isProphet ? t(item.transliteration) : item.transliteration}
           </AppText>
 
           {item.name ? (
@@ -320,7 +320,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               },
             ]}
           >
-            {item.meaning}
+            {isProphet ? t(item.meaning) : item.meaning}
           </AppText>
 
           {item.note ? (
@@ -333,7 +333,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                 },
               ]}
             >
-              {item.note}
+              {isProphet ? t(item.note) : item.note}
             </AppText>
           ) : null}
         </View>
@@ -372,7 +372,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           <TouchableOpacity
             onPress={() => handleShareName(item)}
             accessibilityRole="button"
-            accessibilityLabel={`${t('Share')} ${item.transliteration}`}
+            accessibilityLabel={`${t('Share')} ${isProphet ? t(item.transliteration) : item.transliteration}`}
             style={styles.cardShareBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -648,22 +648,22 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             style={[styles.shareCard, { backgroundColor: tokens.bgSurface, borderColor: tokens.borderSubtle }]}
           >
             <AppText variant="eyebrow" highlight style={styles.shareCardEyebrow}>
-              {isProphet ? 'أسماء النبي ﷺ · Names of the Prophet' : 'أسماء الله الحسنى · The 99 Names of Allah'}
+              {t(isProphet ? 'Asma un-Nabi ﷺ · Names of the Prophet' : 'Asma ul-Husna · The 99 Names of Allah')}
             </AppText>
             <AppText variant="body" style={styles.shareCardArabic}>
               {shareNameItem.arabic}
             </AppText>
             <View style={[styles.shareCardRule, { backgroundColor: tokens.goldBorder }]} />
             <AppText variant="sectionTitle" style={styles.shareCardTranslit}>
-              #{shareNameItem.number} · {shareNameItem.transliteration}
+              #{shareNameItem.number} · {isProphet ? t(shareNameItem.transliteration) : shareNameItem.transliteration}
               {shareNameItem.name ? ` (${shareNameItem.name})` : ''}
             </AppText>
             <AppText variant="body" style={styles.shareCardTrans}>
-              {shareNameItem.meaning}
+              {isProphet ? t(shareNameItem.meaning) : shareNameItem.meaning}
             </AppText>
             {shareNameItem.note ? (
               <AppText variant="subtitle" style={styles.shareCardNote}>
-                {shareNameItem.note}
+                {isProphet ? t(shareNameItem.note) : shareNameItem.note}
               </AppText>
             ) : null}
             {formatVerses(shareNameItem.verses) ? (

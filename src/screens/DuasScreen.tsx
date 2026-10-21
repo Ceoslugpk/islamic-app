@@ -114,7 +114,7 @@ export default function DuasScreen({
   };
 
   const handleShareDua = async (item: DuaItem) => {
-    const textToShare = `${item.title}\n\n${item.arabic}\n\n${item.transliteration}\n\n"${item.translation}"\n\n— Source: ${item.reference}`;
+    const textToShare = `${t(item.title)}\n\n${item.arabic}\n\n${item.transliteration}\n\n"${t(item.translation)}"\n\n— ${t('Source')}: ${item.reference}`;
     if (Platform.OS === 'web') {
       try {
         await Share.share({ message: textToShare });
@@ -206,7 +206,7 @@ export default function DuasScreen({
 
         {/* Translation */}
         <AppText variant="body" style={styles.translation}>
-          {`"${item.translation}"`}
+          {`"${t(item.translation)}"`}
         </AppText>
 
         {/* Reference Footnote & Share Button */}
@@ -493,10 +493,10 @@ export default function DuasScreen({
             style={[styles.shareCard, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
           >
             <AppText variant="eyebrow" highlight style={styles.shareCardEyebrow}>
-              {shareDuaItem.category} · Duas & Adhkar
+              {t(shareDuaItem.category)} · {t('Duas & Adhkar')}
             </AppText>
             <AppText variant="title" style={styles.shareCardTitle}>
-              {shareDuaItem.title}
+              {t(shareDuaItem.title)}
             </AppText>
             <AppText variant="body" style={styles.shareCardArabic}>
               {shareDuaItem.arabic}
@@ -508,10 +508,10 @@ export default function DuasScreen({
               </AppText>
             ) : null}
             <AppText variant="body" style={styles.shareCardTrans}>
-              {`"${shareDuaItem.translation}"`}
+              {`"${t(shareDuaItem.translation)}"`}
             </AppText>
             <AppText variant="caption" style={styles.shareCardRef}>
-              Source: {shareDuaItem.reference}
+              {t('Source')}: {shareDuaItem.reference}
             </AppText>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}

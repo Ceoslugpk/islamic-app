@@ -120,7 +120,7 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
                 <View style={[styles.statDivider, { backgroundColor: tokens.goldBorder }]} />
                 <View style={styles.statCol}>
                   <AppText variant="numeral" highlight style={styles.statNum}>{summary.totalReadingMinutes}</AppText>
-                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Mins Listened')}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Mins Read')}</AppText>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: tokens.goldBorder }]} />
                 <View style={styles.statCol}>
@@ -153,7 +153,7 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <AppText variant="numeral" style={styles.cardStatValue}>{summary.totalReadingMinutes}</AppText>
-                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('minutes of listening')}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('minutes of reading')}</AppText>
                 </View>
               </View>
             </PremiumCard>

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { playAdhan } from './audio';
+import { getLocalDateKey } from './dateKey';
 import type { DayTimings } from './prayerTimes';
 import { useSettings } from './settings';
 import type { PrayerNameKey, PrayerReminderConfig } from './settings';
@@ -9,8 +10,11 @@ export interface PrayerFireMarker {
   dateKey: string;
 }
 
+const firedPrayerMarkers = new Map<string, PrayerFireMarker>();
+let firedMarkerDateKey: string | null = null;
+
 export function getPrayerDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return getLocalDateKey(date);
 }
 
 export function shouldFirePrayer(
@@ -36,7 +40,6 @@ export function shouldFirePrayer(
  * Must be mounted while HomeScreen is visible; notifications cover background.
  */
 export function usePrayerWatcher(timings: DayTimings | null, enabled: boolean) {
-  const lastFiredRef = useRef<PrayerFireMarker | null>(null);
   const { settings } = useSettings();
 
   useEffect(() => {
@@ -44,6 +47,11 @@ export function usePrayerWatcher(timings: DayTimings | null, enabled: boolean) {
 
     const check = () => {
       const now = new Date();
+      const dateKey = getPrayerDateKey(now);
+      if (firedMarkerDateKey !== dateKey) {
+        firedPrayerMarkers.clear();
+        firedMarkerDateKey = dateKey;
+      }
 
       const prayers: { name: string; time: string }[] = [
         { name: 'Fajr', time: timings.timings.Fajr },
@@ -63,8 +71,9 @@ export function usePrayerWatcher(timings: DayTimings | null, enabled: boolean) {
         };
 
         // Fire once per prayer and local calendar date, honoring per-prayer adhan settings.
-        if (shouldFirePrayer(p, now, lastFiredRef.current, config)) {
-          lastFiredRef.current = { name: p.name, dateKey: getPrayerDateKey(now) };
+        const markerKey = `${dateKey}:${p.name}`;
+        if (shouldFirePrayer(p, now, firedPrayerMarkers.get(markerKey) ?? null, config)) {
+          firedPrayerMarkers.set(markerKey, { name: p.name, dateKey });
           void Promise.resolve(playAdhan(settings.adhanReciterId)).catch(() => {});
         }
       }

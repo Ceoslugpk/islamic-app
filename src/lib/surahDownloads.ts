@@ -59,8 +59,40 @@ function notifyListeners() {
 function getStore(): Record<string, DownloadedSurahMeta> {
   if (memStore) return memStore;
   const loaded = loadQuranCache<Record<string, DownloadedSurahMeta>>(DOWNLOADS_STORE_KEY);
-  memStore = loaded && typeof loaded === 'object' ? loaded : {};
+  const validStore: Record<string, DownloadedSurahMeta> = {};
+  if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+    for (const [key, value] of Object.entries(loaded)) {
+      if (isUsableDownloadedSurahMeta(key, value)) validStore[key] = value;
+    }
+  }
+  memStore = validStore;
   return memStore;
+}
+
+function isUsableDownloadedSurahMeta(
+  cacheKey: string,
+  value: unknown,
+): value is DownloadedSurahMeta {
+  if (!value || typeof value !== 'object') return false;
+  const meta = value as Partial<DownloadedSurahMeta>;
+  const { edition, surah, bitrate, size, date, localUri } = meta;
+  return (
+    typeof edition === 'string' &&
+    edition.length > 0 &&
+    typeof surah === 'number' &&
+    Number.isInteger(surah) &&
+    surah > 0 &&
+    typeof bitrate === 'string' &&
+    bitrate.length > 0 &&
+    typeof size === 'number' &&
+    Number.isFinite(size) &&
+    size >= 0 &&
+    typeof date === 'number' &&
+    Number.isFinite(date) &&
+    typeof localUri === 'string' &&
+    localUri.length > 0 &&
+    getSurahCacheKey(edition, surah, bitrate) === cacheKey
+  );
 }
 
 function updateStore(store: Record<string, DownloadedSurahMeta>) {

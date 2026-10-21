@@ -30,6 +30,7 @@ let pendingQueue: string[] = [];
 let activeWorkers = 0;
 let isPaused = false;
 let isStopped = false;
+let preloadGeneration = 0;
 
 /**
  * Take a preloaded sound for the given URL.
@@ -53,12 +54,15 @@ export async function takePreloadedSound(url: string): Promise<AudioPlayer | nul
   // 2. Currently downloading in-flight
   const inFlightPromise = inFlight.get(url);
   if (inFlightPromise) {
+    const requestGeneration = preloadGeneration;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), IN_FLIGHT_TIMEOUT_MS)
+        timeoutId = setTimeout(() => resolve(null), IN_FLIGHT_TIMEOUT_MS)
       );
       const player = await Promise.race([inFlightPromise, timeoutPromise]);
       if (player) {
+        if (requestGeneration !== preloadGeneration) return null;
         const cachedEntry = cache.get(url);
         if (cachedEntry) {
           cache.delete(url);
@@ -68,6 +72,8 @@ export async function takePreloadedSound(url: string): Promise<AudioPlayer | nul
       }
     } catch {
       return null;
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
     }
   }
 
@@ -142,6 +148,7 @@ async function runWorker(): Promise<void> {
       const url = pendingQueue.shift();
       if (!url) break;
       if (cache.has(url) || inFlight.has(url)) continue;
+      const generation = preloadGeneration;
 
       const preloadPromise = (async () => {
         try {
@@ -151,7 +158,7 @@ async function runWorker(): Promise<void> {
           const player = createAudioPlayer({ uri: url }, { updateInterval: 250 });
           player.volume = 1.0;
 
-          if (isStopped) {
+          if (isStopped || generation !== preloadGeneration) {
             try {
               player.remove();
             } catch {}
@@ -189,10 +196,21 @@ async function runWorker(): Promise<void> {
             }
           }
 
+          const lastAccessedAt = Date.now();
+          if (isStopped || generation !== preloadGeneration) {
+            try {
+              player.remove();
+            } catch {}
+            try {
+              (player as any).release?.();
+            } catch {}
+            return null;
+          }
+
           cache.set(url, {
             player,
             url,
-            lastAccessedAt: Date.now(),
+            lastAccessedAt,
           });
           return player;
         } catch {
@@ -234,6 +252,7 @@ export function resumeAudioPreloading(): void {
  * Stop preloading and clear all cached/pending audio resources.
  */
 export async function stopAudioPreloading(): Promise<void> {
+  preloadGeneration += 1;
   isStopped = true;
   isPaused = false;
   pendingQueue = [];
@@ -259,6 +278,7 @@ export async function stopAudioPreloading(): Promise<void> {
  * Clear the LRU audio cache without changing pause/stop state.
  */
 export async function clearAudioPreloadCache(): Promise<void> {
+  preloadGeneration += 1;
   pendingQueue = [];
   inFlight.clear();
   const entries = Array.from(cache.values());

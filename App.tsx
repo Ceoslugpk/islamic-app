@@ -46,6 +46,7 @@ import {
   t,
   setAppLanguage,
   applyRTL,
+  lockNativeDirectionForUI,
   resolvePersistedLanguage,
   getBootLanguage,
   isRTL,
@@ -1437,6 +1438,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                     <WomenGuidanceScreen
                       onBack={() => setLibrary({ screen: 'hub' })}
                       onOpenPurity={() => setLibrary({ screen: 'women-purity' })}
+                      backLabel="Library"
                     />
                   </DiagScreenProvider>
                 )}
@@ -1867,6 +1869,7 @@ export default function App() {
       settled = true;
       setAppLanguage(lang);
       applyRTL(isRtlLanguage(lang));
+      lockNativeDirectionForUI();
       setLangReady(true);
     };
     const timeout = setTimeout(() => finish(getBootLanguage()), 5000);

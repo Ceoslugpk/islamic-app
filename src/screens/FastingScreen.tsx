@@ -43,6 +43,7 @@ import {
   getFastingCountdown,
   FastingType,
 } from '../lib/fasting';
+import { isWomenSpecificReason } from '../lib/womenReason';
 
 type FastingSubTab = 'tracker' | 'voluntary' | 'qada' | 'history';
 
@@ -55,17 +56,20 @@ const MISSED_REASONS = [
   'Other',
 ];
 
-export function isWomenSpecificReason(reason: string | undefined): boolean {
-  if (!reason || typeof reason !== 'string') return false;
-  const r = reason.toLowerCase();
-  return (
-    r.includes('menstru') ||
-    r.includes('period') ||
-    r.includes('post-natal') ||
-    r.includes('postnatal') ||
-    r.includes('nifas') ||
-    r.includes('haidh')
-  );
+const NON_WOMEN_MISSED_REASONS = new Set(['Illness / Medical', 'Travel', 'Severe Fatigue', 'Other']);
+
+function isPrivateMissedFast(reason: unknown): boolean {
+  return isWomenSpecificReason(reason) ||
+    (typeof reason !== 'string' || !NON_WOMEN_MISSED_REASONS.has(reason.trim()));
+}
+
+export function getVisibleMissedFasts(
+  missedList: MissedFastItem[],
+  womenWorshipEnabled: boolean,
+  womenUnlocked: boolean,
+): MissedFastItem[] {
+  if (womenWorshipEnabled && womenUnlocked) return missedList;
+  return missedList.filter((m) => !isPrivateMissedFast(m.reason));
 }
 
 interface FastingScreenProps {
@@ -251,13 +255,12 @@ function FastingScreen({
 
   const availableMissedReasons = useMemo(() => {
     if (settings.womenWorshipEnabled && womenUnlocked) return MISSED_REASONS;
-    return MISSED_REASONS.filter((r) => !isWomenSpecificReason(r));
+    return MISSED_REASONS.filter((r) => !isPrivateMissedFast(r));
   }, [settings.womenWorshipEnabled, womenUnlocked]);
 
   const visibleMissedList = useMemo(() => {
-    if (settings.womenWorshipEnabled) return missedList;
-    return missedList.filter((m) => !isWomenSpecificReason(m.reason));
-  }, [missedList, settings.womenWorshipEnabled]);
+    return getVisibleMissedFasts(missedList, settings.womenWorshipEnabled, womenUnlocked);
+  }, [missedList, settings.womenWorshipEnabled, womenUnlocked]);
 
   const qadaPendingCount = useMemo(() => visibleMissedList.filter((m) => !m.madeUp).length, [visibleMissedList]);
   const qadaMadeUpCount = useMemo(() => visibleMissedList.filter((m) => m.madeUp).length, [visibleMissedList]);
@@ -710,7 +713,7 @@ function FastingScreen({
                             {item.date}
                           </AppText>
                           <AppText variant="body" style={styles.missedReason}>
-                            {(!womenUnlocked && isWomenSpecificReason(item.reason))
+                            {(!womenUnlocked && isPrivateMissedFast(item.reason))
                               ? t('Excused (Private)')
                               : t(item.reason)}{' '}
                             {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}
@@ -1027,7 +1030,7 @@ function FastingScreen({
                           {item.date}
                         </AppText>
                         <AppText variant="body" style={styles.missedReason}>
-                          {(!womenUnlocked && isWomenSpecificReason(item.reason))
+                          {(!womenUnlocked && isPrivateMissedFast(item.reason))
                             ? t('Excused (Private)')
                             : t(item.reason)}{' '}
                           {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}

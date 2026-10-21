@@ -28,6 +28,7 @@ import {
   DIAGNOSTIC_VERSION,
   DIAGNOSTIC_VERSION_CODE,
 } from '../../lib/diagnostic/diagnosticConfig';
+import { DiagScreenProvider } from '../../lib/diagnostic/diagnosticScreenContext';
 import {
   getTargetMeasurements,
   getAutoProbes,
@@ -488,10 +489,10 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
   useEffect(() => {
     if (!visible) return;
     return addDiagnosticListener(() => {
-      // Coalesced flush: update lightweight notification stats & sizes without rebuilding whole report
+      // Coalesced flush: update only the cheap notification stats. Size estimates are
+      // refreshed on initial mount or explicit refresh so this listener never rebuilds
+      // and serializes the whole evidence report while it is measuring the app.
       setPerfStats(getDiagnosticNotificationStats());
-      setEstimatedSize(getEstimatedReportSizeBytes());
-      setEstimatedSummarySize(getEstimatedSummarySizeBytes());
     });
   }, [visible]);
 
@@ -1978,7 +1979,9 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <RtlDiagnosticModalContent visible={visible} onClose={onClose} />
+      <DiagScreenProvider name="Diagnostics">
+        <RtlDiagnosticModalContent visible={visible} onClose={onClose} />
+      </DiagScreenProvider>
     </Modal>
   );
 }

@@ -1,9 +1,75 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
 
 console.log('=== QURAN READER TOOLS MENU REDESIGN TEST SUITE ===\n');
 
 const code = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
+
+const ROOT = import.meta.dirname;
+
+// Execute the real src/lib/quran.ts with an in-memory quran-cache seam so the
+// mushaf-page cache validator is exercised as behaviour, not as source text.
+function createQuranModule(fetchImpl) {
+  const cache = new Map();
+  const response = (json, ok = true, status = 200) => ({
+    ok,
+    status,
+    statusText: ok ? 'OK' : 'Unavailable',
+    async json() { return json; },
+  });
+  const sourcePath = path.join(ROOT, '..', 'src', 'lib', 'quran.ts');
+  const output = ts.transpileModule(fs.readFileSync(sourcePath, 'utf8'), {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      jsx: ts.JsxEmit.React,
+      esModuleInterop: true,
+    },
+    fileName: sourcePath,
+  }).outputText;
+  const module = { exports: {} };
+  const requireMap = {
+    './db': {
+      loadQuranCache: (key) => (cache.has(key) ? cache.get(key) : null),
+      saveQuranCache: (key, value) => { cache.set(key, value); return true; },
+    },
+    './useConnectivity': { isAppOnline: () => true },
+    './surahs114': {
+      SURAHS_114: [{
+        number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah',
+        numberOfAyahs: 7, revelationType: 'Meccan',
+      }],
+    },
+    './surahTranslationsData': { SURAH_NAME_TRANSLATIONS: {} },
+    './surahAyahCounts': { SURAH_AYAH_COUNTS: [7] },
+    './tafsirApi': {
+      fetchTafsirApi: async () => ({ text: '', author: '' }),
+      getCanonicalTafsirSlug: (slug) => slug,
+      TAFSIR_API_BASE: 'https://example.test/tafsir',
+    },
+    './surahPageData': {
+      SURAH_START_PAGES: [1],
+      TOTAL_MUSHAF_PAGES: 604,
+      getSurahStartPage: () => 1,
+      getPrimarySurahForPage: () => 1,
+    },
+    './quranScripts': {},
+  };
+  const localRequire = (id) => {
+    if (Object.prototype.hasOwnProperty.call(requireMap, id)) return requireMap[id];
+    throw new Error(`Unexpected import while executing quran.ts: ${id}`);
+  };
+  const sandbox = {
+    module, exports: module.exports, require: localRequire, console,
+    fetch: fetchImpl, AbortController, setTimeout, clearTimeout,
+  };
+  new Function('module', 'exports', 'require', 'fetch', 'AbortController', 'setTimeout', 'clearTimeout', output)(
+    module, module.exports, localRequire, fetchImpl, AbortController, setTimeout, clearTimeout,
+  );
+  return { module: module.exports, cache, response };
+}
 
 // Test 1: Dots button specifications
 assert.ok(code.includes('styles.dotsButton'), 'dotsButton style must be applied');
@@ -126,12 +192,61 @@ assert.ok(code.includes('`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`'
 console.log('  ✓ T11: Mushaf Pages/Ayah mode split, 500ms long-press, compact actions, and page race guard verified');
 
 // Test 12: Mushaf page numbers & metadata validation
-const quranLibCode = fs.readFileSync('src/lib/quran.ts', 'utf8');
-assert.ok(
-  quranLibCode.includes('cached.pageNumber === safePage') &&
-  quranLibCode.includes('cached.ayahs.every((a) => !a.page || a.page === safePage)'),
-  'fetchMushafPage must strictly validate that cached page payload matches requested page and ayah metadata'
-);
+{
+  // A stale/poisoned cache entry must be rejected: fetchMushafPage must only
+  // serve a cached page whose pageNumber and per-ayah page match the request.
+  const arabicAyah = (page) => ({
+    number: page, numberInSurah: 1, text: 'بِسْمِ اللَّهِ', page, juz: 1,
+    surah: { number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah', englishNameTranslation: 'The Opening', numberOfAyahs: 7 },
+  });
+  const pageResponse = (page) => ({
+    code: 200,
+    data: {
+      ayahs: [arabicAyah(page)],
+      surahs: { 1: { number: 1, name: 'الفاتحة', englishName: 'Al-Fatihah', englishNameTranslation: 'The Opening', numberOfAyahs: 7, revelationType: 'Meccan' } },
+    },
+  });
+
+  // (a) cache entry whose pageNumber is a different page must be ignored, not served.
+  {
+    let fetches = 0;
+    const quran = createQuranModule(async (url) => {
+      fetches += 1;
+      assert.ok(url.includes('/page/7/quran-uthmani'), 'must fetch the requested page after rejecting a mismatched cache');
+      return quran.response(pageResponse(7));
+    });
+    quran.cache.set('mushaf-page:7:ar', {
+      pageNumber: 3, ayahs: [arabicAyah(3)], surahs: [],
+    });
+    const detail = await quran.module.fetchMushafPage(7, false, 'en.sahih', false);
+    assert.equal(detail.pageNumber, 7, 'a cache entry for a different page must never be served');
+    assert.ok(fetches > 0, 'a mismatched cached page must trigger a real fetch');
+  }
+
+  // (b) cache entry with correct pageNumber but an ayah tagged to another page must be ignored.
+  {
+    let fetches = 0;
+    const quran = createQuranModule(async () => { fetches += 1; return quran.response(pageResponse(7)); });
+    quran.cache.set('mushaf-page:7:ar', {
+      pageNumber: 7, ayahs: [arabicAyah(9)], surahs: [],
+    });
+    const detail = await quran.module.fetchMushafPage(7, false, 'en.sahih', false);
+    assert.equal(detail.pageNumber, 7);
+    assert.ok(fetches > 0, 'a cached page with an ayah from another page must trigger a real fetch');
+  }
+
+  // (c) a fully matching cache entry is served without any network call.
+  {
+    let fetches = 0;
+    const quran = createQuranModule(async () => { fetches += 1; return quran.response(pageResponse(7)); });
+    quran.cache.set('mushaf-page:7:ar', {
+      pageNumber: 7, ayahs: [arabicAyah(7)], surahs: [], editionIdentifier: 'quran-uthmani',
+    });
+    const detail = await quran.module.fetchMushafPage(7, false, 'en.sahih', false);
+    assert.equal(detail.pageNumber, 7);
+    assert.equal(fetches, 0, 'a matching cached page must be served without a network call');
+  }
+}
 assert.ok(
   !code.includes("t('Page {p}'") &&
   !code.includes("t('Page {n}'") &&

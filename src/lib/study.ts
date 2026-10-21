@@ -72,8 +72,7 @@ export function addBookmark(ref: VerseRef): boolean {
   try {
     const bookmarks = getBookmarks();
     const updated = dedupeBookmarks(bookmarks, ref);
-    saveQuranCache(BOOKMARKS_KEY, updated);
-    return true;
+    return saveQuranCache(BOOKMARKS_KEY, updated);
   } catch {
     return false;
   }
@@ -84,8 +83,7 @@ export function removeBookmark(surah: number, ayah: number): boolean {
     const bookmarks = getBookmarks();
     const updated = bookmarks.filter((b) => !(b && b.surah === surah && b.ayah === ayah));
     if (updated.length === bookmarks.length) return false;
-    saveQuranCache(BOOKMARKS_KEY, updated);
-    return true;
+    return saveQuranCache(BOOKMARKS_KEY, updated);
   } catch {
     return false;
   }
@@ -106,8 +104,7 @@ export function addNote(surah: number, ayah: number, body: string): Note | false
     const id = `${surah}:${ayah}:${Date.now()}`;
     const newNote: Note = { id, surah, ayah, body, createdAt: Date.now() };
     const updated = [...notes, newNote];
-    saveQuranCache(NOTES_KEY, updated);
-    return newNote;
+    return saveQuranCache(NOTES_KEY, updated) ? newNote : false;
   } catch {
     return false;
   }
@@ -119,8 +116,7 @@ export function deleteNote(id: string): boolean {
     const before = notes.length;
     const updated = notes.filter((n) => n && n.id !== id);
     if (updated.length >= before) return false;
-    saveQuranCache(NOTES_KEY, updated);
-    return true;
+    return saveQuranCache(NOTES_KEY, updated);
   } catch {
     return false;
   }

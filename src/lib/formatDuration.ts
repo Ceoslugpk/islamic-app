@@ -3,9 +3,14 @@ export function formatDuration(seconds: number): string {
     seconds = 0;
   }
 
-  const clampedSeconds = Math.min(Math.floor(seconds), 3599);
-  const minutes = Math.floor(clampedSeconds / 60);
-  const remainingSeconds = clampedSeconds % 60;
+  const totalSeconds = Math.floor(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
 
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }

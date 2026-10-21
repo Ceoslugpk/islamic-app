@@ -4,6 +4,23 @@
  * Both files export the SAME names - callers import from './db' and Metro picks per-platform.
  */
 import * as SQLite from 'expo-sqlite';
+import { isWomenSpecificReason } from './womenReason';
+import { getLocalDateKey } from './dateKey';
+
+const SCRIPT_AYAH_COUNTS = [
+  7, 286, 200, 176, 120, 165, 206, 75, 129, 109,
+  123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
+  112, 78, 118, 64, 77, 227, 93, 88, 69, 60,
+  34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
+  54, 53, 89, 59, 37, 35, 38, 29, 18, 45,
+  60, 49, 62, 55, 78, 96, 29, 22, 24, 13,
+  14, 11, 11, 18, 12, 12, 30, 52, 52, 44,
+  28, 28, 20, 56, 40, 31, 50, 40, 46, 42,
+  29, 19, 36, 25, 22, 17, 19, 26, 30, 20,
+  15, 21, 11, 8, 8, 19, 5, 8, 8, 11,
+  11, 8, 3, 9, 5, 4, 7, 3, 6, 3,
+  5, 4, 5, 6,
+];
 
 let db: SQLite.SQLiteDatabase | null = null;
 const DATABASE_SCHEMA_VERSION = 2;
@@ -411,7 +428,9 @@ export function getSalahEntries(date: string): Record<string, boolean> {
 
 export function getSalahHistory(days: number): Record<string, Record<string, boolean>> {
   const out: Record<string, Record<string, boolean>> = {};
-  const from = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const cutoff = new Date(Date.now());
+  cutoff.setDate(cutoff.getDate() - days);
+  const from = getLocalDateKey(cutoff);
   try {
     const rows = getDb().getAllSync<SalahRow>('SELECT * FROM salah_entries WHERE date >= ? ORDER BY date ASC', from);
     for (const r of rows) {
@@ -456,6 +475,7 @@ export const DISPOSABLE_KEY_PREFIXES = [
   'tafsir:',
   'tafsir-',
   'tajweed:',
+  'islamic-tajweed:',
   'hadith:',
 ];
 
@@ -726,6 +746,7 @@ export function enforceQuranCacheBudget(
              key LIKE 'tafsir:%' OR
              key LIKE 'tafsir-%' OR
              key LIKE 'tajweed:%' OR
+             key LIKE 'islamic-tajweed:%' OR
              key LIKE 'hadith:%'
            )
            AND key NOT IN ('bookmarks', 'notes', 'playlists', 'audio-queue', 'audio-settings', 'last-read', 'recent-audio', 'quran-audio-downloads', 'surah-list', 'quran-reading-marker', 'quran-last-reading', 'quran_cache_bytes')
@@ -750,6 +771,7 @@ export function enforceQuranCacheBudget(
 }
 
 export function saveQuranCache(key: string, payload: object): boolean {
+  if (!isCompleteScriptCachePayload(key, payload)) return false;
   try {
     const database = getDb();
     applyQuranCacheWrite(database, key, JSON.stringify(payload), Date.now());
@@ -768,6 +790,20 @@ export function saveQuranCache(key: string, payload: object): boolean {
       return false;
     }
   }
+}
+
+function isCompleteScriptCachePayload(key: string, payload: object): boolean {
+  const match = /^surah-script:(\d+):[^:]+$/.exec(key);
+  if (!match) return true;
+  const surah = Number(match[1]);
+  const expected = SCRIPT_AYAH_COUNTS[surah - 1];
+  if (!expected || !payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
+  const map = payload as Record<string, unknown>;
+  for (let ayah = 1; ayah <= expected; ayah++) {
+    const text = map[ayah];
+    if (typeof text !== 'string' || text.trim().length === 0) return false;
+  }
+  return true;
 }
 
 export function loadQuranCache<T>(key: string, validator?: (val: unknown) => val is T): T | null {
@@ -873,6 +909,13 @@ export function computeStreak(history: Record<string, Record<string, boolean>>):
     else break;
   }
   return streak;
+}
+
+export const SALAH_STREAK_WINDOW_DAYS = 30;
+
+/** Shared source of truth for the streak shown by Salah surfaces. */
+export function getSalahStreak(): number {
+  return computeStreak(getSalahHistory(SALAH_STREAK_WINDOW_DAYS));
 }
 
 export type HifzStatus = 'not-started' | 'revising' | 'memorized';
@@ -1464,7 +1507,7 @@ export function loadMissedFasts(): MissedFastItem[] {
 
 export function toggleMissedFastMadeUp(id: string, madeUp: boolean): void {
   try {
-    const madeUpDate = madeUp ? new Date().toISOString().slice(0, 10) : null;
+    const madeUpDate = madeUp ? getLocalDateKey() : null;
     getDb().runSync('UPDATE missed_fasts SET made_up = ?, made_up_date = ? WHERE id = ?', madeUp ? 1 : 0, madeUpDate, id);
   } catch { /* non-fatal */ }
 }
@@ -1613,9 +1656,7 @@ export function savePeriodEntry(entry: PeriodEntry): void {
 }
 
 export function deletePeriodEntry(id: string): void {
-  try {
-    getDb().runSync('DELETE FROM period_entries WHERE id = ?', id);
-  } catch { /* non-fatal */ }
+  getDb().runSync('DELETE FROM period_entries WHERE id = ?', id);
 }
 
 export function loadPeriodEntries(): PeriodEntry[] {
@@ -1661,9 +1702,7 @@ export function saveNifasEntry(entry: NifasEntry): void {
 }
 
 export function deleteNifasEntry(id: string): void {
-  try {
-    getDb().runSync('DELETE FROM nifas_entries WHERE id = ?', id);
-  } catch { /* non-fatal */ }
+  getDb().runSync('DELETE FROM nifas_entries WHERE id = ?', id);
 }
 
 export function loadNifasEntries(): NifasEntry[] {
@@ -1775,12 +1814,14 @@ export function addVerseHighlight(surah: number, ayah: number, color: string): V
   try {
     const id = `${surah}:${ayah}:${Date.now()}`;
     const createdAt = Date.now();
-    // Remove existing highlight for this ayah first
-    getDb().runSync('DELETE FROM verse_highlights WHERE surah = ? AND ayah = ?', surah, ayah);
-    getDb().runSync(
-      `INSERT INTO verse_highlights (id, surah, ayah, color, created_at) VALUES (?, ?, ?, ?, ?)`,
-      id, surah, ayah, color, createdAt
-    );
+    const database = getDb();
+    database.withTransactionSync(() => {
+      database.runSync('DELETE FROM verse_highlights WHERE surah = ? AND ayah = ?', surah, ayah);
+      database.runSync(
+        `INSERT INTO verse_highlights (id, surah, ayah, color, created_at) VALUES (?, ?, ?, ?, ?)`,
+        id, surah, ayah, color, createdAt
+      );
+    });
     return { id, surah, ayah, color, createdAt };
   } catch {
     return false;
@@ -1840,8 +1881,7 @@ export function clearWomenData(): void {
     getDb().runSync('DELETE FROM nifas_entries');
     const missed = loadMissedFasts();
     for (const item of missed) {
-      const reason = (item.reason || '').toLowerCase();
-      if (reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal')) {
+      if (isWomenSpecificReason(item.reason)) {
         deleteMissedFast(item.id);
       }
     }
@@ -1855,9 +1895,9 @@ export function clearWomenData(): void {
     }
     // Verify with a direct query. loadMissedFasts() swallows SELECT errors and returns [],
     // which would let a failed clear report success and the caller wipe the PIN.
-    const remainingWomenFasts = getDb().getAllSync<{ id: string }>(
-      "SELECT id FROM missed_fasts WHERE lower(reason) LIKE '%menstru%' OR lower(reason) LIKE '%post-natal%' OR lower(reason) LIKE '%postnatal%'"
-    ).length;
+    const remainingWomenFasts = getDb()
+      .getAllSync<{ id: string; reason: string }>('SELECT id, reason FROM missed_fasts')
+      .filter((item) => isWomenSpecificReason(item.reason)).length;
     if (remainingWomenFasts > 0) {
       throw new Error(`Failed to clear women data: ${remainingWomenFasts} missed fast entries remain`);
     }

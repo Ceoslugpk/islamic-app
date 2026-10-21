@@ -4,7 +4,8 @@
  * notes added. All computed locally, no backend.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getSalahHistory, computeStreak, loadHifzStatuses } from './db';
+import { getLocalDateKey } from './dateKey';
+import * as db from './db';
 import { getNotes } from './study';
 
 export interface WeeklySummary {
@@ -20,7 +21,7 @@ export interface WeeklySummary {
   notesAdded: number;
 }
 
-const PROGRESS_PREFIX = 'quran-daily-progress-';
+const PROGRESS_PREFIX = 'quran-daily-progress:';
 
 export async function buildWeeklySummary(now = new Date()): Promise<WeeklySummary> {
   const today = new Date(now);
@@ -28,9 +29,7 @@ export async function buildWeeklySummary(now = new Date()): Promise<WeeklySummar
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    dayStrings.push(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    );
+    dayStrings.push(getLocalDateKey(d));
   }
 
   let daysRead = 0;
@@ -42,21 +41,26 @@ export async function buildWeeklySummary(now = new Date()): Promise<WeeklySummar
       const raw = await AsyncStorage.getItem(`${PROGRESS_PREFIX}${day}`);
       if (!raw) continue;
       const p = JSON.parse(raw);
-      if (p.ayahsRead > 0) daysRead++;
-      totalAyahsRead += p.ayahsRead || 0;
-      totalReadingMinutes += Math.round((p.secondsPlayed || 0) / 60);
+      const minutesRead = Number(p.minutesRead || 0);
+      const pagesRead = Number(p.pagesRead || 0);
+      const customCompleted = Number(p.customCompleted || 0);
+      if (minutesRead > 0 || pagesRead > 0 || customCompleted > 0) daysRead++;
+      totalAyahsRead += customCompleted;
+      totalReadingMinutes += minutesRead;
     } catch {
       // skip unparseable day
     }
   }
 
-  const salahHistory = getSalahHistory(7);
+  const salahHistory = db.getSalahHistory(7);
   const salahDays = Object.keys(salahHistory).filter((d) =>
     Object.values(salahHistory[d] || {}).some(Boolean)
   ).length;
-  const salahStreak = computeStreak(salahHistory);
+  const salahStreak = typeof db.getSalahStreak === 'function'
+    ? db.getSalahStreak()
+    : db.computeStreak(db.getSalahHistory(30));
 
-  const hifz = loadHifzStatuses();
+  const hifz = db.loadHifzStatuses();
   const hifzMemorized = Object.values(hifz).filter((s) => s === 'memorized').length;
 
   let notesAdded = 0;

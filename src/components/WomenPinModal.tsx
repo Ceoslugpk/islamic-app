@@ -86,7 +86,7 @@ export function WomenPinModal({
       if (diffMs > 0) {
         const secs = Math.ceil(diffMs / 1000);
         setLockoutSeconds(secs);
-        setErrorMsg(`Too many attempts. Try again in ${secs}s.`);
+        setErrorMsg(t('Too many attempts. Try again in {{seconds}}s.', { seconds: secs }));
       } else {
         setLockoutSeconds(0);
       }
@@ -106,7 +106,7 @@ export function WomenPinModal({
           return 0;
         }
         const next = prev - 1;
-        setErrorMsg(`Too many attempts. Try again in ${next}s.`);
+        setErrorMsg(t('Too many attempts. Try again in {{seconds}}s.', { seconds: next }));
         return next;
       });
     }, 1000);
@@ -169,9 +169,9 @@ export function WomenPinModal({
           const lockInfo = await recordFailedPinAttempt();
           if (lockInfo.locked) {
             setLockoutSeconds(lockInfo.remainingSeconds);
-            setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
+            setErrorMsg(t('Too many attempts. Try again in {{seconds}}s.', { seconds: lockInfo.remainingSeconds }));
           } else {
-            setErrorMsg('Incorrect PIN. Please try again.');
+            setErrorMsg(t('Incorrect PIN. Please try again.'));
           }
           setTimeout(() => setPin(''), 300);
         }
@@ -193,9 +193,9 @@ export function WomenPinModal({
           const lockInfo = await recordFailedPinAttempt();
           if (lockInfo.locked) {
             setLockoutSeconds(lockInfo.remainingSeconds);
-            setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
+            setErrorMsg(t('Too many attempts. Try again in {{seconds}}s.', { seconds: lockInfo.remainingSeconds }));
           } else {
-            setErrorMsg('Current PIN is incorrect.');
+            setErrorMsg(t('Current PIN is incorrect.'));
           }
           setTimeout(() => setPin(''), 300);
         }
@@ -215,7 +215,7 @@ export function WomenPinModal({
           onSuccess();
         } else {
           triggerHaptic('error');
-          setErrorMsg('PINs did not match. Please try again.');
+          setErrorMsg(t('PINs did not match. Please try again.'));
           setTimeout(() => {
             setFirstPin('');
             setPin('');
@@ -360,7 +360,7 @@ export function WomenPinModal({
                       onPress={() => handleDigit(item)}
                       disabled={lockoutSeconds > 0 || verifying}
                       accessibilityRole="button"
-                      accessibilityLabel={`Digit ${item}`}
+                      accessibilityLabel={t('Digit {{digit}}', { digit: item })}
                     >
                       <AppText
                         variant="numeral"

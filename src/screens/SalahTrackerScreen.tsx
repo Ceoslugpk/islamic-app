@@ -15,6 +15,7 @@ import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import { formatTime } from '../lib/timeFormat';
+import { getLocalDateKey } from '../lib/dateKey';
 import {
   markSalahCompleted,
   getSalahEntries,
@@ -36,8 +37,7 @@ const PRAYERS = [
 ] as const;
 
 function getTodayIso(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return getLocalDateKey();
 }
 
 export default function SalahTrackerScreen({

@@ -22,6 +22,9 @@ import * as SQLite from 'expo-sqlite';
 import * as db from './db';
 import { sanitizeSettings } from './settings';
 import { webKV } from './webStorage';
+import { isWomenSpecificReason } from './womenReason';
+
+export { isWomenSpecificReason } from './womenReason';
 
 export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_MIME = 'application/json';
@@ -99,8 +102,6 @@ export const VIRTUAL_USER_TABLES = [
   { table: 'audio_settings', cacheKey: 'audio-settings', isSingleObject: true },
 ] as const;
 
-const WITHHELD_SENSITIVE_TABLES = new Set(['period_entries', 'nifas_entries', 'missed_fasts']);
-
 /** Complete set of user tables included in backups. */
 export const USER_TABLES = [
   ...SQLITE_USER_TABLES,
@@ -129,39 +130,16 @@ export const EXCLUDED_STORAGE_KEYS = [
   'quran_audio_arabic_reciters_cache',
 ] as const;
 
-const WOMEN_SPECIFIC_REASON_TOKENS = [
-  'menstru',
-  'period',
-  'menses',
-  'haidh',
-  'hayd',
-  'haydh',
-  'haiz',
-  'hayz',
-  'nifas',
-  'nifaas',
-  'post-natal',
-  'postnatal',
-  'post natal',
-  'postpartum',
-  'حيض',
-  'نفاس',
-] as const;
-
-function normalizeWomenReason(reason: string): string {
-  return reason
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[\u064B-\u065F\u0670]/g, '')
-    .replace(/[‐‑‒–—]/g, '-');
-}
-
-/** The privacy classifier for free-text qada reasons. */
-export function isWomenSpecificReason(reason: unknown): boolean {
-  if (typeof reason !== 'string') return false;
-  const normalized = normalizeWomenReason(reason);
-  return WOMEN_SPECIFIC_REASON_TOKENS.some((token) => normalized.includes(token));
-}
+/**
+ * Tables whose contents are deliberately withheld from every export.
+ * A LEGACY exporter wrote these tables as an empty array to mean "withheld",
+ * so on restore an empty array for one of them means "the backup does not
+ * carry this data", NOT "the user has none". Wiping on that ambiguity would
+ * destroy local cycle/nifas/missed-fast rows on a routine restore, so the
+ * empty case preserves what is there. A genuine erase is the explicit user
+ * clear flow, never a side effect of restoring a backup.
+ */
+export const WITHHELD_SENSITIVE_TABLES = new Set(['period_entries', 'nifas_entries', 'missed_fasts']);
 
 function isSensitiveWomenRecord(row: unknown): boolean {
   if (!row || typeof row !== 'object') return false;
@@ -407,16 +385,15 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
         const rows = tables[table];
         if (rows === undefined) continue;
 
-        // Older default exports represented withheld Women's Worship tables
-        // with [], which is an omission marker, not an instruction to clear
-        // the device. A genuinely empty array remains authoritative for every
-        // other table, including virtual user tables below.
+        // Older default exports represented withheld Women's Worship tables as
+        // an empty array. Treat that as "withheld", never as "delete what the
+        // user has" - see WITHHELD_SENSITIVE_TABLES.
         if (WITHHELD_SENSITIVE_TABLES.has(table) && rows.length === 0) continue;
 
         // Older exports could include only non-sensitive missed-fasts rows.
         // Replace that subset while retaining the sensitive rows that were
         // deliberately withheld from the backup.
-        if (table === 'missed_fasts' && !rows.some(isSensitiveWomenRecord)) {
+        if (table === 'missed_fasts' && rows.length > 0 && !rows.some(isSensitiveWomenRecord)) {
           const existingRows = sqliteDb.getAllSync('SELECT id, reason FROM missed_fasts') as unknown[];
           for (const existingRow of existingRows) {
             if (!isSensitiveWomenRecord(existingRow)) {
@@ -798,28 +775,88 @@ async function exportWebTables(includeSensitiveWomenData: boolean): Promise<Reco
   return out;
 }
 
+interface WebTableScope {
+  table: string;
+  prefix: string;
+  keep?: (key: string) => boolean;
+}
+
+// Wipe only the web key scope represented by each table. In particular, an
+// omitted sensitive table must leave its existing rows untouched.
+const WEB_TABLE_SCOPES: WebTableScope[] = [
+  { table: 'salah_entries', prefix: 'salah:' },
+  { table: 'tasbih_entries', prefix: 'tasbih:', keep: (key) => !key.startsWith('tasbih:daily:') },
+  { table: 'tasbih_daily', prefix: 'tasbih:daily:' },
+  { table: 'plan_entries', prefix: 'plan:' },
+  { table: 'hifz_entries', prefix: 'hifz:' },
+  { table: 'hadith_saved', prefix: 'hadith:saved:' },
+  { table: 'hadith_recent', prefix: 'hadith:recent:' },
+  { table: 'hadith_read_markers', prefix: 'hadith:read:' },
+  { table: 'fasting_entries', prefix: 'fasting:entry:' },
+  { table: 'missed_fasts', prefix: 'fasting:missed:' },
+  { table: 'zakat_history', prefix: 'zakat:history:' },
+  { table: 'period_entries', prefix: 'women:period:' },
+  { table: 'nifas_entries', prefix: 'women:nifas:' },
+  { table: 'study_tags', prefix: 'study:tag:' },
+  { table: 'verse_highlights', prefix: 'study:highlight:' },
+  { table: 'bookmarks', prefix: 'quran:bookmarks' },
+  { table: 'notes', prefix: 'quran:notes' },
+  { table: 'playlists', prefix: 'quran:playlists' },
+  { table: 'audio_queue', prefix: 'quran:audio-queue' },
+  { table: 'audio_settings', prefix: 'quran:audio-settings' },
+];
+
+interface WebTableSnapshot {
+  scope: WebTableScope;
+  rows: { key: string; value: string }[];
+}
+
+function snapshotWebTables(tables: Record<string, unknown[]>): WebTableSnapshot[] {
+  return WEB_TABLE_SCOPES
+    .filter(({ table }) => tables[table] !== undefined)
+    .map((scope) => ({
+      scope,
+      rows: webKV.getAll(scope.prefix).filter(({ key }) => !scope.keep || scope.keep(key)),
+    }));
+}
+
+function restoreWebTables(snapshots: WebTableSnapshot[]): void {
+  for (const { scope, rows } of snapshots) {
+    const current = webKV.getAll(scope.prefix).filter(({ key }) => !scope.keep || scope.keep(key));
+    for (const { key } of current) {
+      webKV.delete(key);
+    }
+    for (const { key, value } of rows) {
+      webKV.set(key, value);
+    }
+  }
+}
+
 async function importWebTables(tables: Record<string, unknown[]>): Promise<void> {
-  // Wipe only the web key scope represented by each table. In particular, an
-  // omitted sensitive table must leave its existing rows untouched.
-  const userTableScopes: Array<{ table: string; prefix: string; keep?: (key: string) => boolean }> = [
-    { table: 'salah_entries', prefix: 'salah:' },
-    { table: 'tasbih_entries', prefix: 'tasbih:', keep: (key) => !key.startsWith('tasbih:daily:') },
-    { table: 'tasbih_daily', prefix: 'tasbih:daily:' },
-    { table: 'plan_entries', prefix: 'plan:' },
-    { table: 'hifz_entries', prefix: 'hifz:' },
-    { table: 'hadith_saved', prefix: 'hadith:saved:' },
-    { table: 'hadith_recent', prefix: 'hadith:recent:' },
-    { table: 'hadith_read_markers', prefix: 'hadith:read:' },
-    { table: 'fasting_entries', prefix: 'fasting:entry:' },
-    { table: 'missed_fasts', prefix: 'fasting:missed:' },
-    { table: 'zakat_history', prefix: 'zakat:history:' },
-    { table: 'period_entries', prefix: 'women:period:' },
-    { table: 'nifas_entries', prefix: 'women:nifas:' },
-    { table: 'study_tags', prefix: 'study:tag:' },
-    { table: 'verse_highlights', prefix: 'study:highlight:' },
-  ];
-  for (const { table, prefix, keep } of userTableScopes) {
-    if (tables[table] === undefined) continue;
+  for (const { table, prefix, keep } of WEB_TABLE_SCOPES) {
+    const rows = tables[table];
+    if (rows === undefined) continue;
+
+    // Older exports represented withheld Women's Worship tables as an empty
+    // array. Treat that as withheld, never as an instruction to clear local
+    // rows - see WITHHELD_SENSITIVE_TABLES.
+    if (WITHHELD_SENSITIVE_TABLES.has(table) && rows.length === 0) continue;
+
+    // Older exports could include only non-sensitive missed-fasts rows.
+    // Replace that subset while retaining sensitive rows withheld from export.
+    if (table === 'missed_fasts' && rows.length > 0 && !rows.some(isSensitiveWomenRecord)) {
+      for (const { key, value } of webKV.getAll(prefix).filter(({ key: currentKey }) => !keep || keep(currentKey))) {
+        let existingRow: unknown;
+        try {
+          existingRow = JSON.parse(value);
+        } catch {
+          existingRow = undefined;
+        }
+        if (!isSensitiveWomenRecord(existingRow)) webKV.delete(key);
+      }
+      continue;
+    }
+
     const existing = webKV.getAll(prefix).filter(({ key }) => !keep || keep(key));
     for (const { key } of existing) {
       webKV.delete(key);
@@ -1032,9 +1069,7 @@ async function importWebTables(tables: Record<string, unknown[]>): Promise<void>
 
   // Restore playlists
   if (tables['playlists'] !== undefined && Array.isArray(tables['playlists'])) {
-    for (const pl of tables['playlists'] as any[]) {
-      if (pl && pl.id) db.savePlaylist(pl);
-    }
+    webKV.set('quran:playlists', JSON.stringify(tables['playlists']));
   }
 
   // Restore audio_queue
@@ -1205,6 +1240,18 @@ export function validateBackup(payload: unknown): payload is BackupPayload {
   return true;
 }
 
+function syncNativeLanguageMirror(storage: Record<string, string>): void {
+  const rawSettings = storage['islamic-settings'];
+  if (typeof rawSettings !== 'string') return;
+
+  const parsed = JSON.parse(rawSettings) as { language?: unknown };
+  if (typeof parsed.language !== 'string') return;
+
+  if (db.saveQuranCache('app-language', { language: parsed.language }) === false) {
+    throw new Error('Failed to synchronize the restored app language mirror.');
+  }
+}
+
 /** Restore validated backup into the local DB + storage. */
 export async function applyRestore(payload: BackupPayload): Promise<void> {
   validateBackup(payload);
@@ -1212,6 +1259,7 @@ export async function applyRestore(payload: BackupPayload): Promise<void> {
     const rawStorage = payload.data.storage || {};
     const filteredStorage = filterAllowedStorage(rawStorage);
     const storageKeys = Object.keys(filteredStorage);
+    const webTableSnapshot = snapshotWebTables(payload.data.tables || {});
     const webSnapshot: [string, string | null][] = [];
     if (typeof localStorage !== 'undefined') {
       for (const k of storageKeys) {
@@ -1222,6 +1270,11 @@ export async function applyRestore(payload: BackupPayload): Promise<void> {
       await importWebStorage(rawStorage);
       await importWebTables(payload.data.tables || {});
     } catch (err) {
+      try {
+        restoreWebTables(webTableSnapshot);
+      } catch (rollbackErr) {
+        console.warn('[backup] Failed to rollback web tables after restore failure:', rollbackErr);
+      }
       if (typeof localStorage !== 'undefined') {
         for (const [k, prevVal] of webSnapshot) {
           if (prevVal === null) {
@@ -1245,6 +1298,7 @@ export async function applyRestore(payload: BackupPayload): Promise<void> {
 
     try {
       await importNativeStorage(rawStorage);
+      syncNativeLanguageMirror(filteredStorage);
       await importNativeTables(payload.data.tables || {});
     } catch (err) {
       // Rollback storage on any failure so previous state remains exactly intact.

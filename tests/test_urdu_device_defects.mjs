@@ -38,10 +38,14 @@ assert.ok(
   'SettingsScreen must not discard reload on unmount once language persistence succeeds'
 );
 
-// 1e. SettingsScreen unmount cleanup preserves pending reload timer if a switch is in progress
+// 1e. SettingsScreen unmount cleanup must retire its pending reload safely.
+// The v1.1.95 contract: an unmounted screen must NOT fire a reload from a stale
+// callback, so cleanup bumps the switch generation and clears the reload timer;
+// the reload is requested (300ms after a verified persist) only while mounted.
 assert.ok(
-  settingsScreenCode.includes('if (reloadTimerRef.current && !isSwitchingLanguageRef.current)'),
-  'SettingsScreen cleanup must not cancel reload timer when language switch is in progress'
+  settingsScreenCode.includes('languageSwitchGenerationRef.current += 1;') &&
+    settingsScreenCode.includes('if (reloadTimerRef.current) {\n        clearTimeout(reloadTimerRef.current);'),
+  'SettingsScreen unmount cleanup must retire the pending reload (bump generation, clear timer)'
 );
 
 console.log('  ✓ Task 1 static contract assertions passed.');
@@ -288,14 +292,16 @@ console.log('  ✓ Task 4 actual Urdu normalizer/name queries, English, Arabic c
 // Verify every bundled Quran edition has Urdu display metadata and that the
 // helper keeps a fallback for unknown remote editions.
 const editionsBlock = quranLanguagesCode.match(
-  /export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/
+  /(?:export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];|const RAW_QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];)/
 );
 const metadataBlock = quranLanguagesCode.match(
-  /export const EDITION_METADATA_UR:[\s\S]*?= \{([\s\S]*?)\n\};/
+  /(?:export const EDITION_METADATA_UR:[\s\S]*?= \{([\s\S]*?)\n\};|const RAW_EDITION_METADATA_UR:[\s\S]*?= \{([\s\S]*?)\n\};)/
 );
 assert.ok(editionsBlock && metadataBlock, 'edition list and Urdu metadata map must be present');
-const editionIds = [...editionsBlock[1].matchAll(/editionIdentifier:\s*'([^']+)'/g)].map((match) => match[1]);
-const metadataIds = new Set([...metadataBlock[1].matchAll(/^\s*'([^']+)':\s*\{/gm)].map((match) => match[1]));
+const editionsBody = editionsBlock[1] ?? editionsBlock[2];
+const metadataBody = metadataBlock[1] ?? metadataBlock[2];
+const editionIds = [...editionsBody.matchAll(/editionIdentifier:\s*'([^']+)'/g)].map((match) => match[1]);
+const metadataIds = new Set([...metadataBody.matchAll(/^\s*'([^']+)':\s*\{/gm)].map((match) => match[1]));
 assert.ok(editionIds.length >= 48, 'all exposed Quran editions must be inspected');
 assert.deepEqual(
   editionIds.filter((identifier) => !metadataIds.has(identifier)),

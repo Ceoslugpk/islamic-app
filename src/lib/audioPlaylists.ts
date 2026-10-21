@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 export interface PlaylistItem {
   surah: number;
   ayah: number;
@@ -11,7 +13,7 @@ export interface PresetPlaylist {
   items: PlaylistItem[];
 }
 
-export const PRESET_PLAYLISTS: PresetPlaylist[] = [
+const RAW_PRESET_PLAYLISTS: PresetPlaylist[] = [
   {
     id: 'morning-protection',
     title: 'Morning Protection',
@@ -82,3 +84,23 @@ export const PRESET_PLAYLISTS: PresetPlaylist[] = [
     ],
   },
 ];
+
+function localizePlaylist(playlist: PresetPlaylist): PresetPlaylist {
+  return {
+    ...playlist,
+    get title() {
+      return t(playlist.title);
+    },
+    get subtitle() {
+      return t(playlist.subtitle);
+    },
+    items: playlist.items.map((item) => ({
+      ...item,
+      get label() {
+        return t(item.label);
+      },
+    })),
+  };
+}
+
+export const PRESET_PLAYLISTS: PresetPlaylist[] = RAW_PRESET_PLAYLISTS.map(localizePlaylist);

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  AppState,
   useWindowDimensions,
 } from 'react-native';
 import { AppText } from '../components/ui/AppText';
@@ -17,10 +18,53 @@ import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { VOCAB_WORDS, VocabWord, TIER_LABELS, getDailyWord, getDailyWords } from '../lib/vocab';
+import { getLocalDateKey } from '../lib/dateKey';
 import { hScrollRTLStyle } from '../lib/rtl';
 import { getBackIcon, getForwardIcon } from '../lib/iconMap';
 
 const PROGRESS_KEY = 'vocab-trainer-progress-v1';
+
+/**
+ * Reactively track the local calendar day. The screen can stay mounted across
+ * midnight (the app keeps tab panes mounted), so a value captured once on mount
+ * would freeze "Today's Word" on yesterday. Re-derive at local midnight and on
+ * foreground resume.
+ */
+function useTodayKey(): string {
+  const [todayKey, setTodayKey] = useState(() => getLocalDateKey());
+
+  useEffect(() => {
+    let midnightTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const refresh = () => {
+      const next = getLocalDateKey();
+      setTodayKey((previous) => (previous === next ? previous : next));
+    };
+
+    const schedule = () => {
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      midnightTimer = setTimeout(() => {
+        refresh();
+        schedule();
+      }, Math.max(1, nextMidnight.getTime() - now.getTime()));
+    };
+
+    schedule();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refresh();
+    });
+
+    return () => {
+      subscription.remove();
+      if (midnightTimer !== null) clearTimeout(midnightTimer);
+    };
+  }, []);
+
+  return todayKey;
+}
 
 interface Progress {
   known: Record<string, boolean>; // arabic -> known
@@ -45,8 +89,9 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   const [tierFilter, setTierFilter] = useState<number | 'daily' | null>(null);
   const [sessionKnown, setSessionKnown] = useState(0);
 
-  const dailyWord = useMemo(() => getDailyWord(), []);
-  const dailyWords = useMemo(() => getDailyWords(5), []);
+  const todayKey = useTodayKey();
+  const dailyWord = useMemo(() => getDailyWord(new Date(`${todayKey}T12:00:00`)), [todayKey]);
+  const dailyWords = useMemo(() => getDailyWords(5, new Date(`${todayKey}T12:00:00`)), [todayKey]);
 
   // Load progress on mount
   useEffect(() => {
@@ -210,7 +255,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 &quot;{t(dailyWord.meaning)}&quot;
               </AppText>
               <AppText variant="caption" tone="faint" style={styles.dailyRef}>
-                Quran {dailyWord.ref}
+                {t('Quran')} {dailyWord.ref}
               </AppText>
             </View>
 
@@ -233,7 +278,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel={`Practice ${dailyWord.transliteration} in flashcards`}
+                accessibilityLabel={`${t('Practice')} ${dailyWord.transliteration} ${t('in flashcards')}`}
               >
                 <Ionicons name="school-outline" size={14} color={tokens.goldText} />
                 <AppText variant="link" style={styles.dailyActionBtnText}>
@@ -324,7 +369,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               style={styles.card}
               contentStyle={styles.cardContent}
               accessibilityRole="button"
-              accessibilityLabel={`Vocabulary card ${index + 1} of ${words.length}. Tap to flip.`}
+              accessibilityLabel={`${t('Vocabulary card')} ${index + 1} ${t('of')} ${words.length}. ${t('Tap to flip.')}`}
             >
               <View style={styles.cardTopRow}>
                 <AppText variant="caption" tone="faint" style={styles.cardCount}>
@@ -367,7 +412,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                     {t(current.meaning)}
                   </AppText>
                   <AppText variant="caption" tone="faint" style={styles.cardRef}>
-                    Quran {current.ref}
+                    {t('Quran')} {current.ref}
                   </AppText>
                 </View>
               )}

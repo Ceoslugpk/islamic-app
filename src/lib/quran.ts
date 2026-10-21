@@ -69,6 +69,7 @@ export interface MushafPageDetail {
   surahs: SurahMeta[];
   juz?: number;
   hizbQuarter?: number;
+  editionIdentifier?: string;
 }
 
 export interface SurahDetail {
@@ -78,11 +79,87 @@ export interface SurahDetail {
   englishNameTranslation: string;
   numberOfAyahs: number;
   ayahs: Ayah[];
+  editionIdentifier?: string;
 }
 
 const BASE = 'https://api.alquran.cloud/v1';
 // Saheeh International translation edition
 const TRANSLATION = 'en.sahih';
+
+function createTranslationUnavailableError(editionIdentifier: string): Error & {
+  code: 'QURAN_TRANSLATION_UNAVAILABLE';
+  editionIdentifier: string;
+} {
+  const error = new Error(`Translation edition "${editionIdentifier}" is unavailable`) as Error & {
+    code: 'QURAN_TRANSLATION_UNAVAILABLE';
+    editionIdentifier: string;
+  };
+  error.code = 'QURAN_TRANSLATION_UNAVAILABLE';
+  error.editionIdentifier = editionIdentifier;
+  return error;
+}
+
+function hasCompleteTranslation(ayahs: { translation?: unknown }[] | null | undefined): boolean {
+  return Boolean(
+    Array.isArray(ayahs) &&
+      ayahs.length > 0 &&
+      ayahs.every((ayah) => typeof ayah?.translation === 'string' && ayah.translation.trim().length > 0)
+  );
+}
+
+function hasCompleteEditionAyahs(data: any, expectedCount?: number): boolean {
+  return Boolean(
+    data &&
+      Array.isArray(data.ayahs) &&
+      data.ayahs.length > 0 &&
+      (!expectedCount || data.ayahs.length === expectedCount) &&
+      data.ayahs.every((ayah: any) => typeof ayah?.text === 'string' && ayah.text.trim().length > 0)
+  );
+}
+
+function isUsableSurahCache(
+  detail: SurahDetail | null | undefined,
+  requestedSurah: number,
+  withTranslation: boolean,
+  translationEdition: string
+): detail is SurahDetail {
+  const expectedAyahCount = SURAH_AYAH_COUNTS[requestedSurah - 1];
+  if (
+    !detail ||
+    detail.number !== requestedSurah ||
+    !expectedAyahCount ||
+    !hasCompleteEditionAyahs(detail, expectedAyahCount)
+  ) return false;
+  if (!withTranslation) return true;
+  return detail.editionIdentifier === translationEdition && hasCompleteTranslation(detail.ayahs);
+}
+
+function isUsableMushafPageCache(
+  detail: MushafPageDetail | null | undefined,
+  safePage: number,
+  withTranslation: boolean,
+  translationEdition: string
+): detail is MushafPageDetail {
+  if (
+    !detail ||
+    detail.pageNumber !== safePage ||
+    !Array.isArray(detail.ayahs) ||
+    detail.ayahs.length === 0 ||
+    !detail.ayahs.every((ayah) => !ayah.page || ayah.page === safePage)
+  ) {
+    return false;
+  }
+  if (!withTranslation) return true;
+  return detail.editionIdentifier === translationEdition && hasCompleteTranslation(detail.ayahs);
+}
+
+function isLegacyBundledSurahList(list: SurahMeta[] | null | undefined): boolean {
+  return Boolean(
+    Array.isArray(list) &&
+      list.length === SURAHS_114.length &&
+      list.every((item, index) => item.englishNameTranslation === SURAHS_114[index]?.englishName)
+  );
+}
 
 export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 4000): Promise<Response> {
   const controller = new AbortController();
@@ -120,10 +197,9 @@ let inFlightSurahList: Promise<SurahMeta[]> | null = null;
 export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
   if (!force) {
     const cached = loadQuranCache<SurahMeta[]>('surah-list');
-    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+    if (cached && Array.isArray(cached) && cached.length > 0 && !isLegacyBundledSurahList(cached)) return cached;
     if (!isAppOnline()) {
       const fallbackList = getBundledSurahs114();
-      saveQuranCache('surah-list', fallbackList);
       return fallbackList;
     }
   }
@@ -153,10 +229,9 @@ export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
     } catch {
       // If network fails/times out, use cached data if present, or bundled SURAHS_114
       const cached = loadQuranCache<SurahMeta[]>('surah-list');
-      if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+      if (cached && Array.isArray(cached) && cached.length > 0 && !isLegacyBundledSurahList(cached)) return cached;
 
       const fallbackList = getBundledSurahs114();
-      saveQuranCache('surah-list', fallbackList);
       return fallbackList;
     } finally {
       inFlightSurahList = null;
@@ -228,7 +303,7 @@ export async function fetchSurah(
   const key = `surah:${number}:${withTranslation ? translationEdition : 'ar'}`;
   if (!force) {
     const cached = loadQuranCache<SurahDetail>(key);
-    if (cached) return cached;
+    if (isUsableSurahCache(cached, number, withTranslation, translationEdition)) return cached;
   }
 
   const edition = withTranslation
@@ -236,18 +311,29 @@ export async function fetchSurah(
     : 'quran-uthmani';
   
   let res: Response;
+  let responseTranslationEdition = withTranslation ? translationEdition : 'quran-uthmani';
   try {
     res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/${edition}`, {}, 4000);
   } catch (err) {
-    if (translationEdition !== 'en.sahih') {
-      res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,en.sahih`, {}, 4000);
+    if (withTranslation && translationEdition !== TRANSLATION) {
+      try {
+        res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,${TRANSLATION}`, {}, 4000);
+        responseTranslationEdition = TRANSLATION;
+      } catch {
+        throw createTranslationUnavailableError(translationEdition);
+      }
     } else {
       throw err;
     }
   }
-  if (!res.ok && translationEdition !== 'en.sahih') {
+  if (!res.ok && withTranslation && translationEdition !== TRANSLATION) {
     // Fallback to Saheeh International if selected edition fails
-    res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,en.sahih`, {}, 4000);
+    try {
+      res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,${TRANSLATION}`, {}, 4000);
+      responseTranslationEdition = TRANSLATION;
+    } catch {
+      throw createTranslationUnavailableError(translationEdition);
+    }
   }
   if (!res.ok) throw new Error('Surah fetch failed');
   const json = await res.json();
@@ -255,8 +341,25 @@ export async function fetchSurah(
     throw new Error('Surah non-200');
   }
 
-  const arabic = json.data[0];
-  const translation = json.data[1] || null;
+  const arabic =
+    json.data.find((item: any) => item.edition?.identifier === 'quran-uthmani' || item.edition?.type === 'quran') ||
+    json.data[0];
+  const translation = withTranslation
+    ? json.data.find((item: any) => item.edition?.identifier === responseTranslationEdition)
+    : null;
+
+  if (
+    !arabic ||
+    arabic.number !== number ||
+    !SURAH_AYAH_COUNTS[number - 1] ||
+    !hasCompleteEditionAyahs(arabic, SURAH_AYAH_COUNTS[number - 1]) ||
+    (withTranslation &&
+      (!translation ||
+        translation.edition?.identifier !== responseTranslationEdition ||
+        !hasCompleteEditionAyahs(translation, arabic.ayahs.length)))
+  ) {
+    throw createTranslationUnavailableError(translationEdition);
+  }
 
   const detail: SurahDetail = {
     number: arabic.number,
@@ -264,6 +367,7 @@ export async function fetchSurah(
     englishName: arabic.englishName,
     englishNameTranslation: arabic.englishNameTranslation,
     numberOfAyahs: arabic.numberOfAyahs,
+    editionIdentifier: responseTranslationEdition,
     ayahs: arabic.ayahs.map((a: any, i: number) => ({
       number: a.number,
       numberInSurah: a.numberInSurah,
@@ -279,19 +383,25 @@ export async function fetchSurah(
     })),
   };
 
-  saveQuranCache(key, detail);
+  const responseKey = `surah:${number}:${responseTranslationEdition === 'quran-uthmani' ? 'ar' : responseTranslationEdition}`;
+  saveQuranCache(responseKey, detail);
 
   // Also cache Arabic-only key so Arabic reader / Tafsir screens work completely offline
   const arKey = `surah:${number}:ar`;
   if (!loadQuranCache(arKey)) {
     const arDetail: SurahDetail = {
       ...detail,
+      editionIdentifier: 'quran-uthmani',
       ayahs: detail.ayahs.map((a) => ({
         ...a,
         translation: undefined,
       })),
     };
     saveQuranCache(arKey, arDetail);
+  }
+
+  if (withTranslation && responseTranslationEdition !== translationEdition) {
+    throw createTranslationUnavailableError(translationEdition);
   }
 
   return detail;
@@ -314,7 +424,12 @@ export async function fetchSurahMultiEditions(
   );
 
   const arKey = `surah:${number}:ar`;
-  let arDetail = !force ? loadQuranCache<SurahDetail>(arKey) : null;
+  let arDetail = !force
+    ? loadQuranCache<SurahDetail>(arKey)
+    : null;
+  if (arDetail && !isUsableSurahCache(arDetail, number, false, 'quran-uthmani')) {
+    arDetail = null;
+  }
   const editionsMap: Record<string, SurahDetail> = {};
   const uncachedEditions: string[] = [];
 
@@ -322,7 +437,7 @@ export async function fetchSurahMultiEditions(
     if (!force) {
       const edKey = `surah:${number}:${id}`;
       const cached = loadQuranCache<SurahDetail>(edKey);
-      if (cached && cached.ayahs && cached.ayahs.length > 0) {
+      if (isUsableSurahCache(cached, number, true, id)) {
         editionsMap[id] = cached;
         continue;
       }
@@ -347,13 +462,18 @@ export async function fetchSurahMultiEditions(
       if (res.ok) {
         const json = await res.json();
         const arabicData = json.data?.[0];
-        if (arabicData && Array.isArray(arabicData.ayahs)) {
+        if (
+          arabicData &&
+          arabicData.number === number &&
+          hasCompleteEditionAyahs(arabicData, SURAH_AYAH_COUNTS[number - 1])
+        ) {
           arDetail = {
             number: arabicData.number || number,
             name: arabicData.name || '',
             englishName: arabicData.englishName || '',
             englishNameTranslation: arabicData.englishNameTranslation || '',
             numberOfAyahs: arabicData.numberOfAyahs || arabicData.ayahs.length,
+            editionIdentifier: 'quran-uthmani',
             ayahs: arabicData.ayahs.map((a: any) => ({
               number: a.number,
               numberInSurah: a.numberInSurah,
@@ -411,7 +531,12 @@ export async function fetchSurahMultiEditions(
           (d: any) => d.edition?.identifier === 'quran-uthmani' || d.edition?.type === 'quran'
         ) || json.data[0];
 
-      if (!arabicData || !Array.isArray(arabicData.ayahs)) {
+      if (
+        !arabicData ||
+        arabicData.number !== number ||
+        !SURAH_AYAH_COUNTS[number - 1] ||
+        !hasCompleteEditionAyahs(arabicData, SURAH_AYAH_COUNTS[number - 1])
+      ) {
         continue;
       }
 
@@ -439,6 +564,7 @@ export async function fetchSurahMultiEditions(
           englishName: arabicData.englishName || '',
           englishNameTranslation: arabicData.englishNameTranslation || '',
           numberOfAyahs: arabicData.numberOfAyahs || arabicAyahsBase.length,
+          editionIdentifier: 'quran-uthmani',
           ayahs: arabicAyahsBase.map((a: any) => ({
             ...a,
             translation: undefined,
@@ -453,12 +579,17 @@ export async function fetchSurahMultiEditions(
           continue;
         }
 
+        if (!hasCompleteEditionAyahs(item, arabicAyahsBase.length)) {
+          continue;
+        }
+
         const editionDetail: SurahDetail = {
           number: arabicData.number || number,
           name: arabicData.name || '',
           englishName: arabicData.englishName || '',
           englishNameTranslation: arabicData.englishNameTranslation || '',
           numberOfAyahs: arabicData.numberOfAyahs || arabicAyahsBase.length,
+          editionIdentifier: identifier,
           ayahs: arabicAyahsBase.map((a: any, i: number) => ({
             ...a,
             translation: item.ayahs && item.ayahs[i] ? item.ayahs[i].text : undefined,
@@ -686,13 +817,7 @@ export async function fetchMushafPage(
 
   if (!force) {
     const cached = loadQuranCache<MushafPageDetail>(key);
-    if (
-      cached &&
-      cached.pageNumber === safePage &&
-      Array.isArray(cached.ayahs) &&
-      cached.ayahs.length > 0 &&
-      cached.ayahs.every((a) => !a.page || a.page === safePage)
-    ) {
+    if (isUsableMushafPageCache(cached, safePage, withTranslation, translationEdition)) {
       return cached;
     }
   }
@@ -703,6 +828,7 @@ export async function fetchMushafPage(
 
   let arabicAyahs: any[] | null = null;
   let translationAyahs: any[] | null = null;
+  let responseTranslationEdition: string | null = withTranslation ? null : 'quran-uthmani';
   let surahsFromApi: Record<string, any> = {};
 
   // Try the multi-editions endpoint if supported by the provider
@@ -720,12 +846,18 @@ export async function fetchMushafPage(
             (d: any) => d.edition?.identifier === 'quran-uthmani' || d.edition?.type === 'quran'
           ) || json.data[0];
         const trData =
-          json.data.find(
-            (d: any) => d.edition?.identifier === translationEdition
-          ) || json.data[1];
-        if (arData && Array.isArray(arData.ayahs)) {
+          json.data.find((d: any) => d.edition?.identifier === translationEdition);
+        if (
+          arData &&
+          Array.isArray(arData.ayahs) &&
+          (!withTranslation ||
+            (trData &&
+              trData.edition?.identifier === translationEdition &&
+              hasCompleteEditionAyahs(trData, arData.ayahs.length)))
+        ) {
           arabicAyahs = arData.ayahs;
           translationAyahs = trData?.ayahs || null;
+          responseTranslationEdition = withTranslation ? trData.edition.identifier : 'quran-uthmani';
           if (arData.surahs && typeof arData.surahs === 'object') {
             surahsFromApi = arData.surahs;
           }
@@ -743,7 +875,8 @@ export async function fetchMushafPage(
         ? fetchWithTimeout(`${BASE}/page/${safePage}/${translationEdition}`, {}, 4000).catch(
             async () => {
               if (translationEdition !== 'en.sahih') {
-                return fetchWithTimeout(`${BASE}/page/${safePage}/en.sahih`, {}, 4000);
+                responseTranslationEdition = TRANSLATION;
+                return fetchWithTimeout(`${BASE}/page/${safePage}/${TRANSLATION}`, {}, 4000);
               }
               return null;
             }
@@ -765,6 +898,7 @@ export async function fetchMushafPage(
         const trJson = await trRes.json();
         if (trJson.code === 200 && trJson.data && Array.isArray(trJson.data.ayahs)) {
           translationAyahs = trJson.data.ayahs;
+          responseTranslationEdition = trJson.data.edition?.identifier || responseTranslationEdition;
         }
       }
     } catch (err) {
@@ -772,11 +906,16 @@ export async function fetchMushafPage(
       const cachedAyahsForPage: MushafPageAyah[] = [];
       const bundled114 = getBundledSurahs114();
       for (const s of bundled114) {
-        const cachedSurah =
-          loadQuranCache<SurahDetail>(`surah:${s.number}:${withTranslation ? translationEdition : 'ar'}`) ||
-          loadQuranCache<SurahDetail>(`surah:${s.number}:ar`);
-        if (cachedSurah && Array.isArray(cachedSurah.ayahs)) {
-          for (const a of cachedSurah.ayahs) {
+        const cachedSurah = loadQuranCache<SurahDetail>(
+          `surah:${s.number}:${withTranslation ? translationEdition : 'ar'}`
+        );
+        const usableSurah = isUsableSurahCache(cachedSurah, s.number, withTranslation, translationEdition)
+          ? cachedSurah
+          : !withTranslation
+            ? loadQuranCache<SurahDetail>(`surah:${s.number}:ar`)
+            : null;
+        if (usableSurah && Array.isArray(usableSurah.ayahs)) {
+          for (const a of usableSurah.ayahs) {
             if (a.page === safePage) {
               cachedAyahsForPage.push({
                 number: a.number,
@@ -821,13 +960,24 @@ export async function fetchMushafPage(
           surahs: Object.values(surahsMap),
           juz: validJuzAyah?.juz,
           hizbQuarter: validHizbAyah?.hizbQuarter,
+          editionIdentifier: withTranslation ? translationEdition : 'quran-uthmani',
         };
-        saveQuranCache(key, fallbackDetail);
+        if (!withTranslation || hasCompleteTranslation(fallbackDetail.ayahs)) {
+          saveQuranCache(key, fallbackDetail);
+        }
         return fallbackDetail;
       }
 
       throw err;
     }
+  }
+
+  if (
+    withTranslation &&
+    (responseTranslationEdition !== translationEdition ||
+      !hasCompleteEditionAyahs({ ayahs: translationAyahs }, arabicAyahs?.length))
+  ) {
+    throw createTranslationUnavailableError(translationEdition);
   }
 
   // Normalize page response
@@ -877,6 +1027,7 @@ export async function fetchMushafPage(
     surahs: Object.values(surahsMap),
     juz: validJuz,
     hizbQuarter: validHizb,
+    editionIdentifier: withTranslation ? translationEdition : 'quran-uthmani',
   };
 
   saveQuranCache(key, detail);
@@ -886,6 +1037,7 @@ export async function fetchMushafPage(
   if (!loadQuranCache(arKey)) {
     const arDetail: MushafPageDetail = {
       ...detail,
+      editionIdentifier: 'quran-uthmani',
       ayahs: detail.ayahs.map((a) => ({
         ...a,
         translation: undefined,

@@ -58,7 +58,7 @@ export function parseTajweedHtml(text: string): TajweedSpan[] {
       spans.push(rule ? { text: m[2] || '', rule } : { text: m[2] || '' });
     } else if (m[3]) {
       // Plain text: trim the ayah-end marker digits if they slipped here
-      const clean = m[3].replace(/[\u0660-\u0669]+$/g, '').trim();
+      const clean = m[3].replace(/[\u0660-\u0669]+$/g, '');
       if (clean) spans.push({ text: clean });
     }
     // m[2] (end marker contents) is intentionally dropped
@@ -130,7 +130,7 @@ export interface TajweedAyah {
 
 /** Fetch tajweed-colored text for an entire surah from islamic.app (cached). */
 export async function fetchTajweedSurah(surah: number): Promise<TajweedAyah[]> {
-  const key = `islamic-tajweed:surah:${surah}`;
+  const key = `tajweed:surah:${surah}`;
   const cached = loadQuranCache<TajweedAyah[]>(key);
   if (cached && cached.length) return cached;
 

@@ -319,7 +319,11 @@ export function PrayerTimeline({
                 activeOpacity={item.isSalah ? 0.7 : 1}
                 accessibilityRole={item.isSalah ? 'checkbox' : 'none'}
                 accessibilityState={item.isSalah ? { checked: isDone } : undefined}
-                accessibilityLabel={`${item.label} at ${time}, ${item.isSalah ? (isDone ? 'completed' : 'not completed') : 'timing'}`}
+                accessibilityLabel={t('{{name}} at {{time}}, {{status}}', {
+                  name: prayerLabel,
+                  time: formattedTime,
+                  status: item.isSalah ? (isDone ? t('completed') : t('not completed')) : t('timing'),
+                })}
               >
                 {/* Left rail column */}
                 <View style={styles.railColumn}>

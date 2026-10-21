@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { parseTajweedAny, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
 import { AppText } from './ui/AppText';
 import { useAutoProbe } from '../lib/diagnostic';
@@ -113,8 +114,8 @@ export function TajweedLegend({ compact = false }: { compact?: boolean }) {
         <View key={rule} style={[styles.legendRow, compact && styles.legendRowCompact]}>
           <View style={[styles.legendDot, { backgroundColor: info.color }]} />
           <View style={{ flex: 1 }}>
-            <AppText variant="rowTitle" style={[styles.legendLabel, { color: colors.textPrimary }]}>{info.label}</AppText>
-            {!compact && <AppText variant="caption" style={[styles.legendHint, { color: colors.textMuted }]}>{info.hint}</AppText>}
+            <AppText variant="rowTitle" style={[styles.legendLabel, { color: colors.textPrimary }]}>{t(info.label)}</AppText>
+            {!compact && <AppText variant="caption" style={[styles.legendHint, { color: colors.textMuted }]}>{t(info.hint)}</AppText>}
           </View>
         </View>
       ))}

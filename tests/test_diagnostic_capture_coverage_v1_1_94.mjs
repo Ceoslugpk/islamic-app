@@ -82,6 +82,34 @@ function magicStub(id) {
 }
 
 /**
+ * `renderToStaticMarkup` runs render but never commits, so React invokes `useEffect`
+ * and discards the callback. Production registration now happens at COMMIT time
+ * (recordControlState was moved from render into an effect), so the server renderer
+ * alone can no longer observe it. This queue captures every effect the real React
+ * renderer schedules and replays it exactly once after the render returns, which is
+ * what happens on device - the harness therefore exercises the real code path rather
+ * than a stale render-time snapshot.
+ */
+const effectQueue = [];
+function flushEffects() {
+  while (effectQueue.length) {
+    const effect = effectQueue.shift();
+    const cleanup = effect();
+    if (typeof cleanup === 'function') {
+      // Effects are replayed once for the render under test; cleanups (e.g.
+      // markProbeStale on unmount) must not run in the same pass.
+      void cleanup;
+    }
+  }
+}
+const reactForModules = Object.assign({}, React, {
+  useEffect(effect) {
+    effectQueue.push(effect);
+  },
+});
+reactForModules.default = reactForModules;
+
+/**
  * Isolated "universe": one fresh instance of every real module, so diagnostic state
  * never leaks between scenarios. `mutations` maps repo-relative paths to { from, to }
  * replacements applied to the on-disk source (this is how RED mutation checks revert
@@ -162,7 +190,7 @@ function createUniverse({ gateOn = true, language = 'en', isRTL = false, appIsRt
   };
 
   const mocks = {
-    react: React,
+    react: reactForModules,
     'react-native': reactNativeStub,
     '../components/ui/AppText': { AppText: hostComponent('AppText') },
     '../theme/tokens': {
@@ -248,6 +276,7 @@ function createUniverse({ gateOn = true, language = 'en', isRTL = false, appIsRt
       universe.diagState.resetDiagnosticProbes();
       hosts.length = 0;
     },
+    flushEffects,
   };
   liveUniverses.push(universe);
   return universe;
@@ -326,6 +355,7 @@ function renderRow(universe, props) {
     React.createElement(universe.SettingsScreen.Row, props)
   );
   renderToStaticMarkup(tree);
+  universe.flushEffects();
   return universe.lastHostProps('Pressable');
 }
 
@@ -424,6 +454,7 @@ function guaranteeSwitchAndStepperRecorded(universe) {
     )
   );
   renderToStaticMarkup(tree);
+  universe.flushEffects();
 
   const toggle = universe.hostProps('Pressable').find((p) => p.accessibilityRole === 'switch');
   assert.ok(toggle, 'the switch must render a host pressable');
@@ -495,6 +526,7 @@ function guaranteeGateOffIsFree(universe) {
       })
     );
     renderToStaticMarkup(tree);
+    universe.flushEffects();
     props = universe.lastHostProps('Pressable');
     assert.ok(props, 'the row must render a host pressable');
     props.onPress();

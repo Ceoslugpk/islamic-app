@@ -49,7 +49,10 @@ const enKeys = Object.keys(en);
 const enKeySet = new Set(enKeys);
 const totalEnKeys = enKeys.length;
 
-assert(totalEnKeys === 2470, `en.json has exactly 2,470 keys (was 2,302 + 168 new keys), found: ${totalEnKeys}`);
+// A floor, not a frozen snapshot: key LOSS is a defect, growth is not. The exact figure moves whenever
+// strings are added, and pinning it just means editing the test every time (it said 2,470 before today's
+// localisation work added 1,206). Parity against en is asserted for every locale below.
+assert(totalEnKeys >= 2470, `en.json must never lose keys (expected >= 2,470, found: ${totalEnKeys})`);
 
 // 2. Inventory check: exactly 49 files
 const files = fs.readdirSync(LOCALES_DIR).filter(f => f.endsWith('.json'));
@@ -119,7 +122,7 @@ assert(arabicNCorruptions === 0, `Zero occurrences of corrupted token '{ن}' in 
 
 // 5. S1-011: Kazakh (kk.json) check
 const kk = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, 'kk.json'), 'utf8'));
-assert(Object.keys(kk).length === 2470, `Kazakh kk.json has all 2,470 keys (39 missing keys restored + 168 new keys)`);
+assert(Object.keys(kk).length === totalEnKeys, `Kazakh kk.json must carry every en key (en=${totalEnKeys}, kk=${Object.keys(kk).length})`);
 assert(kk['PIN Protection'] === 'PIN қорғанысы', 'kk.json has natural Kazakh translation for PIN Protection');
 assert(kk['Enter your 4-digit PIN'] === '4 таңбалы PIN кодын енгізіңіз', 'kk.json has natural Kazakh translation for Enter your 4-digit PIN');
 assert(kk["Women's Worship Locked"] === 'Әйелдер ғибадаты құлыпталған', "kk.json has natural Kazakh translation for Women's Worship Locked");

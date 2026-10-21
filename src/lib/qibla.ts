@@ -208,10 +208,15 @@ export function checkMagneticInterference(
   
   // Check 2: Heading variance (jitter) over recent samples
   if (!hasInterference && interferenceHistory.length >= 10) {
-    const sorted = [...interferenceHistory].sort((a, b) => a - b);
-    // Handle wrap-around for variance calculation
-    const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length;
-    const variance = sorted.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / sorted.length;
+    // Calculate the circular mean and shortest angular deltas so 359° and 1° stay close.
+    const mean = (Math.atan2(
+      interferenceHistory.reduce((sum, value) => sum + Math.sin((value * Math.PI) / 180), 0),
+      interferenceHistory.reduce((sum, value) => sum + Math.cos((value * Math.PI) / 180), 0),
+    ) * 180) / Math.PI;
+    const variance = interferenceHistory.reduce(
+      (sum, val) => sum + Math.pow(shortestAngleDelta(val, mean), 2),
+      0,
+    ) / interferenceHistory.length;
     const stdDev = Math.sqrt(variance);
     
     if (stdDev > 15) {

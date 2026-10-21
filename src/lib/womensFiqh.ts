@@ -3,6 +3,22 @@
  * Static curated content based on mainstream authentic Islamic jurisprudence.
  */
 
+import { t } from './i18n';
+
+function localize<const T extends Record<string, unknown>>(source: T, fields: readonly (keyof T)[]): T {
+  const result = { ...source };
+  for (const field of fields) {
+    const value = source[field];
+    if (typeof value === 'string') {
+      Object.defineProperty(result, field, {
+        enumerable: true,
+        get: () => t(value),
+      });
+    }
+  }
+  return result;
+}
+
 export interface GhuslStep {
   id: string;
   type: 'obligatory' | 'sunnah';
@@ -95,62 +111,62 @@ export const GHUSL_STEPS: GhuslStep[] = [
 
 /** Permitted and restricted acts during Menstruation & Postnatal bleeding */
 export const WORSHIP_GUIDELINES: WorshipRule[] = [
-  {
+  localize({
     id: 'salah',
     topic: 'Obligatory & Voluntary Prayers (Salah)',
     status: 'restricted',
     ruling: 'Exempt from praying. Prayers missed are NOT made up.',
     details: 'A menstruating woman is exempted out of Allah’s mercy. She does not pray and is not required to make up any missed prayers after purification.',
     evidence: 'Aisha (RA) narrated: "We were ordered to make up missed fasts, but not missed prayers." (Sahih Muslim 335)',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'fasting',
     topic: 'Fasting (Ramadan & Voluntary)',
     status: 'restricted',
     ruling: 'Exempt from fasting. Missed Ramadan days MUST be made up.',
     details: 'Fasting during active bleeding is invalid. Ramadan days missed must be made up (Qada) at any time before the subsequent Ramadan.',
     evidence: 'Sahih al-Bukhari (304), Sahih Muslim (335)',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'dhikr',
     topic: 'Dhikr, Tasbih & Morning/Evening Adhkar',
     status: 'recommended',
     ruling: 'Fully permitted and highly encouraged.',
     details: 'Remembering Allah, reciting Tasbih, Tahmid, Takbir, seeking forgiveness (Istighfar), and reading daily morning and evening protections are deeply rewarding.',
     evidence: 'Prophetic consensus; no restriction on dhikr during ritual impurity.',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'dua',
     topic: 'Du’a (Supplication)',
     status: 'recommended',
     ruling: 'Fully permitted anytime.',
     details: 'Personal supplication in any language or authentic Prophetic wordings is always welcomed and rewarded.',
     evidence: 'Quran: "Call upon Me, I will respond to you." (40:60)',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'quran_digital',
     topic: 'Reading Quran (Digital Apps / Memory)',
     status: 'permitted',
     ruling: 'Permitted from memory or electronic devices.',
     details: 'According to the strong contemporary scholarly position (including Ibn Taymiyyah and modern committees), women may recite Quran from memory or read from phone screens without directly touching physical paper Mushaf.',
     evidence: 'Fatwa of Permanent Committee (Majmoo al-Fatawa 21/460)',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'quran_audio',
     topic: 'Listening to Quran Recitation & Tafsir',
     status: 'recommended',
     ruling: 'Fully permitted and spiritually uplifting.',
     details: 'Listening to audio recitations, pondering the meanings, and studying Tafsir or Islamic lectures maintain a strong spiritual connection.',
     evidence: 'Prophetic tradition; the Prophet ﷺ would recite while resting with Aisha (RA).',
-  },
-  {
+  }, ['topic', 'ruling', 'details', 'evidence']),
+  localize({
     id: 'charity',
     topic: 'Charity (Sadaqah) & Community Service',
     status: 'recommended',
     ruling: 'Fully permitted with great reward.',
     details: 'Feeding the needy, financial charity, helping family, and acts of kindness are boundless righteous deeds during this period.',
     evidence: 'Surah Al-Baqarah (2:261)',
-  },
+  }, ['topic', 'ruling', 'details', 'evidence']),
 ];
 
 /** Comparison: Hayd vs Nifas vs Istihadha */
@@ -163,66 +179,66 @@ export interface BleedingTypeInfo {
 }
 
 export const BLEEDING_TYPES: BleedingTypeInfo[] = [
-  {
+  localize({
     name: 'Hayd (Menstruation)',
     arabic: 'حيض',
     definition: 'Natural, regular monthly bleeding that occurs from the womb in healthy adult women.',
     duration: 'Commonly 5–7 days. Classical limits: Shafi’i & Hanbali: 1–15 days; Hanafi: 3–10 days.',
     rulings: 'Salah and fasting cease. Complete ghusl required upon cessation. Missed fasts are made up later; prayers are not.',
-  },
-  {
+  }, ['name', 'definition', 'duration', 'rulings']),
+  localize({
     name: 'Nifas (Postpartum Bleeding)',
     arabic: 'نفاس',
     definition: 'Bleeding following childbirth (natural or cesarean) from the womb.',
     duration: 'Standard Sunnah maximum is 40 days (majority). Shafi’i jurists note it may extend up to 60 days.',
     rulings: 'Same exemptions as Hayd. If bleeding extends past the maximum, it is treated as Istihadha unless coinciding with regular cycle.',
-  },
-  {
+  }, ['name', 'definition', 'duration', 'rulings']),
+  localize({
     name: 'Istihadha (Irregular Bleeding)',
     arabic: 'استحاضة',
     definition: 'Non-menstrual bleeding resulting from a ruptured blood vessel or medical condition, beyond regular cycle limits.',
     duration: 'Occurs irregularly, or continuous bleeding exceeding the maximum Hayd limit.',
     rulings: 'Ghusl is performed once when the regular menstrual period ends. Thereafter, the woman washes, makes wudu for EACH obligatory prayer, and prays/fasts normally.',
-  },
+  }, ['name', 'definition', 'duration', 'rulings']),
 ];
 
 /** Curated Women's Fiqh Resources */
 export const WOMENS_FIQH_RESOURCES: FiqhResource[] = [
-  {
+  localize({
     id: 'uthaymeen_rulings',
     title: 'Natural Blood of Women (Rulings on Hayd, Nifas & Istihadha)',
     author: 'Shaykh Muhammad ibn Salih al-Uthaymeen',
     description: 'An authoritative, evidence-based treatise explaining menstrual cycles, irregular bleeding, and when ghusl becomes binding.',
     category: 'Fiqh',
-  },
-  {
+  }, ['title', 'author', 'description', 'category']),
+  localize({
     id: 'four_madhhabs',
     title: 'Fiqh of Hayd in the Four Madhhabs',
     author: 'Classical Jurisprudence Consensus',
     description: 'Clear breakdown of minimum, maximum, and purity intervals across the Hanafi, Maliki, Shafi’i, and Hanbali schools of thought.',
     category: 'Fiqh',
-  },
-  {
+  }, ['title', 'author', 'description', 'category']),
+  localize({
     id: 'ideal_muslimah',
     title: 'The Ideal Muslimah',
     author: 'Dr. Muhammad Ali al-Hashimi',
     description: 'A comprehensive guide to the Muslim woman’s spiritual character, devotional life, intellect, and balanced worship.',
     category: 'Spirituality',
-  },
-  {
+  }, ['title', 'author', 'description', 'category']),
+  localize({
     id: 'aisha_hadith',
     title: 'Aisha (RA) on Hajj & Worship During Hayd',
     author: 'Sahih al-Bukhari & Sahih Muslim',
     description: 'Prophetic reassurance to the Mother of the Believers: "This is a matter Allah has decreed for the daughters of Adam. Do everything a pilgrim does except Tawaf."',
     category: 'Hadith',
-  },
-  {
+  }, ['title', 'author', 'description', 'category']),
+  localize({
     id: 'fawzan_guide',
     title: 'A Summary of Islamic Jurisprudence for Women',
     author: 'Dr. Salih al-Fawzan',
     description: 'Practical handbook on prayer purification, modern contraceptive impacts, medical procedures, and makeup fasts.',
     category: 'Fiqh',
-  },
+  }, ['title', 'author', 'description', 'category']),
 ];
 
 /* ─── Cycle & Date Calculation Helpers ──────────────────────── */

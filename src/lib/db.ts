@@ -4,6 +4,23 @@
  * No expo-sqlite import here, so the web bundle never pulls the WASM.
  */
 import { webKV } from './webStorage';
+import { isWomenSpecificReason } from './womenReason';
+import { getLocalDateKey } from './dateKey';
+
+const SCRIPT_AYAH_COUNTS = [
+  7, 286, 200, 176, 120, 165, 206, 75, 129, 109,
+  123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
+  112, 78, 118, 64, 77, 227, 93, 88, 69, 60,
+  34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
+  54, 53, 89, 59, 37, 35, 38, 29, 18, 45,
+  60, 49, 62, 55, 78, 96, 29, 22, 24, 13,
+  14, 11, 11, 18, 12, 12, 30, 52, 52, 44,
+  28, 28, 20, 56, 40, 31, 50, 40, 46, 42,
+  29, 19, 36, 25, 22, 17, 19, 26, 30, 20,
+  15, 21, 11, 8, 8, 19, 5, 8, 8, 11,
+  11, 8, 3, 9, 5, 4, 7, 3, 6, 3,
+  5, 4, 5, 6,
+];
 
 export interface PrayerCacheMeta {
   date?: string;
@@ -153,7 +170,9 @@ export function getSalahEntries(date: string): Record<string, boolean> {
 
 export function getSalahHistory(days: number): Record<string, Record<string, boolean>> {
   const out: Record<string, Record<string, boolean>> = {};
-  const from = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  const cutoff = new Date(Date.now());
+  cutoff.setDate(cutoff.getDate() - days);
+  const from = getLocalDateKey(cutoff);
   const rows = webKV.getAll('salah:');
   for (const { key, value } of rows) {
     const parts = key.split(':');
@@ -203,6 +222,7 @@ export const DISPOSABLE_KEY_PREFIXES = [
   'tafsir:',
   'tafsir-',
   'tajweed:',
+  'islamic-tajweed:',
   'hadith:',
 ];
 
@@ -376,6 +396,7 @@ export function enforceQuranCacheBudget(
 export function saveQuranCache(key: string, payload: object): boolean {
   try {
     if (key === QURAN_CACHE_COUNTER_KEY) return false;
+    if (!isCompleteScriptCachePayload(key, payload)) return false;
     const raw = webKV.get(`quran:${key}`);
     const current = readValidatedQuranCacheAccounting();
     webKV.set(`quran:${key}`, JSON.stringify(payload));
@@ -398,6 +419,20 @@ export function saveQuranCache(key: string, payload: object): boolean {
       return false;
     }
   }
+}
+
+function isCompleteScriptCachePayload(key: string, payload: object): boolean {
+  const match = /^surah-script:(\d+):[^:]+$/.exec(key);
+  if (!match) return true;
+  const surah = Number(match[1]);
+  const expected = SCRIPT_AYAH_COUNTS[surah - 1];
+  if (!expected || !payload || typeof payload !== 'object' || Array.isArray(payload)) return false;
+  const map = payload as Record<string, unknown>;
+  for (let ayah = 1; ayah <= expected; ayah++) {
+    const text = map[ayah];
+    if (typeof text !== 'string' || text.trim().length === 0) return false;
+  }
+  return true;
 }
 
 export function deleteQuranCache(key: string): boolean {
@@ -460,6 +495,13 @@ export function computeStreak(history: Record<string, Record<string, boolean>>):
     else break;
   }
   return streak;
+}
+
+export const SALAH_STREAK_WINDOW_DAYS = 30;
+
+/** Shared source of truth for the streak shown by Salah surfaces. */
+export function getSalahStreak(): number {
+  return computeStreak(getSalahHistory(SALAH_STREAK_WINDOW_DAYS));
 }
 
 export type HifzStatus = 'not-started' | 'revising' | 'memorized';
@@ -885,7 +927,7 @@ export function toggleMissedFastMadeUp(id: string, madeUp: boolean): void {
   try {
     const item = JSON.parse(raw) as MissedFastItem;
     item.madeUp = madeUp;
-    item.madeUpDate = madeUp ? new Date().toISOString().slice(0, 10) : undefined;
+    item.madeUpDate = madeUp ? getLocalDateKey() : undefined;
     webKV.set(`fasting:missed:${id}`, JSON.stringify(item));
   } catch { /* ignore */ }
 }
@@ -956,7 +998,11 @@ export function savePeriodEntry(entry: PeriodEntry): void {
 }
 
 export function deletePeriodEntry(id: string): void {
-  webKV.delete(`women:period:${id}`);
+  const key = `women:period:${id}`;
+  webKV.delete(key);
+  if (webKV.get(key) !== null) {
+    throw new Error(`Failed to delete period entry: ${id}`);
+  }
 }
 
 export function loadPeriodEntries(): PeriodEntry[] {
@@ -976,7 +1022,11 @@ export function saveNifasEntry(entry: NifasEntry): void {
 }
 
 export function deleteNifasEntry(id: string): void {
-  webKV.delete(`women:nifas:${id}`);
+  const key = `women:nifas:${id}`;
+  webKV.delete(key);
+  if (webKV.get(key) !== null) {
+    throw new Error(`Failed to delete nifas entry: ${id}`);
+  }
 }
 
 export function loadNifasEntries(): NifasEntry[] {
@@ -998,11 +1048,14 @@ export function loadNifasEntries(): NifasEntry[] {
 export function clearWomenData(): void {
   for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
   for (const { key } of webKV.getAll('women:nifas:')) webKV.delete(key);
-  const missed = loadMissedFasts();
-  for (const item of missed) {
-    const reason = (item.reason || '').toLowerCase();
-    if (reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal')) {
-      deleteMissedFast(item.id);
+  for (const { key, value } of webKV.getAll('fasting:missed:')) {
+    try {
+      const parsed = JSON.parse(value) as { reason?: unknown };
+      if (isWomenSpecificReason(parsed?.reason)) {
+        webKV.delete(key);
+      }
+    } catch {
+      // Keep malformed rows so verification fails closed instead of claiming erase success.
     }
   }
   const remainingPeriods = webKV.getAll('women:period:').length;
@@ -1013,9 +1066,13 @@ export function clearWomenData(): void {
   if (remainingNifas > 0) {
     throw new Error(`Failed to clear women data: ${remainingNifas} nifas entries remain`);
   }
-  const remainingMissed = loadMissedFasts().filter((item) => {
-    const reason = (item.reason || '').toLowerCase();
-    return reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal');
+  const remainingMissed = webKV.getAll('fasting:missed:').filter(({ value }) => {
+    try {
+      const parsed = JSON.parse(value) as { reason?: unknown };
+      return isWomenSpecificReason(parsed?.reason);
+    } catch {
+      return true;
+    }
   });
   if (remainingMissed.length > 0) {
     throw new Error(`Failed to clear women data: ${remainingMissed.length} missed fast entries remain`);
@@ -1104,22 +1161,30 @@ export function getAllStudyTags(): StudyTag[] {
 }
 
 export function addVerseHighlight(surah: number, ayah: number, color: string): VerseHighlight | false {
-  try {
-    const id = `${surah}:${ayah}:${Date.now()}`;
-    const createdAt = Date.now();
-    // Remove existing highlight for this ayah first
-    const rows = webKV.getAll('study:highlight:');
-    for (const { key, value } of rows) {
-      try {
-        const parsed = JSON.parse(value);
-        if (parsed && parsed.surah === surah && parsed.ayah === ayah) {
-          webKV.delete(key);
-        }
-      } catch { /* ignore */ }
+  const id = `${surah}:${ayah}:${Date.now()}`;
+  const createdAt = Date.now();
+  const rows = webKV.getAll('study:highlight:');
+  const existing = rows.filter(({ value }) => {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && parsed.surah === surah && parsed.ayah === ayah;
+    } catch {
+      return false;
     }
+  });
+  try {
+    for (const { key } of existing) webKV.delete(key);
     webKV.set(`study:highlight:${id}`, JSON.stringify({ id, surah, ayah, color, createdAt }));
     return { id, surah, ayah, color, createdAt };
   } catch {
+    try {
+      webKV.delete(`study:highlight:${id}`);
+      for (const { key, value } of existing) {
+        webKV.set(key, value);
+      }
+    } catch {
+      // Preserve the original failure result; callers must not report success.
+    }
     return false;
   }
 }

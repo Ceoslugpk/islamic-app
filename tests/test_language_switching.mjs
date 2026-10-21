@@ -85,8 +85,30 @@ assert.ok(
   settingsWriterCode.includes('await storage.setItem') && settingsWriterCode.includes('JSON.stringify(value)'),
   'shared settings writer must await the durable serialized write'
 );
+// The language write is routed through the shared mutation lane, and the readback
+// verifier is passed into that same queued write: setLanguage -> enqueueMutation ->
+// enqueueSharedSettingsMutation -> enqueueSharedSettingsOperation -> writeSettings(next, verify).
+// The verifier must still run inside the queue, after the durable write, and the
+// writer must re-read the persisted value before reporting success.
 assert.ok(
-  settingsWriterCode.includes('await storage.getItem(key)') && settingsCode.includes('await enqueueWrite(nextClean, (raw)'),
+  settingsWriterCode.includes('await storage.setItem') &&
+    settingsWriterCode.includes('await storage.getItem(key)') &&
+    settingsWriterCode.includes('if (!raw) throw new Error('),
+  'shared settings writer must write, then read back inside the same queued task'
+);
+assert.ok(
+  settingsCode.includes('enqueueSharedSettingsOperation(async () =>') &&
+    settingsCode.includes('return defaultSharedSettingsWriter(nextClean, verify)'),
+  'shared settings mutation must run the write+readback verifier inside one queued operation'
+);
+// The verifier must live INSIDE the queued language mutation (contiguous region),
+// so removing verification from that queued call fails this assertion.
+const languageVerifier = settingsCode.match(
+  /enqueueMutation\(\(latest\) => computeNextLanguageSettings\(latest, nextLang\), nextClean, \(raw\) => \{([\s\S]*?)\}\)/
+);
+assert.ok(languageVerifier, 'language write must enqueue a mutation carrying a readback verifier');
+assert.ok(
+  languageVerifier[1].includes('Storage readback verification mismatch'),
   'language write must perform readback verification inside the same queued task'
 );
 assert.ok(
@@ -1702,21 +1724,42 @@ class SettingsHarness {
 }
 
 // ---------------------------------------------------------------------------
+// Audio-policy shape helpers.
+// The exported VERIFIED_NON_ARABIC_EDITIONS / LANGUAGE_AUDIO_EDITIONS constants
+// are now derived (via .map) from RAW_* literal blocks; extract whichever form
+// is present so the "no fake translation audio for language X" invariants can
+// still be asserted against the source of truth.
+// ---------------------------------------------------------------------------
+function extractNonArabicEditionsBody(code) {
+  const match = code.match(
+    /(?:export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];|const RAW_VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];)/
+  );
+  assert.ok(match, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
+  return match[1] ?? match[2];
+}
+
+function extractLanguageAudioEditionsBody(code) {
+  const match = code.match(
+    /(?:export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};|const RAW_LANGUAGE_AUDIO_EDITIONS:[\s\S]*?=\s*\{([\s\S]*?)\};)/
+  );
+  assert.ok(match, 'LANGUAGE_AUDIO_EDITIONS definition found');
+  return match[1] ?? match[2];
+}
+
+// ---------------------------------------------------------------------------
 // Test 7d: Honest audio policy: No fake Arabic translation audio edition
 // ---------------------------------------------------------------------------
 {
   const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
 
-  // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain an Arabic entry
-  const nonArabicMatch = quranAudioCode.match(/export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];/);
-  assert.ok(nonArabicMatch, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
-  assert.ok(!nonArabicMatch[1].includes("language: 'ar'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Arabic reciters');
-  assert.ok(!nonArabicMatch[1].includes("identifier: 'ar."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Arabic identifiers');
+  // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain an Arabic entry.
+  const nonArabicBody = extractNonArabicEditionsBody(quranAudioCode);
+  assert.ok(!nonArabicBody.includes("language: 'ar'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Arabic reciters');
+  assert.ok(!nonArabicBody.includes("identifier: 'ar."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Arabic identifiers');
 
   // 2. LANGUAGE_AUDIO_EDITIONS must not contain 'ar'
-  const langAudioMatch = quranAudioCode.match(/export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};/);
-  assert.ok(langAudioMatch, 'LANGUAGE_AUDIO_EDITIONS definition found');
-  assert.ok(!langAudioMatch[1].includes("ar:"), 'LANGUAGE_AUDIO_EDITIONS must not have an Arabic translation audio entry');
+  const langAudioBody = extractLanguageAudioEditionsBody(quranAudioCode);
+  assert.ok(!langAudioBody.includes("ar:"), 'LANGUAGE_AUDIO_EDITIONS must not have an Arabic translation audio entry');
 
   // 3. settings.tsx must not reference any fake Arabic audio translation edition
   assert.ok(!settingsCode.includes("ar.everyayah"), 'settings.tsx must not contain fake EveryAyah Arabic translation audio');
@@ -1806,15 +1849,13 @@ class SettingsHarness {
   const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
 
   // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain a Hindi entry
-  const nonArabicMatch = quranAudioCode.match(/export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];/);
-  assert.ok(nonArabicMatch, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
-  assert.ok(!nonArabicMatch[1].includes("language: 'hi'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi reciters');
-  assert.ok(!nonArabicMatch[1].includes("identifier: 'hi."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi identifiers');
+  const nonArabicBody = extractNonArabicEditionsBody(quranAudioCode);
+  assert.ok(!nonArabicBody.includes("language: 'hi'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi reciters');
+  assert.ok(!nonArabicBody.includes("identifier: 'hi."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi identifiers');
 
   // 2. LANGUAGE_AUDIO_EDITIONS must not contain 'hi'
-  const langAudioMatch = quranAudioCode.match(/export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};/);
-  assert.ok(langAudioMatch, 'LANGUAGE_AUDIO_EDITIONS definition found');
-  assert.ok(!langAudioMatch[1].includes("hi:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Hindi translation audio entry');
+  const langAudioBody = extractLanguageAudioEditionsBody(quranAudioCode);
+  assert.ok(!langAudioBody.includes("hi:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Hindi translation audio entry');
 
   // 3. settings.tsx must not reference any fake Hindi audio translation edition
   assert.ok(!settingsCode.includes("hi.everyayah"), 'settings.tsx must not contain fake EveryAyah Hindi translation audio');
@@ -1904,15 +1945,13 @@ class SettingsHarness {
   const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
 
   // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain a Malayalam entry
-  const nonArabicMatch = quranAudioCode.match(/export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];/);
-  assert.ok(nonArabicMatch, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
-  assert.ok(!nonArabicMatch[1].includes("language: 'ml'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Malayalam reciters');
-  assert.ok(!nonArabicMatch[1].includes("identifier: 'ml."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Malayalam identifiers');
+  const nonArabicBody = extractNonArabicEditionsBody(quranAudioCode);
+  assert.ok(!nonArabicBody.includes("language: 'ml'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Malayalam reciters');
+  assert.ok(!nonArabicBody.includes("identifier: 'ml."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Malayalam identifiers');
 
   // 2. LANGUAGE_AUDIO_EDITIONS must not contain 'ml'
-  const langAudioMatch = quranAudioCode.match(/export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};/);
-  assert.ok(langAudioMatch, 'LANGUAGE_AUDIO_EDITIONS definition found');
-  assert.ok(!langAudioMatch[1].includes("ml:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Malayalam translation audio entry');
+  const langAudioBody = extractLanguageAudioEditionsBody(quranAudioCode);
+  assert.ok(!langAudioBody.includes("ml:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Malayalam translation audio entry');
 
   // 3. settings.tsx must not reference any fake Malayalam audio translation edition
   assert.ok(!settingsCode.includes("ml.everyayah"), 'settings.tsx must not contain fake EveryAyah Malayalam translation audio');
@@ -2002,15 +2041,13 @@ class SettingsHarness {
   const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
 
   // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain a Sinhala entry
-  const nonArabicMatch = quranAudioCode.match(/export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];/);
-  assert.ok(nonArabicMatch, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
-  assert.ok(!nonArabicMatch[1].includes("language: 'si'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Sinhala reciters');
-  assert.ok(!nonArabicMatch[1].includes("identifier: 'si."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Sinhala identifiers');
+  const nonArabicBody = extractNonArabicEditionsBody(quranAudioCode);
+  assert.ok(!nonArabicBody.includes("language: 'si'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Sinhala reciters');
+  assert.ok(!nonArabicBody.includes("identifier: 'si."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Sinhala identifiers');
 
   // 2. LANGUAGE_AUDIO_EDITIONS must not contain 'si'
-  const langAudioMatch = quranAudioCode.match(/export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};/);
-  assert.ok(langAudioMatch, 'LANGUAGE_AUDIO_EDITIONS definition found');
-  assert.ok(!langAudioMatch[1].includes("si:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Sinhala translation audio entry');
+  const langAudioBody = extractLanguageAudioEditionsBody(quranAudioCode);
+  assert.ok(!langAudioBody.includes("si:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Sinhala translation audio entry');
 
   // 3. settings.tsx must not reference any fake Sinhala audio translation edition
   assert.ok(!settingsCode.includes("si.everyayah"), 'settings.tsx must not contain fake EveryAyah Sinhala translation audio');

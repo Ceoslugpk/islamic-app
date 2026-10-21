@@ -75,11 +75,11 @@ function readSynchronousLanguageMirror(): AppLanguage | null {
   return null;
 }
 
-function writeSynchronousLanguageMirror(language: AppLanguage): void {
+function writeSynchronousLanguageMirror(language: AppLanguage): boolean {
   try {
-    saveQuranCache(SYNC_LANGUAGE_CACHE_KEY, { language });
+    return saveQuranCache(SYNC_LANGUAGE_CACHE_KEY, { language }) !== false;
   } catch {
-    // AsyncStorage remains the durable source; the mirror is a boot accelerator.
+    return false;
   }
 }
 
@@ -95,7 +95,9 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
       const parsed = JSON.parse(raw);
       if (parsed && isAppLanguage(parsed.language)) {
         persistedLanguage = parsed.language;
-        writeSynchronousLanguageMirror(parsed.language);
+        if (!writeSynchronousLanguageMirror(parsed.language)) {
+          console.warn('[i18n] Could not refresh the language mirror; durable storage remains authoritative.');
+        }
       }
     }
   } catch {
@@ -140,7 +142,8 @@ i18nextUse(initReactI18next).init({
   compatibilityJSON: 'v4',
 });
 
-let nativeDirectionApplied = false;
+let nativeDirectionApplied: boolean | null = null;
+let nativeDirectionLocked = false;
 
 /**
  * Configure RTL layout direction for React Native and Web.
@@ -148,16 +151,18 @@ let nativeDirectionApplied = false;
  * inherits the direction for its full lifetime. Language changes persist their
  * target direction with prepareNativeLayoutDirection() and then use an app reload.
  *
- * Enforces single source of truth: native allowRTL/forceRTL is applied at most ONCE
- * per process, strictly before UI mounts. Runtime direction changes after mount trigger
- * Android activity configuration change loops and detach touch targets.
+ * Enforces a single source of truth: once the durable boot language is resolved,
+ * native allowRTL/forceRTL is locked for the process before UI mounts. A stale
+ * provisional mirror may be corrected once in that pre-mount window; runtime
+ * direction changes after the lock trigger Android configuration loops and detached
+ * touch targets.
  */
 export function applyRTL(isRTL: boolean): void {
   if (Platform.OS !== 'web') {
-    if (nativeDirectionApplied) {
+    if (nativeDirectionLocked || nativeDirectionApplied === isRTL) {
       return;
     }
-    nativeDirectionApplied = true;
+    nativeDirectionApplied = isRTL;
     try {
       I18nManager.allowRTL(isRTL);
       I18nManager.forceRTL(isRTL);
@@ -173,13 +178,21 @@ export function applyRTL(isRTL: boolean): void {
 
 /** Reset flag for isolated runtime testing. Internal / test use only. */
 export function __resetNativeDirectionAppliedForTest(): void {
-  nativeDirectionApplied = false;
+  nativeDirectionApplied = null;
+  nativeDirectionLocked = false;
+}
+
+/** Lock the one-shot native direction after the durable boot language is resolved. */
+export function lockNativeDirectionForUI(): void {
+  if (Platform.OS !== 'web') {
+    nativeDirectionLocked = true;
+  }
 }
 
 // On native, a first boot without a mirror must wait for App's async storage
-// gate before writing direction. App calls the same guarded applyRTL() after
-// resolvePersistedLanguage() and before mounting native child views. When a
-// mirror exists, this module can safely apply direction immediately.
+// gate before writing direction. When a mirror exists, it is only provisional:
+// App applies the durable value before locking the one-shot native direction and
+// mounting child views, allowing one stale-mirror correction in that window.
 if (Platform.OS === 'web' || synchronousLanguageAtBoot) {
   applyRTL(isRtlLanguage(initialLanguage));
 }
@@ -197,7 +210,9 @@ if (Platform.OS === 'web' || synchronousLanguageAtBoot) {
  */
 export function prepareNativeLayoutDirection(lang: AppLanguage): void {
   const isRtl = isRtlLanguage(lang);
-  writeSynchronousLanguageMirror(lang);
+  if (!writeSynchronousLanguageMirror(lang)) {
+    throw new Error('Failed to write the language mirror for the next native boot');
+  }
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
@@ -213,7 +228,9 @@ export function prepareNativeLayoutDirection(lang: AppLanguage): void {
 export function setAppLanguage(lang: AppLanguage): void {
   persistedLanguage = lang;
   languageResolved = true;
-  writeSynchronousLanguageMirror(lang);
+  if (!writeSynchronousLanguageMirror(lang)) {
+    console.warn('[i18n] Could not refresh the language mirror; durable storage remains authoritative.');
+  }
   changeLanguage(lang);
   const isRtl = isRtlLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {

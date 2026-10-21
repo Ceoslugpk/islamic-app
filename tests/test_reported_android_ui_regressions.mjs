@@ -70,6 +70,7 @@ for (const inset of [0, 24, 44]) {
 }
 
 const storage = new Map();
+const quranCache = new Map();
 let legacy = null;
 const mapped = [];
 const service = load('src/lib/continuing.ts', {
@@ -80,7 +81,12 @@ const service = load('src/lib/continuing.ts', {
   },
   './surahAyahCounts': { SURAH_AYAH_COUNTS: [7, 286, ...Array(112).fill(200)] },
   './quran': { getMushafPageForAyah: (surah, ayah) => { mapped.push([surah, ayah]); return 293; } },
-  './db': { loadLastReadPosition: () => legacy },
+  './db': {
+    loadLastReadPosition: () => legacy,
+    saveQuranCache: (key, payload) => { quranCache.set(key, JSON.stringify(payload)); return true; },
+    loadQuranCache: (key) => { const raw = quranCache.get(key); if (!raw) return null; try { return JSON.parse(raw); } catch { return null; } },
+    deleteQuranCache: (key) => quranCache.delete(key),
+  },
 });
 assert.equal(await service.getContinueReadingPosition(), null);
 legacy = { surah: 18, ayah: 5, page: 293, updatedAt: 123 };

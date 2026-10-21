@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
-  Pressable,
 } from 'react-native';
 import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { t } from '../lib/i18n';
+import { InteractiveSurface } from './InteractiveSurface';
 
 export interface LocationSetupModalProps {
   visible: boolean;
@@ -48,8 +48,12 @@ export function LocationSetupModal({
       onRequestClose={onDismiss}
       statusBarTranslucent
     >
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
-        <Pressable
+      <InteractiveSurface
+        style={styles.backdrop}
+        onPress={onDismiss}
+        contentPointerEvents="auto"
+      >
+        <View
           style={[
             styles.card,
             {
@@ -58,7 +62,6 @@ export function LocationSetupModal({
               width: cardWidth,
             },
           ]}
-          onPress={(e) => e.stopPropagation()}
         >
           {/* Close button in top-right */}
           <TouchableOpacity
@@ -164,8 +167,8 @@ export function LocationSetupModal({
               </AppText>
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </InteractiveSurface>
     </Modal>
   );
 }

@@ -8,6 +8,9 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import ts from 'typescript';
 
 console.log('=== FOUR DEFECT REGRESSION TESTS ===\n');
 
@@ -20,95 +23,52 @@ const surahNamesCode = fs.readFileSync('src/lib/surahNamesLocalized.ts', 'utf8')
 const quranLanguagesCode = fs.readFileSync('src/lib/quranLanguages.ts', 'utf8');
 const modalCode = fs.readFileSync('src/components/QuranLanguageModal.tsx', 'utf8');
 
-// 1a. surahNamesLocalized must export LANGUAGE_NAMES_AR covering all editions
-assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_AR'), 'surahNamesLocalized must export LANGUAGE_NAMES_AR');
-
-// 1b. quranLanguages must export EDITION_METADATA_AR covering all editions
-assert.ok(quranLanguagesCode.includes('EDITION_METADATA_AR'), 'quranLanguages must export EDITION_METADATA_AR');
-
-// Extract QURAN_LANGUAGE_EDITIONS
-const editionsMatch = quranLanguagesCode.match(/export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/);
-assert.ok(editionsMatch, 'QURAN_LANGUAGE_EDITIONS found');
-const editionIds = [...editionsMatch[1].matchAll(/editionIdentifier:\s*'([^']+)'/g)].map((m) => m[1]);
-const editionLangs = [...editionsMatch[1].matchAll(/language:\s*'([^']+)'/g)].map((m) => m[1]);
-
-// Extract LANGUAGE_NAMES_AR
-const langArMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_AR:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(langArMatch, 'LANGUAGE_NAMES_AR found');
-const langArKeys = new Set([...langArMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langArMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-// Every language in QURAN_LANGUAGE_EDITIONS must exist in LANGUAGE_NAMES_AR
-for (const lang of editionLangs) {
-  assert.ok(langArKeys.has(lang), `LANGUAGE_NAMES_AR must have entry for language "${lang}"`);
+// Execute the real data modules. i18n is the only stubbed state/platform boundary.
+const quranDataTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'quran-language-data-'));
+fs.writeFileSync(path.join(quranDataTmp, 'stubI18n.mjs'), "export const getCurrentLanguage = () => 'en'; export const t = (key) => key;\n");
+function transpileQuranData(source, fileName) {
+  return ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    fileName,
+  }).outputText;
 }
-
-// Extract EDITION_METADATA_AR
-const metaArMatch = quranLanguagesCode.match(/export const EDITION_METADATA_AR:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(metaArMatch, 'EDITION_METADATA_AR found');
-const metaArKeys = new Set([...metaArMatch[1].matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1]));
-
-// Every edition in QURAN_LANGUAGE_EDITIONS must exist in EDITION_METADATA_AR
-for (const id of editionIds) {
-  assert.ok(metaArKeys.has(id), `EDITION_METADATA_AR must have entry for edition "${id}"`);
+fs.writeFileSync(path.join(quranDataTmp, 'surahNamesLocalized.mjs'), transpileQuranData(
+  surahNamesCode.replace("from './i18n'", "from './stubI18n.mjs'"), 'surahNamesLocalized.ts'));
+fs.writeFileSync(path.join(quranDataTmp, 'quranLanguages.mjs'), transpileQuranData(
+  quranLanguagesCode
+    .replace("from './i18n'", "from './stubI18n.mjs'")
+    .replace("from './surahNamesLocalized'", "from './surahNamesLocalized.mjs'"), 'quranLanguages.ts'));
+const surahNames = await import(path.join(quranDataTmp, 'surahNamesLocalized.mjs'));
+const quranLanguages = await import(path.join(quranDataTmp, 'quranLanguages.mjs'));
+const { LANGUAGE_NAMES_AR, LANGUAGE_NAMES_HI, LANGUAGE_NAMES_ML, LANGUAGE_NAMES_SI } = surahNames;
+const { QURAN_LANGUAGE_EDITIONS, EDITION_METADATA_AR, EDITION_METADATA_HI, EDITION_METADATA_ML, EDITION_METADATA_SI } = quranLanguages;
+const editionIds = QURAN_LANGUAGE_EDITIONS.map(({ editionIdentifier }) => editionIdentifier);
+const editionLangs = QURAN_LANGUAGE_EDITIONS.map(({ language }) => language);
+const assertExactKeys = (actual, expected, label) => {
+  assert.deepEqual(new Set(Object.keys(actual)), new Set(expected), `${label} keys must match registered data`);
+};
+for (const [label, map] of [
+  ['LANGUAGE_NAMES_AR', LANGUAGE_NAMES_AR], ['LANGUAGE_NAMES_HI', LANGUAGE_NAMES_HI],
+  ['LANGUAGE_NAMES_ML', LANGUAGE_NAMES_ML], ['LANGUAGE_NAMES_SI', LANGUAGE_NAMES_SI],
+]) {
+  for (const lang of editionLangs) assert.ok(map[lang], `${label} must have entry for language "${lang}"`);
 }
-
-// 1b2. Hindi coverage in surahNamesLocalized & quranLanguages
-assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_HI'), 'surahNamesLocalized must export LANGUAGE_NAMES_HI');
-assert.ok(quranLanguagesCode.includes('EDITION_METADATA_HI'), 'quranLanguages must export EDITION_METADATA_HI');
-
-const langHiMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_HI:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(langHiMatch, 'LANGUAGE_NAMES_HI found');
-const langHiKeys = new Set([...langHiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langHiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const lang of editionLangs) {
-  assert.ok(langHiKeys.has(lang), `LANGUAGE_NAMES_HI must have entry for language "${lang}"`);
+for (const [label, map] of [
+  ['EDITION_METADATA_AR', EDITION_METADATA_AR], ['EDITION_METADATA_HI', EDITION_METADATA_HI],
+  ['EDITION_METADATA_ML', EDITION_METADATA_ML], ['EDITION_METADATA_SI', EDITION_METADATA_SI],
+]) {
+  for (const id of editionIds) assert.ok(map[id]?.title && map[id]?.translator && map[id]?.language, `${label} entry for ${id} must be complete`);
 }
+for (const [label, map] of [
+  ['EDITION_METADATA_HI', EDITION_METADATA_HI], ['EDITION_METADATA_ML', EDITION_METADATA_ML],
+  ['EDITION_METADATA_SI', EDITION_METADATA_SI],
+]) assertExactKeys(map, Object.keys(EDITION_METADATA_AR), label);
+console.log('  ✓ Executed Quran editions, language-name, and metadata maps are cross-consistent.');
 
-const metaHiMatch = quranLanguagesCode.match(/export const EDITION_METADATA_HI:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(metaHiMatch, 'EDITION_METADATA_HI found');
-const metaHiKeys = new Set([...metaHiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...metaHiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const id of editionIds) {
-  assert.ok(metaHiKeys.has(id), `EDITION_METADATA_HI must have entry for edition "${id}"`);
-}
-
-// 1b3. Malayalam & Sinhala coverage in surahNamesLocalized & quranLanguages
-assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_ML'), 'surahNamesLocalized must export LANGUAGE_NAMES_ML');
-assert.ok(quranLanguagesCode.includes('EDITION_METADATA_ML'), 'quranLanguages must export EDITION_METADATA_ML');
-assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_SI'), 'surahNamesLocalized must export LANGUAGE_NAMES_SI');
-assert.ok(quranLanguagesCode.includes('EDITION_METADATA_SI'), 'quranLanguages must export EDITION_METADATA_SI');
-
-const langMlMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_ML:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(langMlMatch, 'LANGUAGE_NAMES_ML found');
-const langMlKeys = new Set([...langMlMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langMlMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const lang of editionLangs) {
-  assert.ok(langMlKeys.has(lang), `LANGUAGE_NAMES_ML must have entry for language "${lang}"`);
-}
-
-const metaMlMatch = quranLanguagesCode.match(/export const EDITION_METADATA_ML:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(metaMlMatch, 'EDITION_METADATA_ML found');
-const metaMlKeys = new Set([...metaMlMatch[1].matchAll(/^\s*'([^']+)':/gm), ...metaMlMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const id of editionIds) {
-  assert.ok(metaMlKeys.has(id), `EDITION_METADATA_ML must have entry for edition "${id}"`);
-}
-
-const langSiMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_SI:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(langSiMatch, 'LANGUAGE_NAMES_SI found');
-const langSiKeys = new Set([...langSiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langSiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const lang of editionLangs) {
-  assert.ok(langSiKeys.has(lang), `LANGUAGE_NAMES_SI must have entry for language "${lang}"`);
-}
-
-const metaSiMatch = quranLanguagesCode.match(/export const EDITION_METADATA_SI:[\s\S]*?= \{([\s\S]*?)\n\};/);
-assert.ok(metaSiMatch, 'EDITION_METADATA_SI found');
-const metaSiKeys = new Set([...metaSiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...metaSiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
-
-for (const id of editionIds) {
-  assert.ok(metaSiKeys.has(id), `EDITION_METADATA_SI must have entry for edition "${id}"`);
-}
+// 1a/1b. The real exported collections above are the source of truth.
+assertExactKeys(LANGUAGE_NAMES_HI, Object.keys(LANGUAGE_NAMES_AR), 'LANGUAGE_NAMES_HI');
+assertExactKeys(LANGUAGE_NAMES_ML, Object.keys(LANGUAGE_NAMES_AR), 'LANGUAGE_NAMES_ML');
+assertExactKeys(LANGUAGE_NAMES_SI, Object.keys(LANGUAGE_NAMES_AR), 'LANGUAGE_NAMES_SI');
 
 // Modal remaining raw English strings must be localized
 assert.ok(!modalCode.includes("accessibilityLabel={`${getLocalizedLanguageName(item.language)} - ${getLocalizedTranslatorName(item.editionIdentifier, item.name)}${isSelected ? ', currently selected' : ''}`}"),
@@ -117,42 +77,6 @@ assert.ok(!modalCode.includes("TRANSLATIONS (${QURAN_LANGUAGE_EDITIONS.length})"
   'Modal eyebrow must not have raw English TRANSLATIONS literal');
 
 console.log('  ✓ Task 1 Quran chooser static assertions passed.');
-
-// 1c. Dynamic evaluation of language and translator helpers
-const urMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_UR:[\s\S]*?= \{([\s\S]*?)\n\};/);
-const langUrMap = new Function('return {' + urMatch[1] + '}')();
-const langArMap = new Function('return {' + langArMatch[1] + '}')();
-const langHiMap = new Function('return {' + langHiMatch[1] + '}')();
-const langMlMap = new Function('return {' + langMlMatch[1] + '}')();
-const langSiMap = new Function('return {' + langSiMatch[1] + '}')();
-const metaUrMatch = quranLanguagesCode.match(/export const EDITION_METADATA_UR:[\s\S]*?= \{([\s\S]*?)\n\};/);
-const metaUrMap = new Function('return {' + metaUrMatch[1] + '}')();
-const metaArMap = new Function('return {' + metaArMatch[1] + '}')();
-const metaHiMap = new Function('return {' + metaHiMatch[1] + '}')();
-const metaMlMap = new Function('return {' + metaMlMatch[1] + '}')();
-const metaSiMap = new Function('return {' + metaSiMatch[1] + '}')();
-
-for (const ed of editionIds) {
-  assert.ok(metaArMap[ed]?.title, `Arabic metadata for ${ed} must have title`);
-  assert.ok(metaArMap[ed]?.translator, `Arabic metadata for ${ed} must have translator`);
-  assert.ok(metaArMap[ed]?.language, `Arabic metadata for ${ed} must have language`);
-  assert.ok(metaHiMap[ed]?.title, `Hindi metadata for ${ed} must have title`);
-  assert.ok(metaHiMap[ed]?.translator, `Hindi metadata for ${ed} must have translator`);
-  assert.ok(metaHiMap[ed]?.language, `Hindi metadata for ${ed} must have language`);
-  assert.ok(metaMlMap[ed]?.title, `Malayalam metadata for ${ed} must have title`);
-  assert.ok(metaMlMap[ed]?.translator, `Malayalam metadata for ${ed} must have translator`);
-  assert.ok(metaMlMap[ed]?.language, `Malayalam metadata for ${ed} must have language`);
-  assert.ok(metaSiMap[ed]?.title, `Sinhala metadata for ${ed} must have title`);
-  assert.ok(metaSiMap[ed]?.translator, `Sinhala metadata for ${ed} must have translator`);
-  assert.ok(metaSiMap[ed]?.language, `Sinhala metadata for ${ed} must have language`);
-}
-for (const lang of editionLangs) {
-  assert.ok(langArMap[lang], `Arabic language name for ${lang} must exist`);
-  assert.ok(langHiMap[lang], `Hindi language name for ${lang} must exist`);
-  assert.ok(langMlMap[lang], `Malayalam language name for ${lang} must exist`);
-  assert.ok(langSiMap[lang], `Sinhala language name for ${lang} must exist`);
-}
-console.log('  ✓ Task 1 dynamic Arabic, Hindi, Malayalam & Sinhala coverage verified across all editions.');
 
 // ---------------------------------------------------------------------------
 // 2. TASBIH: Localization in Urdu & Arabic
@@ -183,9 +107,28 @@ assert.ok(tasbihCode.includes('includeFontPadding: false'), 'Large counter numer
 assert.ok(tasbihCode.includes('lineHeight: 74'), 'Counter numeral must use a bounded line height instead of the locale-wide RTL multiplier');
 assert.ok(tasbihCode.includes('height: counterDiameter'), 'Counter dial must have an explicit responsive height');
 assert.ok(tasbihCode.indexOf('/* Today Summary */') > tasbihCode.indexOf('testID="tasbih-counter-button"'), 'Today summary must follow the main counter so the dial is visible higher on screen');
-assert.ok(tasbihCode.includes('countsRef.current') && tasbihCode.includes('todayTotalRef.current'), 'Rapid taps must increment from the latest count without stale render closures');
+// NOTE: this used to assert only that the file CONTAINS the token `todayTotalRef.current`. That is satisfiable by
+// any occurrence - assigning or advancing the ref - so it passed even when the handler read the STALE render-closure
+// value instead of the ref (verified by reverting the read: the suite stayed green, because the ref was still
+// assigned and advanced two lines later). The bug it exists to catch is a stale READ, so it now names both read
+// sites: the primary counter must read countsRef.current, and the day total must pass todayTotalRef.current into the
+// rollover computation. A revert of either read now fails here.
+assert.ok(
+  /const nextCount = \(countsRef\.current\[selectedDhikr\.id\] \|\| 0\) \+ 1;/.test(tasbihCode),
+  'Rapid taps must increment from the latest count without stale render closures'
+);
+assert.ok(
+  /stateTotal: todayTotalRef\.current,/.test(tasbihCode),
+  'Rapid taps must increment from the latest count without stale render closures'
+);
 assert.ok(tasbihCode.includes('void saveTasbihCountAsync(selectedDhikr.id, nextCount)'), 'Counter updates must persist asynchronously after updating screen state');
-assert.ok(tasbihCode.includes('void saveTasbihDayTotalAsync(todayKey, 1)'), 'Daily totals must persist asynchronously after updating screen state');
+// The write key is now derived from the current clock (rollover.key) rather than the
+// render-closure todayKey, so the first tap after local midnight lands on the new day's
+// row. The guarantee that still matters: the day total is persisted asynchronously (+1).
+assert.ok(
+  /void saveTasbihDayTotalAsync\(rollover\.key, 1\)/.test(tasbihCode),
+  'Daily totals must persist asynchronously (+1, keyed to the resolved rollover day) after updating screen state'
+);
 
 const nativeDbCode = fs.readFileSync('src/lib/db.native.ts', 'utf8');
 assert.ok((nativeDbCode.match(/await getDb\(\)\.runAsync\(/g) || []).length >= 2, 'Native Tasbih persistence must use async SQLite writes for count and daily total');
@@ -233,9 +176,16 @@ assert.ok(
   settingsCode.includes('sanitizeSettings(update(settingsRef.current))'),
   'ordinary updates must derive from the latest optimistic settings ref'
 );
-assert.ok(settingsCode.includes('enqueueWrite(clean)'), 'ordinary updates must use the shared settings queue');
+// NOTE: these two are TEXT assertions and are therefore brittle - they broke once already when the write path was
+// legitimately refactored from `enqueueWrite(...)` to the shared-operation/mutation pair below. They are kept only
+// as a cheap shape check; the BEHAVIOURAL guarantee (serialization under concurrency) is proven by the executed
+// stress test that follows, which is the assertion to trust if these two ever disagree with reality.
 assert.ok(
-  settingsCode.includes('await enqueueWrite(nextClean, (raw)'),
+  settingsCode.includes('enqueueSharedSettingsMutation('),
+  'ordinary updates must use the shared settings queue'
+);
+assert.ok(
+  settingsCode.includes('enqueueSharedSettingsOperation(() => writeSettings('),
   'language write and readback verification must run atomically inside the shared queue'
 );
 

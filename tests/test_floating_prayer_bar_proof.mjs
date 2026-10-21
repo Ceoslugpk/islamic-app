@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { getTextAlignment } from '../src/lib/typography.ts';
 
 // Static code contracts first
 console.log('=== FLOATING PRAYER BAR PROOF: STATIC CONTRACTS ===');
@@ -35,7 +36,17 @@ console.log('  ✓ Single surface, single border, single restrained shadow owner
 assert.ok(compactPrayerBarFile.includes('isRTL()'), 'isRTL check present');
 assert.ok(compactPrayerBarFile.includes("flexDirection: 'row'"), 'Prayer bar uses a native-direction-aware row');
 assert.ok(!compactPrayerBarFile.includes("flexDirection: rtl ? 'row-reverse' : 'row'"), 'Prayer bar must not double-reverse native RTL');
-assert.ok(compactPrayerBarFile.includes("writingDirection: 'ltr'"), 'Prayer time numerals keep LTR');
+// CompactPrayerBar delegates numeral direction to the shared production typography path.
+assert.deepEqual(
+  getTextAlignment('05:15', 'ur', 'numeral'),
+  { textAlign: 'right', writingDirection: 'ltr' },
+  'Prayer time numerals must remain LTR inside an RTL locale',
+);
+assert.deepEqual(
+  getTextAlignment('الفجر', 'ur', 'numeral'),
+  { textAlign: 'right', writingDirection: 'rtl' },
+  'Arabic-script prayer names must remain RTL',
+);
 console.log('  ✓ LTR and RTL layout and numeral direction safety verified');
 
 // 5. Geometry

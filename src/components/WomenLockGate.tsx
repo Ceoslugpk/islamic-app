@@ -124,13 +124,13 @@ function useAuthenticate(
         if (!enrolled) {
           setChecking(false);
           setUnlocked(false);
-          setError('No device security is set up. Enable a screen lock in your device settings.');
+          setError(t('No device security is set up. Enable a screen lock in your device settings.'));
           return;
         }
       }
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Unlock Women's Worship",
-        cancelLabel: 'Cancel',
+        promptMessage: t("Unlock Women's Worship"),
+        cancelLabel: t('Cancel'),
         disableDeviceFallback: false, // allow device PIN/pattern/password fallback
       });
       setChecking(false);
@@ -141,13 +141,13 @@ function useAuthenticate(
         if (result.error === 'user_cancel') {
           setError(null);
         } else {
-          setError('Authentication failed. Try again.');
+          setError(t('Authentication failed. Try again.'));
         }
       }
     } catch {
       setChecking(false);
       setUnlocked(false);
-      setError('Authentication unavailable on this device.');
+      setError(t('Authentication unavailable on this device.'));
     }
   };
 }

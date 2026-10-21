@@ -16,6 +16,7 @@ import path from 'node:path';
 import os from 'node:os';
 import ts from 'typescript';
 import { DatabaseSync } from 'node:sqlite';
+import { compileEsmProductionModule } from './production_module_fallback.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const SRC_DIR = path.join(REPO_ROOT, 'src');
@@ -223,18 +224,19 @@ const stubSqlite = {
   },
 };
 
-// Transpile src/lib/db.native.ts
+// Compile src/lib/db.native.ts with only the SQLite platform seam explicit;
+// the shared resolver supplies every other src/lib dependency from real source.
 const dbNativeSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/db.native.ts'), 'utf8');
-const dbNativeTranspiled = ts.transpileModule(
-  dbNativeSrc.replace("import * as SQLite from 'expo-sqlite';", "import SQLite from './stubSqliteAdapter.mjs';"),
-  { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }
-).outputText;
-
 fs.writeFileSync(path.join(TMP_DIR, 'stubSqliteAdapter.mjs'), `export default globalThis.__stubSqlite;`);
 globalThis.__stubSqlite = stubSqlite;
-fs.writeFileSync(path.join(TMP_DIR, 'db_native.mjs'), dbNativeTranspiled);
-
-const dbNative = await import(path.join(TMP_DIR, 'db_native.mjs'));
+const dbNative = await import(compileEsmProductionModule({
+  root: REPO_ROOT,
+  tmpDir: TMP_DIR,
+  sourceRelativePath: 'src/lib/db.native.ts',
+  source: dbNativeSrc,
+  outputName: 'db_native.mjs',
+  replacements: [["import * as SQLite from 'expo-sqlite';", "import SQLite from './stubSqliteAdapter.mjs';"]],
+}));
 const {
   saveQuranCache,
   deleteQuranCache,
@@ -259,17 +261,21 @@ fs.writeFileSync(path.join(TMP_DIR, 'stubAsyncStorageBackup.mjs'), `
 `);
 fs.writeFileSync(path.join(TMP_DIR, 'stubSettingsBackup.mjs'), `export const sanitizeSettings = (value) => value;`);
 fs.writeFileSync(path.join(TMP_DIR, 'stubWebStorageBackup.mjs'), `export const webKV = { get: () => null, set: () => {}, getAll: () => [], delete: () => {} };`);
-const backupSrcForTest = fs.readFileSync(path.join(SRC_DIR, 'lib/backup.ts'), 'utf8')
-  .replace("import { Platform } from 'react-native';", "import { Platform } from './stubRNBackup.mjs';")
-  .replace("import AsyncStorage from '@react-native-async-storage/async-storage';", "import AsyncStorage from './stubAsyncStorageBackup.mjs';")
-  .replace("import * as SQLite from 'expo-sqlite';", "import SQLite from './stubSqliteAdapter.mjs';")
-  .replace("import * as db from './db';", "import * as db from './db_native.mjs';")
-  .replace("import { sanitizeSettings } from './settings';", "import { sanitizeSettings } from './stubSettingsBackup.mjs';")
-  .replace("import { webKV } from './webStorage';", "import { webKV } from './stubWebStorageBackup.mjs';");
-fs.writeFileSync(path.join(TMP_DIR, 'backup.mjs'), ts.transpileModule(backupSrcForTest, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText);
-const backup = await import(path.join(TMP_DIR, 'backup.mjs'));
+const backup = await import(compileEsmProductionModule({
+  root: REPO_ROOT,
+  tmpDir: TMP_DIR,
+  sourceRelativePath: 'src/lib/backup.ts',
+  source: fs.readFileSync(path.join(SRC_DIR, 'lib/backup.ts'), 'utf8'),
+  outputName: 'backup.mjs',
+  replacements: [
+    ["import { Platform } from 'react-native';", "import { Platform } from './stubRNBackup.mjs';"],
+    ["import AsyncStorage from '@react-native-async-storage/async-storage';", "import AsyncStorage from './stubAsyncStorageBackup.mjs';"],
+    ["import * as SQLite from 'expo-sqlite';", "import SQLite from './stubSqliteAdapter.mjs';"],
+    ["import * as db from './db';", "import * as db from './db_native.mjs';"],
+    ["import { sanitizeSettings } from './settings';", "import { sanitizeSettings } from './stubSettingsBackup.mjs';"],
+    ["import { webKV } from './webStorage';", "import { webKV } from './stubWebStorageBackup.mjs';"],
+  ],
+}));
 
 const TRUE_TOTAL = () =>
   sqliteMem.prepare("SELECT COALESCE(SUM(length(payload)), 0) AS t FROM quran_cache WHERE key != 'quran_cache_bytes'").get().t;
@@ -414,11 +420,8 @@ console.log('  ✓ F-34 complete: real production writes, restore, drift repair 
 /* ========================================================================== */
 console.log('\n--- F-38: Native-safe Reading Marker and Position Sync Accessors ---');
 
-// Transpile src/lib/continuing.ts
+// Compile src/lib/continuing.ts through the shared resolver.
 const continuingSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/continuing.ts'), 'utf8');
-const continuingTranspiled = ts.transpileModule(continuingSrc, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
 
 // Ensure globalThis.localStorage is undefined (Native environment)
 delete globalThis.localStorage;
@@ -448,23 +451,22 @@ fs.writeFileSync(path.join(TMP_DIR, 'stubAsyncStorageCont.mjs'), `
   };
 `);
 
-const ayahCountsSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/surahAyahCounts.ts'), 'utf8');
-fs.writeFileSync(path.join(TMP_DIR, 'surahAyahCounts.mjs'), ts.transpileModule(ayahCountsSrc, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText);
-
 fs.writeFileSync(path.join(TMP_DIR, 'stubQuranContinuing.mjs'), `
   export const getMushafPageForAyah = (surah, ayah) => (surah === 18 ? 294 : surah === 36 ? 441 : 1);
 `);
 
-const continuingPatched = continuingTranspiled
-  .replace("from './db'", "from './stubDbContinuing.mjs'")
-  .replace("from './surahAyahCounts'", "from './surahAyahCounts.mjs'")
-  .replace("from './quran'", "from './stubQuranContinuing.mjs'")
-  .replace("from '@react-native-async-storage/async-storage'", "from './stubAsyncStorageCont.mjs'");
-
-fs.writeFileSync(path.join(TMP_DIR, 'continuing.mjs'), continuingPatched);
-const continuing = await import(path.join(TMP_DIR, 'continuing.mjs'));
+const continuing = await import(compileEsmProductionModule({
+  root: REPO_ROOT,
+  tmpDir: TMP_DIR,
+  sourceRelativePath: 'src/lib/continuing.ts',
+  source: continuingSrc,
+  outputName: 'continuing.mjs',
+  replacements: [
+    ["from './db'", "from './stubDbContinuing.mjs'"],
+    ["from './quran'", "from './stubQuranContinuing.mjs'"],
+    ["from '@react-native-async-storage/async-storage'", "from './stubAsyncStorageCont.mjs'"],
+  ],
+}));
 
 const {
   getReadingMarkerSync,
@@ -595,25 +597,28 @@ fs.writeFileSync(path.join(TMP_DIR, 'stubDownloadsAudio.mjs'), `
 `);
 fs.writeFileSync(path.join(TMP_DIR, 'stubConnAudio.mjs'), `export const isAppOnline = () => true;`);
 fs.writeFileSync(path.join(TMP_DIR, 'stubQuranAudio.mjs'), `export const fetchWithTimeout = async () => ({ ok: true });`);
+fs.writeFileSync(path.join(TMP_DIR, 'stubI18nAudio.mjs'), `export const t = (key) => key;`);
 
 const quranAudioSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/quranAudio.ts'), 'utf8');
-const quranAudioTranspiled = ts.transpileModule(
-  quranAudioSrc
-    .replaceAll("from 'react'", "from './stubReactAudio.mjs'")
-    .replaceAll("from 'expo-audio'", "from './stubExpoAudio.mjs'")
-    .replaceAll("from '@react-native-async-storage/async-storage'", "from './stubAsyncStorageAudio.mjs'")
-    .replaceAll("from './notifications'", "from './stubNotifAudio.mjs'")
-    .replaceAll("from './db'", "from './stubDbAudio.mjs'")
-    .replaceAll("from './surahAyahCounts'", "from './surahAyahCounts.mjs'")
-    .replaceAll("from './audioPreloader'", "from './stubPreloaderAudio.mjs'")
-    .replaceAll("from './surahDownloads'", "from './stubDownloadsAudio.mjs'")
-    .replaceAll("from './useConnectivity'", "from './stubConnAudio.mjs'")
-    .replaceAll("from './quran'", "from './stubQuranAudio.mjs'"),
-  { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }
-).outputText;
-
-fs.writeFileSync(path.join(TMP_DIR, 'quranAudio.mjs'), quranAudioTranspiled);
-const quranAudio = await import(path.join(TMP_DIR, 'quranAudio.mjs'));
+const quranAudio = await import(compileEsmProductionModule({
+  root: REPO_ROOT,
+  tmpDir: TMP_DIR,
+  sourceRelativePath: 'src/lib/quranAudio.ts',
+  source: quranAudioSrc,
+  outputName: 'quranAudio.mjs',
+  replacements: [
+    ["from 'react'", "from './stubReactAudio.mjs'"],
+    ["from 'expo-audio'", "from './stubExpoAudio.mjs'"],
+    ["from '@react-native-async-storage/async-storage'", "from './stubAsyncStorageAudio.mjs'"],
+    ["from './notifications'", "from './stubNotifAudio.mjs'"],
+    ["from './db'", "from './stubDbAudio.mjs'"],
+    ["from './audioPreloader'", "from './stubPreloaderAudio.mjs'"],
+    ["from './surahDownloads'", "from './stubDownloadsAudio.mjs'"],
+    ["from './useConnectivity'", "from './stubConnAudio.mjs'"],
+    ["from './quran'", "from './stubQuranAudio.mjs'"],
+    ["from './i18n'", "from './stubI18nAudio.mjs'"],
+  ],
+}));
 
 const {
   playAudioUrl,

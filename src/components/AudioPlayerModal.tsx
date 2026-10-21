@@ -439,8 +439,10 @@ export function AudioPlayerModal({
                 </AppText>
                 {playback.surah && (
                   <AppText variant="caption" style={styles.surahTag}>
-                    Surah {playback.surah}
-                    {playback.ayah ? ` · Ayah ${playback.ayah}` : ' · Full Surah'}
+                    {t('Surah {{surah}}', { surah: playback.surah })}
+                    {playback.ayah
+                      ? t(' · Ayah {{ayah}}', { ayah: playback.ayah })
+                      : t(' · Full Surah')}
                   </AppText>
                 )}
               </View>
@@ -532,8 +534,8 @@ export function AudioPlayerModal({
                   accessibilityRole="button"
                   accessibilityLabel={
                     audioEdition
-                      ? `Switch to ${audioLangName} translation audio`
-                      : 'Translation audio unavailable'
+                      ? t('Switch to {{language}} translation audio', { language: audioLangName })
+                      : t('Translation audio unavailable')
                   }
                   accessibilityState={{ selected: activeSegment === 'translation' }}
                 >
@@ -601,8 +603,8 @@ export function AudioPlayerModal({
                     numberOfLines={2}
                   >
                     {audioEdition
-                      ? `Voice: ${getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name)}`
-                      : 'Audio translation unavailable'}
+                      ? t('Voice: {{name}}', { name: getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name) })
+                      : t('Audio translation unavailable')}
                   </AppText>
                 </View>
                 <TouchableOpacity
@@ -673,7 +675,7 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Repeat mode: ${repeatMode}. Tap to cycle.`}
+                  accessibilityLabel={t('Repeat mode: {{mode}}. Tap to cycle.', { mode: repeatMode })}
                 >
                   <Ionicons
                     name={repeatMode === 'one' ? 'repeat-sharp' : 'repeat'}
@@ -774,7 +776,7 @@ export function AudioPlayerModal({
                     { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Playback speed ${playbackRate}x. Tap to cycle.`}
+                  accessibilityLabel={t('Playback speed {{rate}}x. Tap to cycle.', { rate: playbackRate })}
                 >
                   <Ionicons name="speedometer-outline" size={15} color={colors.accent} />
                   <AppText variant="caption" style={styles.speedBtnText}>
@@ -794,7 +796,7 @@ export function AudioPlayerModal({
                   >
                     <Ionicons name="moon-outline" size={15} color={colors.accent} />
                     <AppText variant="caption" style={styles.sleepBtnText}>
-                      Sleep 10m
+                      {t('Sleep 10m')}
                     </AppText>
                   </TouchableOpacity>
                 ) : (
@@ -805,7 +807,7 @@ export function AudioPlayerModal({
                       { backgroundColor: colors.accentDim, borderColor: colors.accent },
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel={`Sleep timer active, ${sleepRemaining} seconds remaining. Tap to cancel.`}
+                    accessibilityLabel={t('Sleep timer active, {{seconds}} seconds remaining. Tap to cancel.', { seconds: sleepRemaining })}
                   >
                     <Ionicons name="moon" size={15} color={colors.accent} />
                     <AppText variant="caption" highlight style={styles.sleepBtnText}>
@@ -824,12 +826,12 @@ export function AudioPlayerModal({
                     <View style={styles.queueHeaderTitle}>
                       <Ionicons name="list" size={13} color={colors.textSecondary} />
                       <AppText variant="caption" style={styles.queueHeaderText}>
-                        UP NEXT IN QUEUE ({queue.length})
+                        {t('UP NEXT IN QUEUE ({{count}})', { count: queue.length })}
                       </AppText>
                     </View>
                     {queueIndex >= 0 && (
                       <AppText variant="caption" style={styles.queueIndexText}>
-                        Track {queueIndex + 1} of {queue.length}
+                        {t('Track {{current}} of {{total}}', { current: queueIndex + 1, total: queue.length })}
                       </AppText>
                     )}
                   </View>
@@ -854,7 +856,7 @@ export function AudioPlayerModal({
                             },
                           ]}
                           accessibilityRole="button"
-                          accessibilityLabel={`Play track ${idx + 1}: ${item.title}`}
+                          accessibilityLabel={t('Play track {{index}}: {{title}}', { index: idx + 1, title: item.title })}
                         >
                           <View style={styles.queueItemLeft}>
                             <AppText
@@ -896,7 +898,7 @@ export function AudioPlayerModal({
                 {t('No Audio Playing')}
               </AppText>
               <AppText variant="subtitle" style={styles.emptySubtitle}>
-                Choose any surah or reciter from the Quran tab or Audio Center to start listening.
+                {t('Choose any surah or reciter from the Quran tab or Audio Center to start listening.')}
               </AppText>
             </View>
           )}
@@ -916,7 +918,7 @@ export function AudioPlayerModal({
           >
             <Ionicons name="musical-notes-outline" size={16} color={colors.accent} />
             <AppText variant="rowTitle" style={styles.audioCenterBtnText}>
-              Open Audio Center (Reciters, Playlists, Queue)
+              {t('Open Audio Center (Reciters, Playlists, Queue)')}
             </AppText>
             <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textMuted} />
           </TouchableOpacity>
@@ -950,7 +952,7 @@ export function AudioPlayerModal({
                     {t('Audio Language & Reciter')}
                   </AppText>
                   <AppText variant="caption" style={styles.pickerSubtitle}>
-                    Arabic recitation + 11 translation languages ({NON_ARABIC_AUDIO_EDITIONS.length + 1} options)
+                    {t('Arabic recitation + {{languages}} translation languages ({{options}} options)', { languages: NON_ARABIC_AUDIO_EDITIONS.length, options: NON_ARABIC_AUDIO_EDITIONS.length + 1 })}
                   </AppText>
                 </View>
                 <TouchableOpacity
@@ -990,10 +992,10 @@ export function AudioPlayerModal({
                         highlight={activeSegment === 'arabic'}
                         style={styles.pickerOptionTitle}
                       >
-                        العربية · Arabic (Original)
+                        {t('العربية · Arabic (Original)')}
                       </AppText>
                       <AppText variant="caption" style={styles.pickerOptionSub} numberOfLines={2}>
-                        Reciter: {playback?.arabicReciterName || playback?.reciterName || 'Alafasy'}
+                        {t('Reciter: {{name}}', { name: playback?.arabicReciterName || playback?.reciterName || t('Alafasy') })}
                       </AppText>
                     </View>
                   </View>
@@ -1005,7 +1007,7 @@ export function AudioPlayerModal({
                 {/* Section Header */}
                 <View style={styles.pickerSectionDivider}>
                   <AppText variant="eyebrow" style={styles.pickerSectionLabel}>
-                    TRANSLATION VOICES (11 LANGUAGES)
+                    {t('TRANSLATION VOICES (11 LANGUAGES)')}
                   </AppText>
                 </View>
 
@@ -1027,7 +1029,7 @@ export function AudioPlayerModal({
                         },
                       ]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Select ${langTitle} - ${ed.englishName}`}
+                      accessibilityLabel={t('Select {{language}} - {{name}}', { language: langTitle, name: ed.englishName })}
                     >
                       <View style={styles.pickerOptionLeft}>
                         <AppText variant="body" style={styles.pickerFlag}>{flagEmoji}</AppText>

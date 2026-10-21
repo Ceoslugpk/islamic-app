@@ -109,7 +109,10 @@ export const CompactPrayerBar = React.memo(function CompactPrayerBar({
     </>
   );
 
-  const accessibilityLabel = `${t(prayerName)} at ${prayerTime}. Tap to return to top.`;
+  const accessibilityLabel = t('{{name}} at {{time}}. Tap to return to top.', {
+    name: t(prayerName),
+    time: prayerTime,
+  });
 
   if (onPress) {
     return (

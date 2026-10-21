@@ -36,6 +36,7 @@ import {
   QURAN_LANGUAGE_EDITIONS,
   getLanguageFlag,
   getEditionForLanguage,
+  getRecommendedQuranLanguage,
 } from '../lib/quranLanguages';
 import {
   NON_ARABIC_AUDIO_EDITIONS,
@@ -47,6 +48,7 @@ import {
 } from '../lib/quranAudio';
 import {
   setQuranTranslationLanguage,
+  setAutoLinkedQuranTranslationLanguage,
   getQuranLanguageBootstrapError,
 } from '../lib/quranLanguageState';
 import { setOnboardingDone } from '../lib/onboardingState';
@@ -91,6 +93,7 @@ export interface OnboardingTransactionDeps {
   getAudioTranslationBootstrapError: () => Error | null;
   setLanguage: (lang: AppLanguage) => Promise<void> | void;
   setQuranTranslationLanguage: (lang: string) => Promise<void>;
+  setAutoLinkedQuranTranslationLanguage: (lang: string) => Promise<void>;
   setAudioTranslationEdition: (id: string) => Promise<void>;
   setOnboardingDone: (done: boolean) => Promise<void>;
   prepareNativeLayoutDirection: (lang: AppLanguage) => void;
@@ -105,6 +108,7 @@ export interface OnboardingTransactionDeps {
 export interface OnboardingTransactionParams {
   selectedAppLang: AppLanguage;
   selectedQuranLang: string;
+  selectedQuranLanguageExplicit?: boolean;
   selectedAudioId: string;
   currentSettingsLanguage: AppLanguage;
   onComplete: () => void;
@@ -149,6 +153,8 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     throw new Error('setLanguage dependency is required for onboarding transaction');
   }
   const setQuranTranslationLanguageFn = deps.setQuranTranslationLanguage || setQuranTranslationLanguage;
+  const setAutoLinkedQuranTranslationLanguageFn =
+    deps.setAutoLinkedQuranTranslationLanguage || setAutoLinkedQuranTranslationLanguage;
   const setAudioTranslationEditionFn = deps.setAudioTranslationEdition || setAudioTranslationEdition;
   const setOnboardingDoneFn = deps.setOnboardingDone || setOnboardingDone;
   const prepareNativeLayoutDirectionFn = deps.prepareNativeLayoutDirection || prepareNativeLayoutDirection;
@@ -181,12 +187,21 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
       'Language persistence',
     );
 
-    // 2. Persist selected Quran translation language (honoring explicit choice or default linking)
-    await withTimeout(
-      setQuranTranslationLanguageFn(selectedQuranLang),
-      ONBOARDING_PERSISTENCE_TIMEOUT_MS,
-      'Quran language persistence',
-    ); // setQuranTranslationLanguage(selectedQuranLang)
+    // 2. Persist selected Quran translation language. An implicit choice is guarded
+    // against overwriting a persisted explicit picker choice.
+    if (params.selectedQuranLanguageExplicit === false) {
+      await withTimeout(
+        setAutoLinkedQuranTranslationLanguageFn(selectedQuranLang),
+        ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+        'Quran language persistence',
+      );
+    } else {
+      await withTimeout(
+        setQuranTranslationLanguageFn(selectedQuranLang),
+        ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+        'Quran language persistence',
+      ); // setQuranTranslationLanguage(selectedQuranLang)
+    }
 
     // 3. Persist selected Audio translation edition (honoring explicit choice or default linking)
     await withTimeout(
@@ -300,12 +315,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const defaultAppLang = useMemo(() => resolveDeviceAppLanguage(deviceCode), [deviceCode]);
 
-  const defaultQuranLang = useMemo(() => {
-    if (deviceCode && QURAN_LANGUAGE_EDITIONS.some((e) => e.languageCode === deviceCode.toLowerCase())) {
-      return deviceCode.toLowerCase();
-    }
-    return defaultAppLang;
-  }, [deviceCode, defaultAppLang]);
+  const defaultQuranLang = useMemo(() => getRecommendedQuranLanguage(defaultAppLang), [defaultAppLang]);
 
   const defaultAudioEditionId = useMemo(() => {
     if (deviceCode) {
@@ -720,7 +730,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 isDemoRtl && { textAlign: 'right', fontFamily: rtlBoldFont, fontSize: 14 },
               ]}
             >
-              {isDemoRtl ? currentStrings.welcome : 'ASSALAM O ALAIKUM'}
+              {isDemoRtl ? currentStrings.welcome : t('ASSALAM O ALAIKUM')}
             </AppText>
 
             {/* Editorial Serif headline matching Home greeting */}
@@ -740,7 +750,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               {isDemoRtl ? (
                 `${currentStrings.titleLine1} ${currentStrings.titleLine2}`
               ) : (
-                'Set up your\nlanguages'
+                t('Set up your\nlanguages')
               )}
             </AppText>
 
@@ -753,7 +763,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 isDemoRtl && { textAlign: 'right', fontFamily: rtlRegularFont, fontSize: isCompact ? 13 : 15 },
               ]}
             >
-              {isDemoRtl ? currentStrings.subtitle : 'Choose how you read and listen.'}
+              {isDemoRtl ? currentStrings.subtitle : t('Choose how you read and listen.')}
             </AppText>
           </Animated.View>
 

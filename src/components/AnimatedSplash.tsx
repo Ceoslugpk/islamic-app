@@ -77,8 +77,9 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
   useEffect(() => {
     let finished = false;
+    let cancelled = false;
     const finish = () => {
-      if (finished) return;
+      if (finished || cancelled) return;
       finished = true;
       setIsFading(true);
       onDoneRef.current();
@@ -89,10 +90,22 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
       slit.setValue(1);
       grow.setValue(1);
       const t = setTimeout(finish, 700);
-      return () => clearTimeout(t);
+      return () => {
+        cancelled = true;
+        clearTimeout(t);
+      };
     }
 
     const timings: [number, () => void][] = [];
+    const holds: number[] = [];
+    const scheduleHold = (fn: () => void, ms: number) => {
+      const id = setTimeout(() => {
+        if (cancelled) return;
+        fn();
+      }, ms) as unknown as number;
+      holds.push(id);
+      return id;
+    };
     // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1600ms
     const safetyTimer = setTimeout(finish, 1600);
     timings.push([1, () => clearTimeout(safetyTimer)]);
@@ -127,24 +140,34 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     });
 
     slitAnim.start(() => {
+      if (cancelled) return;
       growAnim.start(() => {
-        const hold = setTimeout(() => {
+        if (cancelled) return;
+        scheduleHold(() => {
           sweepAnim.start(() => {
-            const hold2 = setTimeout(() => {
+            if (cancelled) return;
+            scheduleHold(() => {
               setIsFading(true);
               fadeAnim.start(() => {
+                if (cancelled) return;
                 clearTimeout(safetyTimer);
                 finish();
               });
             }, 160);
-            timings.push([1, () => clearTimeout(hold2)]);
           });
         }, 325);
-        timings.push([1, () => clearTimeout(hold)]);
       });
     });
 
-    return () => timings.forEach(([, c]) => c());
+    return () => {
+      cancelled = true;
+      timings.forEach(([, c]) => c());
+      holds.forEach((h) => clearTimeout(h));
+      slitAnim.stop();
+      growAnim.stop();
+      sweepAnim.stop();
+      fadeAnim.stop();
+    };
   }, [reduced, slit, grow, sweep, fadeOut]);
 
   // Mask: a rectangle that grows SYMMETRICALLY from the slit (x≈58, the true

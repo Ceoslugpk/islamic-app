@@ -240,7 +240,7 @@ export function AudioMiniPlayer({
         onPress={onOpenAudio}
         activeOpacity={0.7}
         accessibilityRole="button"
-        accessibilityLabel={`Now playing ${playback.title} by ${playback.reciterName}. Tap to open audio player.`}
+        accessibilityLabel={t('Now playing {{title}} by {{reciter}}. Tap to open audio player.', { title: playback.title, reciter: playback.reciterName })}
       >
         <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg || colors.accentDim }]}>
           {status.isBuffering ? (
@@ -306,7 +306,7 @@ export function AudioMiniPlayer({
             { backgroundColor: status.isPlaying ? colors.accentDim : colors.accent },
           ]}
           accessibilityRole="button"
-          accessibilityLabel={status.isPlaying ? 'Pause audio' : 'Play audio'}
+          accessibilityLabel={status.isPlaying ? t('Pause audio') : t('Play audio')}
           disabled={status.isBuffering}
         >
           {status.isBuffering ? (

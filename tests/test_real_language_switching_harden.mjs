@@ -45,13 +45,18 @@ assert.ok(
   'settingsWriteQueue must implement serialized queuing'
 );
 assert.ok(
-  settingsCode.includes('await enqueueWrite(nextClean, (raw) =>'),
-  'settings.tsx must pass atomic readback verifier to enqueueWrite'
+  settingsCode.includes('enqueueMutation((latest) => computeNextLanguageSettings(latest, nextLang), nextClean, (raw) =>'),
+  'settings.tsx must pass atomic readback verifier into the queued language mutation'
 );
 
-// (b) Verify atomic readback checks language match
+// (b) Verify atomic readback checks language match inside the queued language mutation.
+// Anchor on the contiguous region so the verifier must live in the same queued call.
+const languageVerifier = settingsCode.match(
+  /enqueueMutation\(\(latest\) => computeNextLanguageSettings\(latest, nextLang\), nextClean, \(raw\) => \{([\s\S]*?)\}\)/
+);
+assert.ok(languageVerifier, 'settings.tsx must enqueue a language mutation carrying a readback verifier');
 assert.ok(
-  settingsCode.includes('parsed.language !== nextLang'),
+  languageVerifier[1].includes('parsed.language !== nextLang'),
   'Readback verifier must throw on language mismatch'
 );
 

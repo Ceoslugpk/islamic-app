@@ -18,8 +18,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import ts from 'typescript';
 import { DatabaseSync } from 'node:sqlite';
+import { compileEsmProductionModule } from './production_module_fallback.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const SRC_DIR = path.join(REPO_ROOT, 'src');
@@ -81,23 +81,21 @@ export const webKV = { get: () => null, set: () => {}, getAll: () => [], delete:
 
 // Transpile the REAL production module with only its platform imports redirected.
 const backupSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/backup.ts'), 'utf8');
-const patched = backupSrc
-  .replace("from 'react-native'", "from './stubRN.mjs'")
-  .replace("from '@react-native-async-storage/async-storage'", "from './stubAsyncStorage.mjs'")
-  .replace("from 'expo-sqlite'", "from './stubSqlite.mjs'")
-  .replace("from './db'", "from './stubDb.mjs'")
-  .replace("from './settings'", "from './stubSettings.mjs'")
-  .replace("from './webStorage'", "from './stubWebStorage.mjs'");
-
-fs.writeFileSync(
-  path.join(TMP_DIR, 'backup.mjs'),
-  ts.transpileModule(patched, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-    fileName: 'backup.ts',
-  }).outputText,
-);
-
-const backup = await import(path.join(TMP_DIR, 'backup.mjs'));
+const backup = await import(compileEsmProductionModule({
+  root: REPO_ROOT,
+  tmpDir: TMP_DIR,
+  sourceRelativePath: 'src/lib/backup.ts',
+  source: backupSrc,
+  outputName: 'backup.mjs',
+  replacements: [
+    ["from 'react-native'", "from './stubRN.mjs'"],
+    ["from '@react-native-async-storage/async-storage'", "from './stubAsyncStorage.mjs'"],
+    ["from 'expo-sqlite'", "from './stubSqlite.mjs'"],
+    ["from './db'", "from './stubDb.mjs'"],
+    ["from './settings'", "from './stubSettings.mjs'"],
+    ["from './webStorage'", "from './stubWebStorage.mjs'"],
+  ],
+}));
 const {
   BACKUP_FORMAT_VERSION,
   MAX_ROWS_PER_TABLE,
