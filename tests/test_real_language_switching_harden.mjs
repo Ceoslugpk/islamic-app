@@ -143,18 +143,11 @@ function isRtlLanguage(lang) {
 }
 
 function computeNextSettings(prev, nextLang) {
-  let tafsirSourceId = prev.tafsirSourceId;
-  if (nextLang === 'ar') {
-    tafsirSourceId = 'api-ibn-kathir-ar';
-  } else if (nextLang === 'ur') {
-    tafsirSourceId = 'api-ibn-kathir-urdu';
-  } else {
-    tafsirSourceId = 'jalalayn';
-  }
+  // Superseded silent canonical-tafsir remapping: the tafsir edition is
+  // preserved because there is no reliable explicit-vs-auto evidence.
   return {
     ...prev,
     language: nextLang,
-    tafsirSourceId,
   };
 }
 
@@ -274,7 +267,7 @@ console.log('\n--- Test A: Sequential en -> ur -> ar -> en Transitions ---');
   await new Promise((r) => setTimeout(r, 60));
 
   assert.equal(ctrl.settings.language, 'ur');
-  assert.equal(ctrl.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.equal(ctrl.settings.tafsirSourceId, 'jalalayn', 'tafsir edition must be preserved');
   assert.equal(ctrl.activeI18nLang, 'ur');
   assert.equal(nativeI18n.isRTL, true);
   assert.equal(ctrl.reloadTarget, 'ur');
@@ -293,7 +286,7 @@ console.log('\n--- Test A: Sequential en -> ur -> ar -> en Transitions ---');
   await new Promise((r) => setTimeout(r, 60));
 
   assert.equal(ctrl.settings.language, 'ar');
-  assert.equal(ctrl.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.equal(ctrl.settings.tafsirSourceId, 'jalalayn', 'tafsir edition must be preserved');
   assert.equal(ctrl.activeI18nLang, 'ar');
   assert.equal(nativeI18n.isRTL, true);
   assert.equal(ctrl.reloadTarget, 'ar');

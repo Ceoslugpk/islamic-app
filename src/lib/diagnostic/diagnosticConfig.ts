@@ -1,5 +1,5 @@
-export const DIAGNOSTIC_VERSION = '1.1.96';
-export const DIAGNOSTIC_VERSION_CODE = 115;
+export const DIAGNOSTIC_VERSION = '1.1.98';
+export const DIAGNOSTIC_VERSION_CODE = 117;
 
 /**
  * The build identity is DERIVED from the version, never written twice.

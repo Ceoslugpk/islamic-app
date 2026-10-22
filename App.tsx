@@ -48,6 +48,8 @@ import {
   applyRTL,
   lockNativeDirectionForUI,
   resolvePersistedLanguage,
+  markPendingLanguageDirection,
+  clearPendingLanguageDirection,
   getBootLanguage,
   isRTL,
   isRtlLanguage,
@@ -1863,20 +1865,47 @@ export default function App() {
   // AsyncStorage resolves while this component is still host-free.
   useEffect(() => {
     let mounted = true;
-    let settled = false;
-    const finish = (lang: ReturnType<typeof getBootLanguage>) => {
-      if (!mounted || settled) return;
-      settled = true;
+    let directionCommitted = false;
+    let appliedLanguage: ReturnType<typeof getBootLanguage> | null = null;
+
+    // A provisional mirror may release the UI on timeout. The durable read stays
+    // authoritative and may still correct the rendered language afterwards; only
+    // the one-shot native direction cannot be re-applied once the tree is locked,
+    // so that case is surfaced as a truthful pending-direction state instead of
+    // permanently keeping the stale mirror.
+    const applyResolvedLanguage = (lang: ReturnType<typeof getBootLanguage>) => {
+      if (!mounted) return;
+      if (appliedLanguage === lang && directionCommitted) return;
+      const previous = appliedLanguage;
       setAppLanguage(lang);
-      applyRTL(isRtlLanguage(lang));
-      lockNativeDirectionForUI();
+      if (!directionCommitted) {
+        applyRTL(isRtlLanguage(lang));
+        lockNativeDirectionForUI();
+        clearPendingLanguageDirection?.();
+        directionCommitted = true;
+      } else if (previous && isRtlLanguage(previous) !== isRtlLanguage(lang)) {
+        markPendingLanguageDirection(lang);
+      }
+      appliedLanguage = lang;
       setLangReady(true);
     };
-    const timeout = setTimeout(() => finish(getBootLanguage()), 5000);
-    resolvePersistedLanguage(true).then(finish).catch(() => finish(getBootLanguage()));
+
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const settleDurable = (lang: ReturnType<typeof getBootLanguage>) => {
+      if (timeout) clearTimeout(timeout);
+      timeout = null;
+      applyResolvedLanguage(lang);
+    };
+    timeout = setTimeout(() => {
+      timeout = null;
+      applyResolvedLanguage(getBootLanguage());
+    }, 5000);
+    resolvePersistedLanguage(true)
+      .then(settleDurable)
+      .catch(() => settleDurable(getBootLanguage()));
     return () => {
       mounted = false;
-      clearTimeout(timeout);
+      if (timeout) clearTimeout(timeout);
     };
   }, []);
 

@@ -39,13 +39,12 @@ assert.ok(
   settingsCode.includes('export async function persistLanguageChange('),
   'settings.tsx must export persistLanguageChange helper'
 );
+// Superseded silent canonical-tafsir remapping: without reliable explicit-vs-auto
+// evidence a language change must preserve the user's tafsir edition, so the old
+// getAutoLinkedTafsir helper/remap table is intentionally gone.
 assert.ok(
-  settingsCode.includes('export function getAutoLinkedTafsir('),
-  'settings.tsx must export getAutoLinkedTafsir helper'
-);
-assert.ok(
-  settingsCode.includes('export const CANONICAL_AUTO_LINKED_TAFSIR_IDS'),
-  'settings.tsx must export CANONICAL_AUTO_LINKED_TAFSIR_IDS'
+  !settingsCode.includes('getAutoLinkedTafsir') && !settingsCode.includes('nextTafsir'),
+  'settings.tsx must not auto-remap canonical tafsir sources on language change'
 );
 assert.ok(
   settingsCode.includes('export const CANONICAL_AUTO_LINKED_QURAN_LANGS'),
@@ -54,28 +53,29 @@ assert.ok(
 
 // (a2) settings.tsx Arabic & Hindi content auto-linking branches
 assert.ok(
-  settingsCode.includes("nextLang === 'ar'") && settingsCode.includes("setQuranTranslationLanguage('ar')"),
+  settingsCode.includes("nextLang === 'ar'") && settingsCode.includes("setAutoLinkedQuranTranslationLanguage('ar')"),
   'setLanguage must auto-link Arabic Quran translation language'
 );
+// Tafsir is user-owned: changing the interface language must not select an edition.
 assert.ok(
-  settingsCode.includes("'api-ibn-kathir-ar'"),
-  'setLanguage must auto-link Arabic Tafsir Ibn Kathir'
+  !settingsCode.includes("'api-ibn-kathir-ar'") && !settingsCode.includes("'api-ibn-kathir-urdu'"),
+  'setLanguage must preserve the current tafsir instead of switching to a canonical edition'
 );
 assert.ok(
-  settingsCode.includes("nextLang === 'hi'") && settingsCode.includes("setQuranTranslationLanguage('hi')"),
+  settingsCode.includes("nextLang === 'hi'") && settingsCode.includes("setAutoLinkedQuranTranslationLanguage('hi')"),
   'setLanguage must auto-link Hindi Quran translation language'
 );
 assert.ok(
-  settingsCode.includes("nextLang === 'ml'") && settingsCode.includes("setQuranTranslationLanguage('ml')"),
+  settingsCode.includes("nextLang === 'ml'") && settingsCode.includes("setAutoLinkedQuranTranslationLanguage('ml')"),
   'setLanguage must auto-link Malayalam Quran translation language'
 );
 assert.ok(
-  settingsCode.includes("nextLang === 'si'") && settingsCode.includes("setQuranTranslationLanguage('si')"),
+  settingsCode.includes("nextLang === 'si'") && settingsCode.includes("setAutoLinkedQuranTranslationLanguage('si')"),
   'setLanguage must auto-link Sinhala Quran translation language'
 );
 assert.ok(
   settingsCode.includes("nextLang === 'bn' || nextLang === 'ms' || nextLang === 'ta' || nextLang === 'id' || nextLang === 'ps'") &&
-    settingsCode.includes('await setQuranTranslationLanguage(nextLang)'),
+    settingsCode.includes('await setAutoLinkedQuranTranslationLanguage(nextLang)'),
   'setLanguage must auto-link Bengali, Malay, Tamil, Indonesian, and Pashto Quran translations'
 );
 assert.ok(i18nCode.includes("['ur', 'ar', 'ps'].some"), 'Pashto must use RTL layout direction');
@@ -98,7 +98,7 @@ assert.ok(
 );
 assert.ok(
   settingsCode.includes('enqueueSharedSettingsOperation(async () =>') &&
-    settingsCode.includes('return defaultSharedSettingsWriter(nextClean, verify)'),
+    settingsCode.includes('return defaultSharedSettingsWriter(nextClean, verify ?? verifySettingsReadback)'),
   'shared settings mutation must run the write+readback verifier inside one queued operation'
 );
 // The verifier must live INSIDE the queued language mutation (contiguous region),
@@ -318,20 +318,15 @@ function sanitizeMockSettings(raw) {
   };
 }
 
-const CANONICAL_TAFSIRS = new Set(['jalalayn', 'api-ibn-kathir-urdu', 'api-ibn-kathir-ar']);
 const CANONICAL_QURAN_LANGS = new Set(['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps']);
 
 function computeNextSettings(prev, nextLang) {
-  let tafsirSourceId = prev.tafsirSourceId;
-  if (CANONICAL_TAFSIRS.has(prev.tafsirSourceId)) {
-    if (nextLang === 'ar') tafsirSourceId = 'api-ibn-kathir-ar';
-    else if (nextLang === 'ur') tafsirSourceId = 'api-ibn-kathir-urdu';
-    else tafsirSourceId = 'jalalayn';
-  }
+  // Superseded policy: canonical tafsir IDs were silently remapped on language
+  // change. The tafsir edition is now preserved because there is no reliable
+  // explicit-vs-auto evidence to justify changing it.
   return sanitizeMockSettings({
     ...prev,
     language: nextLang,
-    tafsirSourceId,
   });
 }
 
@@ -400,18 +395,7 @@ class SettingsHarness {
       }
     }
 
-    if (CANONICAL_TAFSIRS.has(this.settings.tafsirSourceId)) {
-      if (nextLang === 'ur') {
-        this.settings.tafsirSourceId = 'api-ibn-kathir-urdu';
-        this.sideEffectsRun.push('tafsir:urdu');
-      } else if (nextLang === 'ar') {
-        this.settings.tafsirSourceId = 'api-ibn-kathir-ar';
-        this.sideEffectsRun.push('tafsir:ar');
-      } else {
-        this.settings.tafsirSourceId = 'jalalayn';
-        this.sideEffectsRun.push('tafsir:jalalayn');
-      }
-    }
+    // Tafsir is intentionally untouched here: the edition is user-owned.
 
     const currentAudioEdition = (await this.storage.getItem('quran-audio-translation-edition')) || 'en.walk';
     if (nextLang === 'ur') {
@@ -1580,9 +1564,8 @@ class SettingsHarness {
   // Verify side-effects executed in order
   assert.deepStrictEqual(harness.sideEffectsRun, [
     'quran-lang:ur',
-    'tafsir:urdu',
     'audio:shamshad',
-  ]);
+  ], 'tafsir must not be remapped as a language side effect');
 
   // Now verify that if a side-effect fails, main language persist is NOT lost
   storage.failNextWrite = true; // side-effect write might fail
@@ -1603,43 +1586,45 @@ class SettingsHarness {
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
 
-  // 1. en -> ar: Quran language 'ar', Tafsir 'api-ibn-kathir-ar', Audio unchanged
+  // Tafsir stays 'jalalayn' throughout: the interface language no longer selects
+  // a canonical edition (superseded silent-remap policy).
+  // 1. en -> ar: Quran language 'ar', Tafsir preserved, Audio unchanged
   await harness.onUserSelectLanguage('ar');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ar');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ar');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), null); // No fake Arabic translation audio
   const storedAr = storage.dump(STORAGE_KEY);
   assert.strictEqual(storedAr.language, 'ar');
-  assert.strictEqual(storedAr.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(storedAr.tafsirSourceId, 'jalalayn');
 
-  // 2. ar -> ur: Quran language 'ur', Tafsir 'api-ibn-kathir-urdu', Audio Shamshad
+  // 2. ar -> ur: Quran language 'ur', Tafsir preserved, Audio Shamshad
   await harness.onUserSelectLanguage('ur');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ur');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ur');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'ur.everyayah-shamshad');
   const storedUr = storage.dump(STORAGE_KEY);
   assert.strictEqual(storedUr.language, 'ur');
-  assert.strictEqual(storedUr.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(storedUr.tafsirSourceId, 'jalalayn');
 
-  // 3. ur -> ar: Quran language 'ar', Tafsir 'api-ibn-kathir-ar', Audio restored to default
+  // 3. ur -> ar: Quran language 'ar', Tafsir preserved, Audio restored to default
   await harness.onUserSelectLanguage('ar');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ar');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ar');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'en.walk'); // Restored to default
   const storedAr2 = storage.dump(STORAGE_KEY);
   assert.strictEqual(storedAr2.language, 'ar');
-  assert.strictEqual(storedAr2.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(storedAr2.tafsirSourceId, 'jalalayn');
 
-  // 4. ar -> en: Quran language 'en', Tafsir 'jalalayn', Audio remains default
+  // 4. ar -> en: Quran language 'en', Tafsir preserved, Audio remains default
   await harness.onUserSelectLanguage('en');
   await new Promise((r) => setTimeout(r, 70));
 
@@ -1790,16 +1775,16 @@ function extractLanguageAudioEditionsBody(code) {
   assert.strictEqual(storedHi.language, 'hi');
   assert.strictEqual(storedHi.tafsirSourceId, 'jalalayn');
 
-  // 2. hi -> ur: Quran language 'ur', Tafsir 'api-ibn-kathir-urdu', Audio Shamshad
+  // 2. hi -> ur: Quran language 'ur', Tafsir preserved, Audio Shamshad
   await harness.onUserSelectLanguage('ur');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ur');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ur');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'ur.everyayah-shamshad');
 
-  // 3. ur -> hi: Quran language 'hi', Tafsir 'jalalayn' (reset from auto-linked Urdu), Audio restored to default
+  // 3. ur -> hi: Quran language 'hi', Tafsir preserved, Audio restored to default
   await harness.onUserSelectLanguage('hi');
   await new Promise((r) => setTimeout(r, 70));
 
@@ -1808,15 +1793,15 @@ function extractLanguageAudioEditionsBody(code) {
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'hi');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'en.walk'); // Restored to default
 
-  // 4. hi -> ar: Quran language 'ar', Tafsir 'api-ibn-kathir-ar'
+  // 4. hi -> ar: Quran language 'ar', Tafsir preserved
   await harness.onUserSelectLanguage('ar');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ar');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ar');
 
-  // 5. ar -> hi: Quran language 'hi', Tafsir 'jalalayn' (reset from auto-linked Arabic)
+  // 5. ar -> hi: Quran language 'hi', Tafsir preserved
   await harness.onUserSelectLanguage('hi');
   await new Promise((r) => setTimeout(r, 70));
 
@@ -1886,16 +1871,16 @@ function extractLanguageAudioEditionsBody(code) {
   assert.strictEqual(storedMl.language, 'ml');
   assert.strictEqual(storedMl.tafsirSourceId, 'jalalayn');
 
-  // 2. ml -> ur: Quran language 'ur', Tafsir 'api-ibn-kathir-urdu', Audio Shamshad
+  // 2. ml -> ur: Quran language 'ur', Tafsir preserved, Audio Shamshad
   await harness.onUserSelectLanguage('ur');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ur');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ur');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'ur.everyayah-shamshad');
 
-  // 3. ur -> ml: Quran language 'ml', Tafsir 'jalalayn' (reset from auto-linked Urdu), Audio restored to default
+  // 3. ur -> ml: Quran language 'ml', Tafsir preserved, Audio restored to default
   await harness.onUserSelectLanguage('ml');
   await new Promise((r) => setTimeout(r, 70));
 
@@ -1904,15 +1889,15 @@ function extractLanguageAudioEditionsBody(code) {
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ml');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'en.walk'); // Restored to default
 
-  // 4. ml -> ar: Quran language 'ar', Tafsir 'api-ibn-kathir-ar'
+  // 4. ml -> ar: Quran language 'ar', Tafsir preserved
   await harness.onUserSelectLanguage('ar');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ar');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ar');
 
-  // 5. ar -> ml: Quran language 'ml', Tafsir 'jalalayn' (reset from auto-linked Arabic)
+  // 5. ar -> ml: Quran language 'ml', Tafsir preserved
   await harness.onUserSelectLanguage('ml');
   await new Promise((r) => setTimeout(r, 70));
 
@@ -1982,16 +1967,16 @@ function extractLanguageAudioEditionsBody(code) {
   assert.strictEqual(storedSi.language, 'si');
   assert.strictEqual(storedSi.tafsirSourceId, 'jalalayn');
 
-  // 2. si -> ur: Quran language 'ur', Tafsir 'api-ibn-kathir-urdu', Audio Shamshad
+  // 2. si -> ur: Quran language 'ur', Tafsir preserved, Audio Shamshad
   await harness.onUserSelectLanguage('ur');
   await new Promise((r) => setTimeout(r, 70));
 
   assert.strictEqual(harness.settings.language, 'ur');
-  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'ur');
   assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'ur.everyayah-shamshad');
 
-  // 3. ur -> si: Quran language 'si', Tafsir 'jalalayn' (reset from auto-linked Urdu), Audio restored to default
+  // 3. ur -> si: Quran language 'si', Tafsir preserved, Audio restored to default
   await harness.onUserSelectLanguage('si');
   await new Promise((r) => setTimeout(r, 70));
 

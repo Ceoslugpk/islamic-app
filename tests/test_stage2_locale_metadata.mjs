@@ -50,19 +50,24 @@ assert.ok(
 
 // (c) ur->en: English content defaults restored (quran translation, tafsir, audio)
 assert.ok(
-  settingsCode.includes("if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {\n            await setQuranTranslationLanguage('en');"),
+  settingsCode.includes("if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {\n        await setAutoLinkedQuranTranslationLanguage('en');"),
   'ur->en restores quran translation language to en'
 );
+// Superseded silent canonical-tafsir remapping: the tafsir edition choice is
+// now preserved across every language transition, including ur->en.
 assert.ok(
-  settingsCode.includes("currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu'") ||
-    settingsCode.includes("if (settings.tafsirSourceId === 'api-ibn-kathir-urdu') {\n          nextTafsir = 'jalalayn';"),
-  'ur->en restores tafsir source to jalalayn'
+  !settingsCode.includes('nextTafsir') && !settingsCode.includes('getAutoLinkedTafsir'),
+  'ur->en preserves the selected tafsir source instead of forcing jalalayn'
 );
 assert.ok(
-  settingsCode.includes("if (savedAudioEdition === 'ur.everyayah-shamshad') {\n            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);"),
-  'ur->en restores audio translation edition to default'
+  settingsCode.includes("if (!savedAudioEdition) {\n        await setAudioTranslationEdition('ur.everyayah-shamshad');"),
+  'audio is auto-linked only when no edition is stored'
 );
-ok('ur->en: English content defaults restored (translation lang, tafsir, audio edition)');
+assert.ok(
+  !settingsCode.includes("savedAudioEdition === 'ur.everyayah-shamshad'"),
+  'ur->en must not reset an existing audio edition'
+);
+ok('ur->en: English translation default restored; tafsir choice and existing audio preserved');
 
 // (d) repeated switches: both branches guarded by current-state checks (idempotent)
 assert.ok(

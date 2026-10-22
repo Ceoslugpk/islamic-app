@@ -87,6 +87,87 @@ const synchronousLanguageAtBoot = readSynchronousLanguageMirror();
 let persistedLanguage: AppLanguage | null = synchronousLanguageAtBoot;
 let languageResolved = false;
 
+/**
+ * Distinct language lifecycle values. `requested` is the user's latest target,
+ * `durable` is the last language confirmed in settings storage, `active` is the
+ * language currently rendered by i18n, and `pendingDirection` names a language
+ * whose layout direction still needs a restart to take effect.
+ */
+export interface LanguageLifecycleState {
+  requested: AppLanguage | null;
+  durable: AppLanguage | null;
+  active: AppLanguage;
+  pendingDirection: AppLanguage | null;
+  nativeDirectionLocked: boolean;
+}
+
+let requestedLanguage: AppLanguage | null = synchronousLanguageAtBoot;
+let durableLanguage: AppLanguage | null = null;
+let activeRenderedLanguage: AppLanguage = synchronousLanguageAtBoot ?? resolveDeviceAppLanguage(deviceLanguageCode);
+let pendingDirectionLanguage: AppLanguage | null = null;
+const languageLifecycleListeners = new Set<(state: LanguageLifecycleState) => void>();
+
+function notifyLanguageLifecycle(): void {
+  const state = getLanguageLifecycleState();
+  for (const listener of languageLifecycleListeners) {
+    try {
+      listener(state);
+    } catch {
+      // A UI subscriber must not affect language persistence or boot.
+    }
+  }
+}
+
+/** Subscribe to active/durable/pending language changes without adding a settings field. */
+export function subscribeLanguageLifecycle(listener: (state: LanguageLifecycleState) => void): () => void {
+  languageLifecycleListeners.add(listener);
+  return () => languageLifecycleListeners.delete(listener);
+}
+
+export function recordRequestedLanguage(language: AppLanguage): void {
+  if (isAppLanguage(language) && requestedLanguage !== language) {
+    requestedLanguage = language;
+    notifyLanguageLifecycle();
+  }
+}
+
+/** Mark a language durable only after its settings write and read-back succeed. */
+export function markLanguageDurable(language: AppLanguage): void {
+  if (!isAppLanguage(language)) return;
+  const changed = durableLanguage !== language || persistedLanguage !== language;
+  durableLanguage = language;
+  persistedLanguage = language;
+  languageResolved = true;
+  if (!writeSynchronousLanguageMirror(language)) {
+    console.warn('[i18n] Could not refresh the language mirror; durable storage remains authoritative.');
+  }
+  if (changed) notifyLanguageLifecycle();
+}
+
+export function markPendingLanguageDirection(language: AppLanguage): void {
+  if (isAppLanguage(language) && pendingDirectionLanguage !== language) {
+    pendingDirectionLanguage = language;
+    notifyLanguageLifecycle();
+  }
+}
+
+export function clearPendingLanguageDirection(): void {
+  if (pendingDirectionLanguage !== null) {
+    pendingDirectionLanguage = null;
+    notifyLanguageLifecycle();
+  }
+}
+
+export function getLanguageLifecycleState(): LanguageLifecycleState {
+  return {
+    requested: requestedLanguage,
+    durable: durableLanguage,
+    active: activeRenderedLanguage,
+    pendingDirection: pendingDirectionLanguage,
+    nativeDirectionLocked,
+  };
+}
+
 export async function resolvePersistedLanguage(forceFresh = false): Promise<AppLanguage> {
   if (!forceFresh && languageResolved && persistedLanguage) return persistedLanguage;
   try {
@@ -94,10 +175,7 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && isAppLanguage(parsed.language)) {
-        persistedLanguage = parsed.language;
-        if (!writeSynchronousLanguageMirror(parsed.language)) {
-          console.warn('[i18n] Could not refresh the language mirror; durable storage remains authoritative.');
-        }
+        markLanguageDurable(parsed.language);
       }
     }
   } catch {
@@ -184,8 +262,9 @@ export function __resetNativeDirectionAppliedForTest(): void {
 
 /** Lock the one-shot native direction after the durable boot language is resolved. */
 export function lockNativeDirectionForUI(): void {
-  if (Platform.OS !== 'web') {
+  if (Platform.OS !== 'web' && !nativeDirectionLocked) {
     nativeDirectionLocked = true;
+    notifyLanguageLifecycle();
   }
 }
 
@@ -226,11 +305,10 @@ export function prepareNativeLayoutDirection(lang: AppLanguage): void {
  * (no reload) we flip the document direction immediately.
  */
 export function setAppLanguage(lang: AppLanguage): void {
-  persistedLanguage = lang;
-  languageResolved = true;
-  if (!writeSynchronousLanguageMirror(lang)) {
-    console.warn('[i18n] Could not refresh the language mirror; durable storage remains authoritative.');
-  }
+  const changed = activeRenderedLanguage !== lang || requestedLanguage !== lang || pendingDirectionLanguage !== null;
+  activeRenderedLanguage = lang;
+  requestedLanguage = lang;
+  pendingDirectionLanguage = null;
   changeLanguage(lang);
   const isRtl = isRtlLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -240,6 +318,7 @@ export function setAppLanguage(lang: AppLanguage): void {
   // Native: layout direction changes take effect on the NEXT native/JS reload.
   // SettingsScreen calls prepareNativeLayoutDirection(lang) after storage is verified
   // and immediately before Updates.reloadAsync().
+  if (changed) notifyLanguageLifecycle();
 }
 
 export function getCurrentLanguage(): AppLanguage | string {

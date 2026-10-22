@@ -85,9 +85,11 @@ assert.ok(
   settingsCode.includes('if (generation !== languageSwitchGenerationRef.current) {\n        return;\n      }'),
   'settings.tsx setLanguage must abort superseded language switch side effects'
 );
+// Superseded silent canonical-tafsir remapping: the tafsir edition is now
+// preserved across language changes, so this side-effect block must stay gone.
 assert.ok(
-  settingsCode.includes('generation === languageSwitchGenerationRef.current && settingsRef.current.tafsirSourceId !== nextTafsir'),
-  'settings.tsx must guard tafsir side effect with generation check'
+  !settingsCode.includes('nextTafsir') && !settingsCode.includes('getAutoLinkedTafsir'),
+  'settings.tsx must not auto-remap the tafsir source during a language switch'
 );
 
 // 5. MosqueFinder Nominatim Service Layer

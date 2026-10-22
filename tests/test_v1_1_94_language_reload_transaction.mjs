@@ -399,9 +399,10 @@ console.log('1. Direction-changing reload rejection preserves the choice for col
     const englishAgain = findLanguageRow(afterFailure, 'English');
     assert.equal(englishAgain.props.disabled, false, 'no language row may remain disabled after fallback');
     assert.equal(englishAgain.props.accessibilityState.disabled, false, 'diagnostic/UI state must agree that the row is enabled');
-    assert.ok(
+    assert.equal(
       treeContainsText(afterFailure, 'Please restart the app'),
-      'the real screen must tell the user to restart after the choice was saved',
+      false,
+      'the no-restart fallback must not duplicate the pending-direction notice as a language error',
     );
     console.log('   PASS: persisted target + staged direction, old session retained, truthful no-restart outcome, controls unlocked');
   } finally {

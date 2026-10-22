@@ -266,13 +266,18 @@ console.log('=== v1.1.95 interaction-freeze production-path test ===');
   const base = settings.sanitizeSettings({ language: 'en', themeMode: 'paper' });
   const first = settings.persistLanguageChange(base, 'ur', storage);
   const second = settings.persistLanguageChange(base, 'ar', storage);
+  const deadline = (message) => new Promise((_, reject) => originalSetTimeout(() => reject(new Error(message)), 80));
   const boundedFirst = Promise.race([
     first,
-    new Promise((_, reject) => originalSetTimeout(() => reject(new Error('test deadline exceeded')), 80)),
+    deadline('test deadline exceeded'),
   ]);
   await assert.rejects(boundedFirst, /timed out/i, 'a hanging write must fail boundedly');
-  await second;
-  assert.equal(JSON.parse(await storage.getItem('islamic-settings')).language, 'ar');
+  await assert.rejects(
+    Promise.race([second, deadline('successor deadline exceeded')]),
+    /queue closed/i,
+    'a successor must reject promptly after the queue closes',
+  );
+  assert.equal(storage.maxActiveWrites, 1, 'a timed-out write must not overlap a successor');
 }
 
 // Real settings + real theme module: ten theme cycles and ten toggle writes settle on disk.

@@ -38,8 +38,10 @@ console.log('  ✓ Settings schema & sanitization: AppLanguage and defaults veri
 
 // 3. Auto-link logic verification
 assert.ok(settingsCode.includes("if (nextLang === 'ur')"), 'setLanguage contains urdu auto-link branch');
-assert.ok(settingsCode.includes("setQuranTranslationLanguage('ur')"), 'Auto-link switches quran translation to "ur"');
-assert.ok(settingsCode.includes("'api-ibn-kathir-urdu'"), 'Auto-link defaults tafsir to Urdu Ibn Kathir');
+assert.ok(settingsCode.includes("setAutoLinkedQuranTranslationLanguage('ur')"), 'Auto-link switches quran translation to "ur" through the explicit-preserving guard');
+// Superseded silent canonical-tafsir remapping: tafsir edition choices must be
+// preserved, so language changes no longer carry an Urdu Ibn Kathir auto-link.
+assert.ok(!settingsCode.includes('getAutoLinkedTafsir') && !settingsCode.includes('nextTafsir'), 'Language changes must preserve the selected tafsir');
 assert.ok(settingsCode.includes("'ur.everyayah-shamshad'"), 'Auto-link defaults translation audio to Shamshad Ali Khan');
 
 console.log('  ✓ Auto-link behavior: translation, tafsir, and translation-audio defaults verified');

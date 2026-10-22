@@ -28,7 +28,17 @@ import { useTheme } from '../lib/theme';
 import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
+import {
+  t,
+  prepareNativeLayoutDirection,
+  AppLanguage,
+  isRtlLanguage,
+  recordRequestedLanguage,
+  markPendingLanguageDirection,
+  clearPendingLanguageDirection,
+  getLanguageLifecycleState,
+  subscribeLanguageLifecycle,
+} from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import { SheetHeader } from '../components/layout/SheetHeader';
@@ -97,7 +107,11 @@ const LANGUAGE_WRITE_TIMEOUT_MS = 10_000;
 function withLanguageWriteTimeout<T>(task: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error('Language persistence timed out')),
+      () => {
+        const error = new Error('Language persistence timed out');
+        error.name = 'LanguagePersistenceTimeoutError';
+        reject(error);
+      },
       LANGUAGE_WRITE_TIMEOUT_MS,
     );
     task.then(
@@ -111,6 +125,54 @@ function withLanguageWriteTimeout<T>(task: Promise<T>): Promise<T> {
       },
     );
   });
+}
+
+function languageWriteFailureMessage(error: unknown, fallback: string): string {
+  const candidate = error as { name?: unknown; code?: unknown } | null;
+  if (candidate?.name === 'SettingsStorageTimeoutError' ||
+      candidate?.code === 'SETTINGS_STORAGE_QUEUE_CLOSED' ||
+      candidate?.code === 'SETTINGS_STORAGE_RECONCILIATION_REQUIRED') {
+    return t('Please restart the app to apply the new layout direction.');
+  }
+  return fallback;
+}
+export interface LanguageDirectionTransition {
+  valid: boolean;
+  targetRtl: boolean;
+  activeRtl: boolean;
+  nativeRtl: boolean;
+  directionChanges: boolean;
+  nativeDirectionStale: boolean;
+  requiresRestart: boolean;
+}
+
+/**
+ * Classifies a language transition from the locale registry, not from the
+ * module-init I18nManager flag. The native flag is only a staleness hint: it
+ * says whether the already-mounted native tree disagrees with the language that
+ * is actually rendered, which needs a restart even for a same-direction target.
+ */
+export function classifyLanguageDirectionTransition(input: {
+  platform: string;
+  currentLanguage: string | null | undefined;
+  nextLanguage: string;
+  nativeIsRTL: boolean;
+}): LanguageDirectionTransition {
+  const valid = APP_LANGUAGE_OPTIONS.some((option) => option.value === input.nextLanguage);
+  const targetRtl = isRtlLanguage(input.nextLanguage);
+  const activeRtl = isRtlLanguage(input.currentLanguage);
+  const nativeRtl = Boolean(input.nativeIsRTL);
+  const directionChanges = valid && targetRtl !== activeRtl;
+  const nativeDirectionStale = valid && input.platform !== 'web' && nativeRtl !== activeRtl;
+  return {
+    valid,
+    targetRtl,
+    activeRtl,
+    nativeRtl,
+    directionChanges,
+    nativeDirectionStale,
+    requiresRestart: valid && input.platform !== 'web' && (directionChanges || nativeDirectionStale),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -804,6 +866,15 @@ export default function SettingsScreen({
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
   const [switchingTargetLang, setSwitchingTargetLang] = useState<AppLanguage | null>(null);
+  const [languageLifecycle, setLanguageLifecycle] = useState(() =>
+    getLanguageLifecycleState?.() ?? {
+      requested: null,
+      durable: null,
+      active: settings.language,
+      pendingDirection: null,
+      nativeDirectionLocked: false,
+    },
+  );
   const [methodSheetOpen, setMethodSheetOpen] = useState(false);
   const [selectedMissionLanguage, setSelectedMissionLanguage] = useState(() => getMissionLanguage(settings.language));
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -830,6 +901,13 @@ export default function SettingsScreen({
       if (error) setLanguageError(error);
     }
   };
+
+  useEffect(() => {
+    if (!subscribeLanguageLifecycle || !getLanguageLifecycleState) return undefined;
+    return subscribeLanguageLifecycle(() => setLanguageLifecycle(getLanguageLifecycleState()));
+  }, []);
+
+  const pendingRestartLanguage = languageLifecycle.pendingDirection;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1270,13 +1348,14 @@ export default function SettingsScreen({
                 noteProbedPress('row', `language-${opt.value}`, isSwitchingLanguage);
                 if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
                   const currentLang = settings.language;
-                  const currentIsRtl = isRtlLanguage(currentLang);
-                  const nextIsRtl = isRtlLanguage(nextLang);
-                  const isDirectionChange = currentIsRtl !== nextIsRtl;
-                  const nativeDirectionMismatch =
-                    Platform.OS !== 'web' && I18nManager.isRTL !== nextIsRtl;
-                  const needsNativeReload =
-                    Platform.OS !== 'web' && (isDirectionChange || nativeDirectionMismatch);
+                  const transition = classifyLanguageDirectionTransition({
+                    platform: Platform.OS,
+                    currentLanguage: currentLang,
+                    nextLanguage: nextLang,
+                    nativeIsRTL: I18nManager.isRTL,
+                  });
+                  const needsNativeReload = transition.requiresRestart;
+                  recordRequestedLanguage?.(nextLang);
 
                   // Gated app-state record: what was asked for, and what happened to it.
                   const languageSwitch = beginLanguageSwitch(currentLang, nextLang, {
@@ -1306,12 +1385,16 @@ export default function SettingsScreen({
                         if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         languageSwitch.markResolved();
                         prepareNativeLayoutDirection(nextLang);
+                        if (Platform.OS === 'web') clearPendingLanguageDirection?.();
                         releaseLanguageSwitch(switchGeneration);
                       })
-                      .catch(() => {
+                      .catch((error) => {
                         if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         languageSwitch.markRejected();
-                        releaseLanguageSwitch(switchGeneration, t('Failed to save settings. Please try again.'));
+                        releaseLanguageSwitch(
+                          switchGeneration,
+                          languageWriteFailureMessage(error, t('Failed to save settings. Please try again.')),
+                        );
                       });
                     return;
                   }
@@ -1330,10 +1413,9 @@ export default function SettingsScreen({
                     if (switchGeneration !== languageSwitchGenerationRef.current) return;
                     // The switch neither restarted the app nor completed: say so.
                     languageSwitch.markNoRestart();
-                    releaseLanguageSwitch(
-                      switchGeneration,
-                      t('Please restart the app to apply the new layout direction.'),
-                    );
+                    // pendingDirection is the single localized reopen instruction.
+                    // Keep it visible until the next cold start verifies direction.
+                    releaseLanguageSwitch(switchGeneration);
                   };
 
                   withLanguageWriteTimeout(persistLanguageChange(settings, nextLang)).then(() => {
@@ -1341,6 +1423,7 @@ export default function SettingsScreen({
                     languageSwitch.markReloadRequested();
                     onPrepareReload?.();
                     prepareNativeLayoutDirection(nextLang);
+                    markPendingLanguageDirection?.(nextLang);
 
                     reloadTimerRef.current = setTimeout(() => {
                       if (switchGeneration !== languageSwitchGenerationRef.current) return;
@@ -1359,10 +1442,13 @@ export default function SettingsScreen({
                       });
                     }, 300);
                   })
-                    .catch(() => {
+                    .catch((error) => {
                       if (switchGeneration !== languageSwitchGenerationRef.current) return;
                       languageSwitch.markRejected();
-                      releaseLanguageSwitch(switchGeneration, t('Still could not load. Try again later.'));
+                      releaseLanguageSwitch(
+                        switchGeneration,
+                        languageWriteFailureMessage(error, t('Still could not load. Try again later.')),
+                      );
                     });
                 }
               };
@@ -1505,6 +1591,12 @@ export default function SettingsScreen({
             </View>
           ) : null}
         </Section>
+
+        {pendingRestartLanguage && (
+          <AppText variant="caption" tone="faint" style={styles.languagePendingNotice}>
+            {t('Language saved. Reopening the app is required to finish switching the layout direction.')}
+          </AppText>
+        )}
 
         {/* Appearance — theme and haptics */}
         <Section
@@ -2904,6 +2996,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     top: -5,
     marginStart: -8,
+  },
+  languagePendingNotice: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   langList: {
     width: '100%',

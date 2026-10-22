@@ -6,15 +6,27 @@ import { NamesLanguage } from './names99';
 import {
   setAudioTranslationEnabled,
   setAudioTranslationEdition,
-  DEFAULT_AUDIO_TRANSLATION_EDITION_ID,
   AUDIO_TRANSLATION_EDITION_KEY,
 } from './quranAudio';
-import { getQuranTranslationLanguage, setQuranTranslationLanguage } from './quranLanguageState';
-import { AppLanguage, setAppLanguage, getBootLanguage, isAppLanguage } from './i18n';
+import { getQuranTranslationLanguage, setAutoLinkedQuranTranslationLanguage } from './quranLanguageState';
+import {
+  AppLanguage,
+  setAppLanguage,
+  getBootLanguage,
+  isAppLanguage,
+  markLanguageDurable,
+  recordRequestedLanguage,
+} from './i18n';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
-import { createSerializedSettingsWriter, StoredValueVerifier, StringStorage } from './settingsWriteQueue';
+import {
+  createSerializedSettingsWriter,
+  SettingsStorageTimeoutError,
+  SettingsWriteState,
+  StoredValueVerifier,
+  StringStorage,
+} from './settingsWriteQueue';
 
 export type { AppLanguage };
 
@@ -193,8 +205,8 @@ const STORAGE_KEY = 'islamic-settings';
 export const METHOD_MIGRATION_KEY = 'islamic-settings-method-migrated-v16';
 
 // AsyncStorage normally settles quickly, but a native bridge can leave a Promise
-// pending forever after an activity/configuration transition.  A pending operation
-// must reject so the serialized queue can advance and the caller can unlock its UI.
+// pending after an activity/configuration transition. Reject the caller at the
+// timeout; the writer lane closes immediately and observes native settlement detached.
 const SETTINGS_STORAGE_OPERATION_TIMEOUT_MS = 10_000;
 
 type SettingsWriter = ReturnType<typeof createSerializedSettingsWriter<AppSettings>>;
@@ -204,7 +216,7 @@ function withStorageOperationTimeout<T>(operation: Promise<T>, operationName: st
     let settled = false;
     const timer = setTimeout(() => {
       settled = true;
-      reject(new Error(`Settings storage ${operationName} timed out`));
+      reject(new SettingsStorageTimeoutError(operationName as 'read' | 'write'));
     }, SETTINGS_STORAGE_OPERATION_TIMEOUT_MS);
 
     operation.then(
@@ -224,10 +236,47 @@ function withStorageOperationTimeout<T>(operation: Promise<T>, operationName: st
   });
 }
 
+interface TimedStorageFence {
+  pending: number;
+  unresolved: boolean;
+}
+
+// Symbol-backed process registry survives a JS bundle reload when the native
+// AsyncStorage module identity survives with it; it is intentionally not a
+// persisted settings field and disappears with a brand-new app process.
+const timedStorageFenceRegistryKey = Symbol.for('islamic.settings.timed-storage-fences');
+const timedStorageFenceGlobal = globalThis as typeof globalThis & { [key: symbol]: unknown };
+const timedStorageFences =
+  (timedStorageFenceGlobal[timedStorageFenceRegistryKey] as WeakMap<object, TimedStorageFence> | undefined) ??
+  new WeakMap<object, TimedStorageFence>();
+timedStorageFenceGlobal[timedStorageFenceRegistryKey] = timedStorageFences;
+
 function createTimedStorage(storage: StringStorage): StringStorage {
+  const owner = storage as object;
+  const fence = timedStorageFences.get(owner) ?? { pending: 0, unresolved: false };
+  timedStorageFences.set(owner, fence);
+
+  function track<T>(operation: Promise<T>, operationName: 'read' | 'write'): Promise<T> {
+    fence.pending += 1;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      fence.pending -= 1;
+      if (fence.pending === 0) fence.unresolved = false;
+    };
+    operation.then(finish, finish);
+    return withStorageOperationTimeout(operation, operationName).catch((error) => {
+      if (error instanceof SettingsStorageTimeoutError) fence.unresolved = true;
+      throw error;
+    });
+  }
+
   return {
-    setItem: (key, value) => withStorageOperationTimeout(storage.setItem(key, value), 'write'),
-    getItem: (key) => withStorageOperationTimeout(storage.getItem(key), 'read'),
+    setItem: (key, value) => track(storage.setItem(key, value), 'write'),
+    getItem: (key) => track(storage.getItem(key), 'read'),
+    isUnresolvedOperation: () => fence.unresolved,
+    markUnresolvedOperation: () => { fence.unresolved = true; },
   };
 }
 
@@ -510,12 +559,6 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   };
 }
 
-export const CANONICAL_AUTO_LINKED_TAFSIR_IDS: ReadonlySet<string> = new Set([
-  'jalalayn',
-  'api-ibn-kathir-urdu',
-  'api-ibn-kathir-ar',
-]);
-
 export const CANONICAL_AUTO_LINKED_QURAN_LANGS: ReadonlySet<string> = new Set([
   'en',
   'ur',
@@ -531,40 +574,93 @@ export const CANONICAL_AUTO_LINKED_QURAN_LANGS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Pure helper: returns the auto-linked tafsir source ID for a given target language,
- * or undefined if the current tafsir is a custom user selection that must be preserved.
- */
-export function getAutoLinkedTafsir(currentTafsirId: string, nextLang: AppLanguage): string | undefined {
-  if (!CANONICAL_AUTO_LINKED_TAFSIR_IDS.has(currentTafsirId)) {
-    return undefined;
-  }
-  if (nextLang === 'ar') {
-    return 'api-ibn-kathir-ar';
-  }
-  if (nextLang === 'ur') {
-    return 'api-ibn-kathir-urdu';
-  }
-  if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(nextLang)) {
-    return 'jalalayn';
-  }
-  return undefined;
-}
-
-/**
  * Pure helper: computes next AppSettings when changing language.
- * Guarantees all existing settings fields are preserved and sanitized,
- * while auto-linking canonical tafsir sources symmetrically.
+ * Guarantees all existing settings fields are preserved and sanitized.
+ * The tafsir edition is intentionally preserved: there is no reliable
+ * explicit-vs-auto evidence, so silently remapping it is not allowed.
  */
 export function computeNextLanguageSettings(
   prev: AppSettings,
   nextLang: AppLanguage
 ): AppSettings {
-  const targetTafsir = getAutoLinkedTafsir(prev.tafsirSourceId, nextLang);
   return sanitizeSettings({
     ...prev,
     language: nextLang,
-    ...(targetTafsir ? { tafsirSourceId: targetTafsir } : {}),
   });
+}
+
+
+/**
+ * One idempotent linked-language policy used by BOTH live same-direction
+ * switches and direction-changing restarts.
+ *
+ * - Quran translation changes only through the explicit-preserving auto-link
+ *   guard, and only while the current choice is still app-language-linked.
+ * - Audio is auto-linked only when no edition is stored yet. Without a reliable
+ *   explicit-vs-auto schema, an existing audio choice is preserved.
+ * - Tafsir is always preserved: without reliable explicit-vs-auto evidence the
+ *   current edition is never silently remapped.
+ * - No bulk Quran download is triggered here.
+ */
+async function applyLinkedLanguageEffects(nextLang: AppLanguage): Promise<void> {
+  if (nextLang === 'ur') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('ur');
+      }
+    } catch {}
+
+    try {
+      const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+      if (!savedAudioEdition) {
+        await setAudioTranslationEdition('ur.everyayah-shamshad');
+      }
+    } catch {}
+  } else if (nextLang === 'ar') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('ar');
+      }
+    } catch {}
+  } else if (nextLang === 'hi') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('hi');
+      }
+    } catch {}
+  } else if (nextLang === 'ml') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('ml');
+      }
+    } catch {}
+  } else if (nextLang === 'si') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('si');
+      }
+    } catch {}
+  } else if (nextLang === 'bn' || nextLang === 'ms' || nextLang === 'ta' || nextLang === 'id' || nextLang === 'ps') {
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage(nextLang);
+      }
+    } catch {}
+  } else {
+    // Switching back to English from an app language with a linked Quran translation.
+    try {
+      const currentQuranLang = getQuranTranslationLanguage();
+      if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+        await setAutoLinkedQuranTranslationLanguage('en');
+      }
+    } catch {}
+  }
 }
 
 
@@ -591,11 +687,15 @@ export async function persistLanguageChange(
     // Compute from the latest persisted snapshot inside the shared operation lane.
     // The caller's render snapshot can be older than a theme/toggle write already
     // queued ahead of this language switch.
-    return enqueueSharedSettingsMutation(
+    const persisted = await enqueueSharedSettingsMutation(
       (latest) => computeNextLanguageSettings(latest, nextLang),
       currentSettings,
       verify,
     );
+    markLanguageDurable?.(nextLang);
+    // Linked side effects run only after the durable language + readback.
+    await applyLinkedLanguageEffects(nextLang);
+    return persisted;
   }
 
   const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
@@ -605,7 +705,9 @@ export async function persistLanguageChange(
       getItem: storage.getItem ? (key: string) => storage.getItem!(key) : async () => null,
     };
     const writer = getSettingsWriter(stringStorage, storage as object);
+    await writer.reconcile();
     await writer(nextSettings, storage.getItem ? verify : undefined);
+    if (storage.getItem) markLanguageDurable?.(nextLang);
   }
   return nextSettings;
 }
@@ -622,6 +724,7 @@ const defaultSharedSettingsWriter = createSerializedSettingsWriter<AppSettings>(
   timedAsyncStorage,
   STORAGE_KEY,
   () => {},
+  { requireReconciliation: true },
 );
 
 const customSettingsWriters = new WeakMap<object, SettingsWriter>();
@@ -630,9 +733,26 @@ function getSettingsWriter(storage: StringStorage, cacheKey: object = storage as
   const key = cacheKey;
   const existing = customSettingsWriters.get(key);
   if (existing) return existing;
-  const writer = createSerializedSettingsWriter<AppSettings>(createTimedStorage(storage), STORAGE_KEY, () => {});
+  const writer = createSerializedSettingsWriter<AppSettings>(
+    createTimedStorage(storage),
+    STORAGE_KEY,
+    () => {},
+    { requireReconciliation: true },
+  );
   customSettingsWriters.set(key, writer);
   return writer;
+}
+
+function verifySettingsReadback(raw: string, expected: AppSettings): void {
+  let actual: unknown;
+  try {
+    actual = JSON.parse(raw);
+  } catch {
+    throw new Error('Settings storage readback verification mismatch: invalid JSON');
+  }
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error('Settings storage readback verification mismatch');
+  }
 }
 
 let sharedSettingsOperationTail: Promise<void> = Promise.resolve();
@@ -664,9 +784,10 @@ function enqueueSharedSettingsMutation(
   verify?: StoredValueVerifier<AppSettings>,
 ): Promise<AppSettings> {
   return enqueueSharedSettingsOperation(async () => {
+    await defaultSharedSettingsWriter.reconcile();
     const latest = await readLatestSettings(fallback);
     const nextClean = sanitizeSettings(updater(latest));
-    return defaultSharedSettingsWriter(nextClean, verify);
+    return defaultSharedSettingsWriter(nextClean, verify ?? verifySettingsReadback);
   });
 }
 
@@ -705,6 +826,7 @@ export async function enqueueSettingsUpdate(
     const current = sanitizeSettings(parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {});
     const nextClean = sanitizeSettings(updater(current));
     const writer = getSettingsWriter(storage);
+    await writer.reconcile();
     const persisted = await writer(nextClean, (raw) => {
       const stored = raw ? JSON.parse(raw) : null;
       if (!stored || typeof stored !== 'object') {
@@ -718,6 +840,20 @@ export async function enqueueSettingsUpdate(
   const task = standaloneQueue.then(op, op);
   standaloneQueue = task.then(() => undefined, () => undefined);
   return task;
+}
+
+/** Current storage lifecycle; `unresolved` is never treated as durable success. */
+export function getSettingsWriteState(storage: StringStorage = AsyncStorage): SettingsWriteState<unknown> {
+  if (storage === AsyncStorage) return defaultSharedSettingsWriter.getState();
+  const writer = customSettingsWriters.get(storage as object);
+  if (writer) return writer.getState();
+  return {
+    status: 'idle',
+    generation: 0,
+    value: null,
+    error: null,
+    reconciliationRequired: true,
+  };
 }
 
 /** Synchronous read for background callers. Defaults to enabled before storage loads. */
@@ -752,6 +888,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const settingsRef = useRef<AppSettings>(settings);
   const lastPersistedRef = useRef<AppSettings>(settings);
+  const settingsGenerationRef = useRef(0);
+  const settingsFieldGenerationRef = useRef<Partial<Record<keyof AppSettings, number>>>({});
   const locationMutatedDuringHydrationRef = useRef(false);
   const languageSwitchGenerationRef = useRef(0);
   const writeSettings = defaultSharedSettingsWriter;
@@ -764,14 +902,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     (
       nextClean: AppSettings,
       verify?: StoredValueVerifier<AppSettings>,
+      generation = settingsGenerationRef.current,
     ): Promise<AppSettings> => {
-      return enqueueSharedSettingsOperation(() => writeSettings(nextClean, verify))
+      return enqueueSharedSettingsOperation(async () => {
+        await writeSettings.reconcile();
+        return writeSettings(nextClean, verify ?? verifySettingsReadback);
+      })
         .then((persisted) => {
           lastPersistedRef.current = persisted;
           return persisted;
         })
         .catch((err) => {
-          if (settingsRef.current === nextClean) {
+          if (settingsGenerationRef.current === generation) {
             const rollback = lastPersistedRef.current;
             settingsRef.current = rollback;
             preloadRequestedMem = rollback.quranPreloadRequested;
@@ -788,14 +930,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       updater: (current: AppSettings) => AppSettings,
       optimistic: AppSettings,
       verify?: StoredValueVerifier<AppSettings>,
+      generation = settingsGenerationRef.current,
     ): Promise<AppSettings> => {
-      return enqueueSharedSettingsMutation(updater, optimistic, verify)
+      return enqueueSharedSettingsMutation(updater, optimistic, verify ?? verifySettingsReadback)
         .then((persisted) => {
           lastPersistedRef.current = persisted;
           return persisted;
         })
         .catch((err) => {
-          if (settingsRef.current === optimistic) {
+          if (settingsGenerationRef.current === generation) {
             const rollback = lastPersistedRef.current;
             settingsRef.current = rollback;
             preloadRequestedMem = rollback.quranPreloadRequested;
@@ -808,17 +951,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
+    const hydrationStartGeneration = settingsGenerationRef.current;
+    const hydrationStartFieldGenerations = { ...settingsFieldGenerationRef.current };
     (async () => {
       try {
-        const [raw, legacyFontSize, legacyShowTranslation, methodMigrated] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEY),
-          AsyncStorage.getItem(LEGACY_QURAN_FONT_SIZE),
-          AsyncStorage.getItem(LEGACY_QURAN_SHOW_TRANSLATION),
-          AsyncStorage.getItem(METHOD_MIGRATION_KEY),
+        const read = (key: string) => timedAsyncStorage.getItem(key).then(
+          (value) => ({ ok: true as const, value }),
+          () => ({ ok: false as const, value: null }),
+        );
+        const [rawRead, legacyFontRead, legacyShowRead, methodMigratedRead] = await Promise.all([
+          read(STORAGE_KEY),
+          read(LEGACY_QURAN_FONT_SIZE),
+          read(LEGACY_QURAN_SHOW_TRANSLATION),
+          read(METHOD_MIGRATION_KEY),
         ]);
-        const parsedRaw = raw ? JSON.parse(raw) : {};
-        const next: AppSettings = sanitizeSettings(parsedRaw);
-        const parsed = (parsedRaw && typeof parsedRaw === 'object' && !Array.isArray(parsedRaw))
+        const raw = rawRead.ok ? rawRead.value : null;
+        let parsedRaw: unknown = {};
+        let persistedSettingsKnown = rawRead.ok;
+        if (raw) {
+          try {
+            parsedRaw = JSON.parse(raw);
+          } catch {
+            persistedSettingsKnown = false;
+          }
+        }
+        const next: AppSettings = persistedSettingsKnown
+          ? sanitizeSettings(parsedRaw)
+          : { ...hydrationBaselineRef.current };
+        const parsed = (persistedSettingsKnown && parsedRaw && typeof parsedRaw === 'object' && !Array.isArray(parsedRaw))
           ? (parsedRaw as Record<string, unknown>)
           : {};
 
@@ -829,31 +989,40 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           next.language = getBootLanguage();
         }
 
+        // Keep the confirmed durable snapshot separate from migrations and live
+        // hydration changes. A failed hydration write must roll back to this
+        // snapshot, including its nested settings fields.
+        const confirmedHydrationBaseline = sanitizeSettings(next);
+
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
         let migrated = false;
+        let methodMigrationPending = false;
 
         // One-time migration: bump persisted methodId to 16 (Dubai official calculation)
         // if still on the legacy default (8). Does not touch custom methods or other user settings.
-        if (!methodMigrated && (!parsed.settingsVersion || Number(parsed.settingsVersion) < SETTINGS_VERSION)) {
+        const methodMigrated = methodMigratedRead.ok ? methodMigratedRead.value : null;
+        const legacyFontSize = legacyFontRead.ok ? legacyFontRead.value : null;
+        const legacyShowTranslation = legacyShowRead.ok ? legacyShowRead.value : null;
+        if (persistedSettingsKnown && methodMigratedRead.ok && !methodMigrated && (!parsed.settingsVersion || Number(parsed.settingsVersion) < SETTINGS_VERSION)) {
           if (parsed.methodId === 8) {
             next.methodId = 16;
             migrated = true;
           }
           next.settingsVersion = SETTINGS_VERSION;
           migrated = true;
-          AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
-        } else if (!methodMigrated) {
+          methodMigrationPending = true;
+        } else if (persistedSettingsKnown && methodMigratedRead.ok && !methodMigrated) {
           AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
         }
-        if (typeof parsed.quranFontSize !== 'number' && legacyFontSize) {
+        if (legacyFontRead.ok && typeof parsed.quranFontSize !== 'number' && legacyFontSize) {
           const legacy = parseInt(legacyFontSize, 10);
           if (!isNaN(legacy)) {
             next.quranFontSize = clampQuranFontSize(legacy);
             migrated = true;
           }
         }
-        if (typeof parsed.quranShowTranslation !== 'boolean' && legacyShowTranslation !== null) {
+        if (legacyShowRead.ok && typeof parsed.quranShowTranslation !== 'boolean' && legacyShowTranslation !== null) {
           next.quranShowTranslation = legacyShowTranslation === 'true';
           migrated = true;
         }
@@ -873,20 +1042,26 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // Preserve controls changed while AsyncStorage was hydrating. Without this,
         // a fast Quran reader tap is overwritten by the older storage snapshot.
         const live = settingsRef.current;
-        const baseline = hydrationBaselineRef.current;
         const changedDuringHydration = Object.keys(DEFAULTS).reduce((merged, key) => {
           const typedKey = key as keyof AppSettings;
-          if (!Object.is(live[typedKey], baseline[typedKey])) {
+          const fieldGeneration = settingsFieldGenerationRef.current[typedKey] ?? 0;
+          const startFieldGeneration = hydrationStartFieldGenerations[typedKey] ?? 0;
+          if (fieldGeneration > startFieldGeneration) {
             (merged as AppSettings)[typedKey] = live[typedKey] as never;
           }
           return merged;
         }, { ...next } as AppSettings);
         const hasLiveChanges = Object.keys(DEFAULTS).some((key) => {
           const typedKey = key as keyof AppSettings;
-          return !Object.is(live[typedKey], baseline[typedKey]);
+          return (settingsFieldGenerationRef.current[typedKey] ?? 0) >
+            (hydrationStartFieldGenerations[typedKey] ?? 0);
         });
         settingsRef.current = changedDuringHydration;
-        lastPersistedRef.current = changedDuringHydration;
+        if (persistedSettingsKnown) {
+          lastPersistedRef.current = migrated || hasLiveChanges
+            ? confirmedHydrationBaseline
+            : next;
+        }
         setSettings((prev) => {
           const locationChangedDuringHydration = locationMutatedDuringHydrationRef.current;
           if (!locationChangedDuringHydration) return changedDuringHydration;
@@ -901,7 +1076,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setActiveAdhanReciterId(changedDuringHydration.adhanReciterId || 'alafasy');
         setAppLanguage(changedDuringHydration.language);
         if (migrated || hasLiveChanges) {
-          enqueueWrite(changedDuringHydration).catch(() => {});
+          enqueueWrite(changedDuringHydration, undefined, hydrationStartGeneration)
+            .then(() => {
+              if (methodMigrationPending) {
+                AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
+              }
+            })
+            .catch(() => {});
         }
       } catch {
         // fall back to defaults, preserving boot language
@@ -916,11 +1097,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [enqueueWrite]);
 
   const updateSettings = useCallback((update: (current: AppSettings) => AppSettings): AppSettings => {
-    const clean = sanitizeSettings(update(settingsRef.current));
+    const previous = settingsRef.current;
+    const clean = sanitizeSettings(update(previous));
+    const generation = ++settingsGenerationRef.current;
+    for (const key of Object.keys(DEFAULTS) as (keyof AppSettings)[]) {
+      if (!Object.is(previous[key], clean[key])) settingsFieldGenerationRef.current[key] = generation;
+    }
     settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
     setSettings(clean);
-    enqueueMutation(update, clean).catch(() => {});
+    enqueueMutation(update, clean, undefined, generation).catch(() => {});
     return clean;
   }, [enqueueMutation]);
 
@@ -1019,6 +1205,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       // Snapshot settings and compute sanitized clean state once.
       const currentSnapshot = settingsRef.current;
       const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
+      const settingsGeneration = ++settingsGenerationRef.current;
+      if (!Object.is(currentSnapshot.language, nextClean.language)) {
+        settingsFieldGenerationRef.current.language = settingsGeneration;
+      }
+      recordRequestedLanguage?.(nextLang);
 
       // Make optimistic React state and ref reflect nextClean before awaiting the language queue,
       // so any subsequent setter snapshot includes the target language.
@@ -1035,7 +1226,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
               `Storage readback verification mismatch: expected "${nextLang}", got "${parsed?.language}"`
             );
           }
-        });
+        }, settingsGeneration);
       } catch (err) {
         // On failure: preserve any newer unrelated fields while restoring the previous language,
         // and ensure a queued newer selection cannot silently leave disk on the failed target language.
@@ -1064,147 +1255,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       if (settingsRef.current.language === nextLang) {
         setAppLanguage(nextLang);
       }
+      markLanguageDurable?.(nextLang);
 
       // Side-effects run ONLY AFTER the main verified language write.
-      // Side-effect write failures are trapped locally so the main language write is never lost.
-      let nextTafsir: string | undefined;
-      if (nextLang === 'ur') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('ur');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'api-ibn-kathir-urdu';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (!savedAudioEdition || savedAudioEdition === DEFAULT_AUDIO_TRANSLATION_EDITION_ID) {
-            await setAudioTranslationEdition('ur.everyayah-shamshad');
-          }
-        } catch {}
-      } else if (nextLang === 'ar') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('ar');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu') {
-          nextTafsir = 'api-ibn-kathir-ar';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-      } else if (nextLang === 'hi') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('hi');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'jalalayn';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-      } else if (nextLang === 'ml') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('ml');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'jalalayn';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-      } else if (nextLang === 'si') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('si');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'jalalayn';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-
-      } else if (nextLang === 'bn' || nextLang === 'ms' || nextLang === 'ta' || nextLang === 'id' || nextLang === 'ps') {
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage(nextLang);
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'jalalayn';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-      } else {
-        // Switching back to English from an app language with a linked Quran translation.
-        try {
-          const currentQuranLang = getQuranTranslationLanguage();
-          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
-            await setQuranTranslationLanguage('en');
-          }
-        } catch {}
-
-        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
-          nextTafsir = 'jalalayn';
-        }
-
-        try {
-          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-          if (savedAudioEdition === 'ur.everyayah-shamshad') {
-            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
-          }
-        } catch {}
-      }
-
-      if (nextTafsir && generation === languageSwitchGenerationRef.current && settingsRef.current.tafsirSourceId !== nextTafsir) {
-        // Ensure subsequent tafsir update preserves nextLang and cannot overwrite it with old language
-        updateSettings((prev) => (prev.language === nextLang ? {
-          ...prev,
-          tafsirSourceId: nextTafsir,
-        } : prev));
-      }
+      // The same idempotent policy is shared with the direction-changing path.
+      // Tafsir is deliberately absent here: the edition choice is preserved.
+      await applyLinkedLanguageEffects(nextLang);
     },
   };
 
