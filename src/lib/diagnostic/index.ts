@@ -1,5 +1,9 @@
 import React from 'react';
 import {
+  getDiagnosticEvents,
+  installDiagnosticEventObserver,
+} from './diagnosticEvents';
+import {
   isDiagnosticModeEnabled,
   DIAGNOSTIC_BUILD_ID,
   DIAGNOSTIC_VERSION,
@@ -135,6 +139,7 @@ import {
   DiagnosticActionableErrorGroup,
   DiagnosticControlCoverage,
   DiagnosticErrorContext,
+  registerDiagnosticEventsProvider,
 } from './diagnosticState';
 import {
   DiagScreenProvider,
@@ -328,6 +333,31 @@ export {
   getLocalizedUnavailabilityReason,
 };
 
+export {
+  recordDiagnosticEvent,
+  getDiagnosticEvents,
+  clearDiagnosticEvents,
+  buildDiagnosticEventsReport,
+  copyDiagnosticReport,
+  installDiagnosticEventObserver,
+  uninstallDiagnosticEventObserver,
+  getDiagnosticSubscriptionCount,
+  persistDiagnosticEventsSnapshot,
+  triggerDiagnosticEventsSnapshot,
+  MAX_DIAGNOSTIC_EVENTS,
+  ALLOWED_EVENT_FIELDS,
+} from './diagnosticEvents';
+
+export type {
+  DiagnosticEvent,
+  DiagnosticEventCategory,
+  DiagnosticPersistenceScope,
+  DiagnosticFailureStage,
+  DiagnosticEventStatus,
+  RecordDiagnosticEventInput,
+  DiagnosticEventsReport,
+} from './diagnosticEvents';
+
 /**
  * Boot-time installation of the gated diagnostic observer (global error handler,
  * unhandled promise rejections, network ledger, error-boundary recorder and the boot
@@ -335,4 +365,5 @@ export {
  * With the two-factor gate OFF this is a single boolean check: zero listeners, zero
  * timers, zero probes, zero props changed anywhere in the tree.
  */
+registerDiagnosticEventsProvider(getDiagnosticEvents, installDiagnosticEventObserver);
 installDiagnosticAppStateObserver();

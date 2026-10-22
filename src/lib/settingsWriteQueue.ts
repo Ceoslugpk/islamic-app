@@ -28,6 +28,37 @@ export interface SerializedSettingsWriter<T> {
 export interface SerializedSettingsWriterOptions {
   /** Settings storage needs a read after a JS reload before claiming a new write durable. */
   requireReconciliation?: boolean;
+  diagnosticObserver?: SettingsQueueDiagnosticObserver;
+}
+
+export type SettingsQueueLifecycleEvent = {
+  category:
+    | 'settings_write_pending'
+    | 'settings_write_confirmed'
+    | 'settings_write_rejected'
+    | 'settings_write_unresolved'
+    | 'queue_closed'
+    | 'reconciliation_started'
+    | 'reconciliation_completed';
+  generation?: number;
+  failureStage?: 'write' | 'readback';
+  status?: SettingsWriteStatus;
+  error?: unknown;
+};
+
+export type SettingsQueueDiagnosticObserver = (event: SettingsQueueLifecycleEvent) => void;
+
+let globalDiagnosticObserver: SettingsQueueDiagnosticObserver | null = null;
+
+export function registerSettingsQueueDiagnosticObserver(
+  observer: SettingsQueueDiagnosticObserver | null
+): () => void {
+  globalDiagnosticObserver = observer;
+  return () => {
+    if (globalDiagnosticObserver === observer) {
+      globalDiagnosticObserver = null;
+    }
+  };
 }
 
 export class SettingsStorageTimeoutError extends Error {
@@ -98,13 +129,29 @@ export function createSerializedSettingsWriter<T>(
     }
   };
 
+  const emitLifecycle = (event: SettingsQueueLifecycleEvent) => {
+    try {
+      options.diagnosticObserver?.(event);
+      globalDiagnosticObserver?.(event);
+    } catch {
+      // Diagnostic observation must be completely fire-and-forget
+    }
+  };
+
   const getState = (): SettingsWriteState<T> => ({ ...state });
 
   const reconcile = (): Promise<void> => {
     if (closed) return Promise.reject(closeError ?? new SettingsStorageQueueClosedError());
     if (storage.isUnresolvedOperation?.()) {
-      closed = true;
-      closeError = new SettingsStorageQueueClosedError();
+      if (!closed) {
+        closed = true;
+        closeError = new SettingsStorageQueueClosedError();
+        emitLifecycle({
+          category: 'queue_closed',
+          status: 'unresolved',
+          error: closeError,
+        });
+      }
       publish({ status: 'unresolved', error: closeError, reconciliationRequired: true });
       return Promise.reject(closeError);
     }
@@ -113,6 +160,11 @@ export function createSerializedSettingsWriter<T>(
 
     const reconcileGeneration = ++generation;
     publish({ status: 'pending', generation: reconcileGeneration, error: null });
+    emitLifecycle({
+      category: 'reconciliation_started',
+      generation: reconcileGeneration,
+      status: 'pending',
+    });
     reconciliationTask = storage.getItem(key).then(
       () => {
         reconciled = true;
@@ -122,15 +174,44 @@ export function createSerializedSettingsWriter<T>(
           reconciliationRequired: false,
           error: null,
         });
+        emitLifecycle({
+          category: 'reconciliation_completed',
+          generation: reconcileGeneration,
+          status: 'confirmed',
+        });
       },
       (error) => {
         if (isStorageTimeoutError(error)) {
+          const wasClosed = closed;
           closed = true;
           closeError = new SettingsStorageQueueClosedError();
           storage.markUnresolvedOperation?.();
           publish({ status: 'unresolved', generation: reconcileGeneration, error });
+          emitLifecycle({
+            category: 'settings_write_unresolved',
+            generation: reconcileGeneration,
+            failureStage: 'readback',
+            status: 'unresolved',
+            error,
+          });
+          if (!wasClosed) {
+            emitLifecycle({
+              category: 'queue_closed',
+              generation: reconcileGeneration,
+              failureStage: 'readback',
+              status: 'unresolved',
+              error: closeError,
+            });
+          }
         } else {
           publish({ status: 'failed', generation: reconcileGeneration, error });
+          emitLifecycle({
+            category: 'settings_write_rejected',
+            generation: reconcileGeneration,
+            failureStage: 'readback',
+            status: 'failed',
+            error,
+          });
         }
         throw error;
       },
@@ -150,32 +231,68 @@ export function createSerializedSettingsWriter<T>(
 
     const writeGeneration = ++generation;
     publish({ status: 'pending', generation: writeGeneration, error: null });
+    emitLifecycle({
+      category: 'settings_write_pending',
+      generation: writeGeneration,
+      status: 'pending',
+    });
     const task = tail.then(async () => {
       if (closed) {
         throw closeError ?? new SettingsStorageQueueClosedError();
       }
+      let stage: 'write' | 'readback' = 'write';
       try {
         await storage.setItem(key, JSON.stringify(value));
         if (verify) {
+          stage = 'readback';
           const raw = await storage.getItem(key);
           if (!raw) throw new Error('Storage readback failed: empty settings');
           verify(raw, value);
         }
         if (!closed) {
           publish({ status: 'confirmed', generation: writeGeneration, value, error: null });
+          emitLifecycle({
+            category: 'settings_write_confirmed',
+            generation: writeGeneration,
+            status: 'confirmed',
+          });
           onPersisted(value);
         }
         return value;
       } catch (error) {
         if (isStorageTimeoutError(error)) {
+          const wasClosed = closed;
           closed = true;
           closeError = new SettingsStorageQueueClosedError();
           storage.markUnresolvedOperation?.();
           // The native operation may still settle later, but it cannot call
           // onPersisted because this task already rejected and the lane is closed.
           publish({ status: 'unresolved', generation: writeGeneration, error });
+          emitLifecycle({
+            category: 'settings_write_unresolved',
+            generation: writeGeneration,
+            failureStage: stage,
+            status: 'unresolved',
+            error,
+          });
+          if (!wasClosed) {
+            emitLifecycle({
+              category: 'queue_closed',
+              generation: writeGeneration,
+              failureStage: stage,
+              status: 'unresolved',
+              error: closeError,
+            });
+          }
         } else if (state.status !== 'unresolved') {
           publish({ status: 'failed', generation: writeGeneration, error });
+          emitLifecycle({
+            category: 'settings_write_rejected',
+            generation: writeGeneration,
+            failureStage: stage,
+            status: 'failed',
+            error,
+          });
         }
         throw error;
       }

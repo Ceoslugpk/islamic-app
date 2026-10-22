@@ -43,6 +43,7 @@ import {
   formatByteSize,
   getEstimatedReportSizeBytes,
   getEstimatedSummarySizeBytes,
+  copyDiagnosticReport,
   TargetLayoutRecord,
   AutoProbeRecord,
   DiagnosticDefectReportItem,
@@ -451,6 +452,7 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
   const [copied, setCopied] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
   const [copiedProbes, setCopiedProbes] = useState(false);
+  const [copiedEvents, setCopiedEvents] = useState(false);
 
   // Collapsed sections by default — cheap initial mount and zero layout jump
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -675,6 +677,30 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
     }
   }, []);
 
+  const handleCopyEvents = useCallback(() => {
+    try {
+      const ok = copyDiagnosticReport();
+      if (ok) {
+        setCopiedEvents(true);
+        setExportStatus({
+          state: 'success',
+          message: `${t('Copied')} (${diagT('Copy Diagnostic Report')})`,
+        });
+        setTimeout(() => setCopiedEvents(false), 2500);
+      } else {
+        setExportStatus({
+          state: 'error',
+          message: t('Export failed'),
+        });
+      }
+    } catch {
+      setExportStatus({
+        state: 'error',
+        message: t('Export failed'),
+      });
+    }
+  }, []);
+
   const handleCopyPath = useCallback(() => {
     if (!exportStatus.filePath) return;
     try {
@@ -791,6 +817,19 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               icon={copied ? 'checkmark' : 'copy-outline'}
               onPress={handleCopy}
               accessibilityLabel={t('Copy')}
+              style={styles.actionBtn}
+            />
+          </View>
+        </View>
+
+        <View style={[styles.actionRowSecondary, isScreenRTL && styles.actionRowRTL, { marginTop: 8 }]}>
+          <View style={styles.flexOne}>
+            <OutlineButton
+              testID="copy-diagnostic-events-btn"
+              title={copiedEvents ? t('Copied') : diagT('Copy Diagnostic Report')}
+              icon={copiedEvents ? 'checkmark' : 'clipboard-outline'}
+              onPress={handleCopyEvents}
+              accessibilityLabel={diagT('Copy Diagnostic Report')}
               style={styles.actionBtn}
             />
           </View>

@@ -339,7 +339,7 @@ assert.ok(
   'setLanguage failure path must preserve newer unrelated fields while restoring prevLang'
 );
 assert.ok(
-  settingsCode.includes('enqueueWrite(restored)'),
+  settingsCode.includes('enqueueWrite(restored'),
   'setLanguage failure path must serialize the restored state'
 );
 
@@ -351,8 +351,8 @@ assert.ok(settingsCode.includes('locationMutatedDuringHydrationRef'), 'location-
 assert.ok(settingsCode.includes('await enqueueMutation(') && settingsCode.includes('Storage readback verification mismatch'),
   'language write and readback verification stay inside the shared queue');
 assert.ok(settingsCode.includes('const updateSettings = useCallback('), 'ordinary setters use a stable synchronous latest-ref update path');
-assert.ok(settingsCode.includes('const setThemeMode = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, themeMode }))'), 'theme updates synchronously snapshot latest settings');
-assert.ok(settingsCode.includes('const setAccentKey = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, accentKey }))'), 'accent updates synchronously snapshot latest settings');
+assert.ok(settingsCode.includes('const setThemeMode = useCallback(') && settingsCode.includes("updateSettings((prev) => ({ ...prev, themeMode }), 'theme')"), 'theme updates synchronously snapshot latest settings');
+assert.ok(settingsCode.includes('const setAccentKey = useCallback(') && settingsCode.includes("updateSettings((prev) => ({ ...prev, accentKey }), 'theme')"), 'accent updates synchronously snapshot latest settings');
 
 // Model/invariant test: simulated write queue ordering, concurrency, and rollback semantics.
 // (Note: This is a standalone model/invariant test of the queue algorithm, not an execution of the React provider closure).

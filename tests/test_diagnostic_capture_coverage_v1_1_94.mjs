@@ -25,6 +25,7 @@ const readSrc = (relPath) => fs.readFileSync(path.join(ROOT, relPath), 'utf8');
 const DIAG_DIR = path.join(ROOT, 'src/lib/diagnostic');
 const REAL_MODULES = new Set([
   'src/screens/SettingsScreen.tsx',
+  'src/lib/settingsWriteQueue.ts',
   ...fs.readdirSync(DIAG_DIR).map((f) => `src/lib/diagnostic/${f}`),
 ]);
 
@@ -35,11 +36,11 @@ console.log('=== DIAGNOSTIC CAPTURE COVERAGE SUITE (v1.1.94) ===\n');
 // ---------------------------------------------------------------------------
 const diagConfigSource = readSrc('src/lib/diagnostic/diagnosticConfig.ts');
 assert.ok(
-  diagConfigSource.includes('export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-${DIAGNOSTIC_VERSION}-EVIDENCE`'),
+  diagConfigSource.includes('export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-${DIAGNOSTIC_VERSION}-P1.1-EVIDENCE`'),
   'DIAGNOSTIC_BUILD_ID must stay derived from DIAGNOSTIC_VERSION'
 );
 const APP_VERSION = JSON.parse(readSrc('app.json')).expo.version;
-const EXPECTED_BUILD_ID = `RTL-STRUCT-${APP_VERSION}-EVIDENCE`;
+const EXPECTED_BUILD_ID = `RTL-STRUCT-${APP_VERSION}-P1.1-EVIDENCE`;
 console.log(`--- Build identity: ${EXPECTED_BUILD_ID} ---\n`);
 
 // ---------------------------------------------------------------------------

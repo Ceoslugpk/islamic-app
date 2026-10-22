@@ -27,6 +27,20 @@ import {
 } from './diagnosticConfig';
 import { useDiagScreen, useDiagParent, getGlobalActiveScreen, setDiagErrorRecorder } from './diagnosticScreenContext';
 import { KNOWN_SCREENS } from './diagnosticScreens';
+import type { DiagnosticEvent } from './diagnosticEvents';
+
+let diagnosticEventsProvider: (() => any[]) | null = null;
+let diagnosticEventsInstaller: (() => void) | null = null;
+
+export function registerDiagnosticEventsProvider(
+  provider: (() => any[]) | null,
+  installer?: (() => void) | null,
+): void {
+  diagnosticEventsProvider = provider;
+  if (installer !== undefined) {
+    diagnosticEventsInstaller = installer;
+  }
+}
 
 export type DiagnosticTargetId =
   | 'quran-landing-surah-card'
@@ -585,6 +599,7 @@ export interface DiagnosticReport {
   screensVisited: string[];
   screensUnvisited: string[];
   measurements: DiagnosticMeasurementReportItem[];
+  events?: DiagnosticEvent[];
   truncation?: {
     wasTruncated: boolean;
     trimmed: string[];
@@ -1606,6 +1621,7 @@ export function installDiagnosticAppStateObserver(): void {
   installDiagnosticUnhandledRejectionInterceptor();
   installDiagnosticNetworkInterceptor();
   recordConsistencyCheck();
+  diagnosticEventsInstaller?.();
 }
 
 export function isDiagnosticAppStateObserverInstalled(): boolean {
@@ -4142,6 +4158,7 @@ export function buildDiagnosticReport(): DiagnosticReport {
     screensVisited: visitedScreens,
     screensUnvisited: unvisitedScreens,
     measurements,
+    events: diagnosticEventsProvider ? diagnosticEventsProvider() : [],
   };
 }
 

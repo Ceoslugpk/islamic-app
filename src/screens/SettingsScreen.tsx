@@ -98,43 +98,78 @@ import {
   noteControlPress,
   beginLanguageSwitch,
   recordConsistencyCheck,
+  recordDiagnosticEvent,
+  copyDiagnosticReport,
+  diagT,
 } from '../lib/diagnostic';
 
 const APP_VERSION = appConfig.expo.version;
 
-const LANGUAGE_WRITE_TIMEOUT_MS = 10_000;
-
-function withLanguageWriteTimeout<T>(task: Promise<T>): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => {
-        const error = new Error('Language persistence timed out');
-        error.name = 'LanguagePersistenceTimeoutError';
-        reject(error);
-      },
-      LANGUAGE_WRITE_TIMEOUT_MS,
-    );
-    task.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
-function languageWriteFailureMessage(error: unknown, fallback: string): string {
+function languageWriteFailureMessage(
+  error: unknown,
+  fallback: string,
+  isDirectionChange = false,
+): string {
   const candidate = error as { name?: unknown; code?: unknown } | null;
-  if (candidate?.name === 'SettingsStorageTimeoutError' ||
-      candidate?.code === 'SETTINGS_STORAGE_QUEUE_CLOSED' ||
-      candidate?.code === 'SETTINGS_STORAGE_RECONCILIATION_REQUIRED') {
+  const isTimeoutOrQueueIssue =
+    candidate?.name === 'SettingsStorageTimeoutError' ||
+    candidate?.name === 'LanguagePersistenceTimeoutError' ||
+    candidate?.code === 'SETTINGS_STORAGE_QUEUE_CLOSED' ||
+    candidate?.code === 'SETTINGS_STORAGE_RECONCILIATION_REQUIRED';
+
+  if (isDirectionChange && isTimeoutOrQueueIssue) {
     return t('Please restart the app to apply the new layout direction.');
   }
   return fallback;
+}
+
+function getThemePersistenceMessage(state: { status: string; scope?: string; value?: unknown; error?: unknown } | null | undefined): string | null {
+  if (!state || state.scope !== 'theme' || state.status === 'idle') return null;
+  // Correction 1: Reconciliation status=confirmed, value=null is not a user write.
+  // Show Saved only for a confirmed relevant user mutation with a non-null confirmed value.
+  if (state.status === 'confirmed') {
+    return state.value !== null && state.value !== undefined ? t('Saved') : null;
+  }
+  if (state.status === 'pending') {
+    return t('Pending');
+  }
+  // Correction 2: Theme failures must NEVER use the native RTL restart instruction.
+  // Unresolved/queue-closed writes must explain reopen/relaunch and reconciliation.
+  if (state.status === 'unresolved') {
+    return t('Settings write could not be confirmed. Please reopen the app to reconcile settings.');
+  }
+  if (state.status === 'failed') {
+    return t('Failed to save settings. Please try again.');
+  }
+  return null;
+}
+
+function getGeneralSettingsFailureMessage(state: { status: string; scope?: string; error?: unknown } | null | undefined): string | null {
+  if (!state || state.scope === 'theme' || state.scope === 'language' || state.status === 'idle') {
+    return null;
+  }
+  // Correction 2: General settings failures in an appropriate general Settings location, not under Theme.
+  // General failures must NEVER use the native RTL restart instruction.
+  // Unresolved/queue-closed writes must explain reopen/relaunch and reconciliation.
+  if (state.status === 'unresolved') {
+    return t('Settings write could not be confirmed. Please reopen the app to reconcile settings.');
+  }
+  if (state.status === 'failed') {
+    return t('Failed to save settings. Please try again.');
+  }
+  return null;
+}
+
+function getLanguagePersistenceFailureMessage(state: { status: string; scope?: string; error?: unknown } | null | undefined): string | null {
+  if (!state || state.scope !== 'language' || state.status === 'idle') return null;
+  const candidate = state.error as { name?: unknown; code?: unknown } | null;
+  if (state.status === 'unresolved' || candidate?.name === 'SettingsStorageTimeoutError' || candidate?.code === 'SETTINGS_STORAGE_QUEUE_CLOSED' || candidate?.code === 'SETTINGS_STORAGE_RECONCILIATION_REQUIRED') {
+    return t('Please restart the app to apply the new layout direction.');
+  }
+  if (state.status === 'failed') {
+    return t('Failed to save settings. Please try again.');
+  }
+  return null;
 }
 export interface LanguageDirectionTransition {
   valid: boolean;
@@ -830,6 +865,7 @@ export default function SettingsScreen({
   const { height: screenHeight } = useWindowDimensions();
   const {
     settings,
+    settingsPersistence,
     updateSettings,
     setLanguage,
     setMethod,
@@ -863,6 +899,7 @@ export default function SettingsScreen({
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
   const [showRtlDiagnostics, setShowRtlDiagnostics] = useState(false);
+  const [copiedDiagReport, setCopiedDiagReport] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
   const [switchingTargetLang, setSwitchingTargetLang] = useState<AppLanguage | null>(null);
@@ -1210,6 +1247,10 @@ export default function SettingsScreen({
     haptic('light');
   }
 
+  const themePersistenceMessage = getThemePersistenceMessage(settingsPersistence);
+  const generalSettingsFailureMessage = getGeneralSettingsFailureMessage(settingsPersistence);
+  const languagePersistenceFailureMessage = getLanguagePersistenceFailureMessage(settingsPersistence);
+
   function selectCalculationMethod(m: typeof CALC_METHODS[number]) {
     setMethod(m.id);
     haptic('selection');
@@ -1293,6 +1334,32 @@ export default function SettingsScreen({
         ]}
       >
         <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
+
+        {generalSettingsFailureMessage ? (
+          <View
+            style={[
+              styles.langErrorBanner,
+              {
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+                marginBottom: 16,
+              },
+            ]}
+            accessibilityRole="alert"
+          >
+            <Ionicons name="alert-circle-outline" size={16} color={colors.accent} style={{ marginEnd: 6 }} />
+            <AppText
+              variant="caption"
+              highlight
+              style={[
+                styles.langErrorText,
+                { color: colors.accent, fontSize: layout.isCompact ? 12 : 13 },
+              ]}
+            >
+              {generalSettingsFailureMessage}
+            </AppText>
+          </View>
+        ) : null}
 
         {/* App language and writing direction */}
         <Section
@@ -1380,7 +1447,7 @@ export default function SettingsScreen({
                   // Case 1: Native reload is unnecessary only when the current native
                   // direction already matches the target direction. Web updates live.
                   if (!needsNativeReload) {
-                    withLanguageWriteTimeout(Promise.resolve(setLanguage(nextLang)))
+                    Promise.resolve(setLanguage(nextLang))
                       .then(() => {
                         if (switchGeneration !== languageSwitchGenerationRef.current) return;
                         languageSwitch.markResolved();
@@ -1393,7 +1460,7 @@ export default function SettingsScreen({
                         languageSwitch.markRejected();
                         releaseLanguageSwitch(
                           switchGeneration,
-                          languageWriteFailureMessage(error, t('Failed to save settings. Please try again.')),
+                          languageWriteFailureMessage(error, t('Failed to save settings. Please try again.'), false),
                         );
                       });
                     return;
@@ -1418,12 +1485,28 @@ export default function SettingsScreen({
                     releaseLanguageSwitch(switchGeneration);
                   };
 
-                  withLanguageWriteTimeout(persistLanguageChange(settings, nextLang)).then(() => {
+                  persistLanguageChange(settings, nextLang).then(() => {
                     if (switchGeneration !== languageSwitchGenerationRef.current) return;
                     languageSwitch.markReloadRequested();
+                    recordDiagnosticEvent?.({
+                      category: 'reload_requested',
+                      scope: 'language',
+                      status: 'pending',
+                      failureStage: 'reload',
+                    });
                     onPrepareReload?.();
-                    prepareNativeLayoutDirection(nextLang);
                     markPendingLanguageDirection?.(nextLang);
+                    try {
+                      prepareNativeLayoutDirection(nextLang);
+                    } catch {
+                      // Correction 4: Mirror failure after safe persistence.
+                      // Storage is safely saved in AsyncStorage, and pendingRestartLanguage
+                      // is already marked for the next boot. Release the switch without
+                      // setting a duplicate restart error banner, leaving pendingRestartLanguage
+                      // as the single truthful reopen instruction.
+                      releaseLanguageSwitch(switchGeneration);
+                      return;
+                    }
 
                     reloadTimerRef.current = setTimeout(() => {
                       if (switchGeneration !== languageSwitchGenerationRef.current) return;
@@ -1437,9 +1520,25 @@ export default function SettingsScreen({
                         handleReloadFallback();
                       }, RELOAD_TIMEOUT_MS);
 
-                      reloadAppAsync('App language changed').catch(() => {
-                        void handleReloadFallback();
-                      });
+                      reloadAppAsync('App language changed')
+                        .then(() => {
+                          recordDiagnosticEvent?.({
+                            category: 'reload_completed',
+                            scope: 'language',
+                            status: 'confirmed',
+                            failureStage: 'reload',
+                          });
+                        })
+                        .catch((error: unknown) => {
+                          recordDiagnosticEvent?.({
+                            category: 'reload_failed',
+                            scope: 'language',
+                            status: 'failed',
+                            failureStage: 'reload',
+                            error,
+                          });
+                          void handleReloadFallback();
+                        });
                     }, 300);
                   })
                     .catch((error) => {
@@ -1447,7 +1546,7 @@ export default function SettingsScreen({
                       languageSwitch.markRejected();
                       releaseLanguageSwitch(
                         switchGeneration,
-                        languageWriteFailureMessage(error, t('Still could not load. Try again later.')),
+                        languageWriteFailureMessage(error, t('Failed to save settings. Please try again.'), true),
                       );
                     });
                 }
@@ -1576,6 +1675,7 @@ export default function SettingsScreen({
                   borderTopColor: colors.borderSubtle,
                 },
               ]}
+              accessibilityRole="alert"
             >
               <Ionicons name="alert-circle-outline" size={16} color={colors.accent} style={{ marginEnd: 6 }} />
               <AppText
@@ -1593,8 +1693,13 @@ export default function SettingsScreen({
         </Section>
 
         {pendingRestartLanguage && (
-          <AppText variant="caption" tone="faint" style={styles.languagePendingNotice}>
+          <AppText variant="caption" tone="faint" style={styles.languagePendingNotice} accessibilityRole="alert">
             {t('Language saved. Reopening the app is required to finish switching the layout direction.')}
+          </AppText>
+        )}
+        {!pendingRestartLanguage && languagePersistenceFailureMessage && (
+          <AppText variant="caption" tone="faint" style={styles.languagePendingNotice} accessibilityRole="alert">
+            {languagePersistenceFailureMessage}
           </AppText>
         )}
 
@@ -1624,6 +1729,16 @@ export default function SettingsScreen({
               />
             }
           />
+          {themePersistenceMessage ? (
+            <AppText
+              variant="caption"
+              tone={settingsPersistence?.status === 'confirmed' ? undefined : 'faint'}
+              style={styles.languagePendingNotice}
+              accessibilityRole="alert"
+            >
+              {themePersistenceMessage}
+            </AppText>
+          ) : null}
           <Hairline />
           <Row
             title={t("Haptics")}
@@ -2539,6 +2654,30 @@ export default function SettingsScreen({
                 right={
                   <Ionicons
                     name={getForwardIcon('chevron')}
+                    size={iconSizes.inlineLg}
+                    color={colors.accent}
+                  />
+                }
+              />
+              <Hairline />
+              <Row
+                probeId="copy-diagnostic-report"
+                testID="copy-diagnostic-report-row"
+                title={diagT ? diagT('Copy Diagnostic Report') : 'Copy Diagnostic Report'}
+                desc={copiedDiagReport ? t('Copied') : (diagT ? diagT('Copy sanitized diagnostic event log to clipboard') : 'Copy sanitized diagnostic event log to clipboard')}
+                accessibilityRole="button"
+                accessibilityLabel={diagT ? diagT('Copy Diagnostic Report') : 'Copy Diagnostic Report'}
+                onPress={() => {
+                  const ok = copyDiagnosticReport ? copyDiagnosticReport() : false;
+                  if (ok) {
+                    haptic('light');
+                    setCopiedDiagReport(true);
+                    setTimeout(() => setCopiedDiagReport(false), 2500);
+                  }
+                }}
+                right={
+                  <Ionicons
+                    name={copiedDiagReport ? 'checkmark' : 'clipboard-outline'}
                     size={iconSizes.inlineLg}
                     color={colors.accent}
                   />

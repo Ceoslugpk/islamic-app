@@ -1,5 +1,5 @@
-export const DIAGNOSTIC_VERSION = '1.1.98';
-export const DIAGNOSTIC_VERSION_CODE = 117;
+export const DIAGNOSTIC_VERSION = '1.1.99';
+export const DIAGNOSTIC_VERSION_CODE = 118;
 
 /**
  * The build identity is DERIVED from the version, never written twice.
@@ -7,7 +7,7 @@ export const DIAGNOSTIC_VERSION_CODE = 117;
  * build, so a version bump that forgets to update a hardcoded id would silently
  * switch diagnostics off in the field (it did, in v1.1.93's first build).
  */
-export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-${DIAGNOSTIC_VERSION}-EVIDENCE`;
+export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-${DIAGNOSTIC_VERSION}-P1.1-EVIDENCE`;
 
 /**
  * Source/test marker: Exact deterministic build command for building the signed v1.1.92 diagnostic APK.

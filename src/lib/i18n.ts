@@ -101,6 +101,16 @@ export interface LanguageLifecycleState {
   nativeDirectionLocked: boolean;
 }
 
+export class LanguageMirrorPreparationError extends Error {
+  readonly code = 'LANGUAGE_MIRROR_PREPARATION_FAILED';
+  readonly recoverable = true;
+
+  constructor() {
+    super('The native language mirror could not be prepared for the next app boot');
+    this.name = 'LanguageMirrorPreparationError';
+  }
+}
+
 let requestedLanguage: AppLanguage | null = synchronousLanguageAtBoot;
 let durableLanguage: AppLanguage | null = null;
 let activeRenderedLanguage: AppLanguage = synchronousLanguageAtBoot ?? resolveDeviceAppLanguage(deviceLanguageCode);
@@ -144,10 +154,46 @@ export function markLanguageDurable(language: AppLanguage): void {
   if (changed) notifyLanguageLifecycle();
 }
 
+export type LanguageDiagnosticObserver = (event: {
+  category:
+    | 'language_mirror_success'
+    | 'language_mirror_failed'
+    | 'native_direction_prepared'
+    | 'pending_restart_recorded'
+    | 'pending_restart_cleared';
+  scope?: 'language';
+  status?: 'pending' | 'confirmed' | 'failed';
+  failureStage?: 'mirror';
+  errorName?: string;
+  errorCode?: string;
+  nativeDirectionTransition?: string;
+}) => void;
+
+let languageDiagnosticObserver: LanguageDiagnosticObserver | null = null;
+
+export function registerLanguageDiagnosticObserver(
+  observer: LanguageDiagnosticObserver | null
+): () => void {
+  languageDiagnosticObserver = observer;
+  return () => {
+    if (languageDiagnosticObserver === observer) {
+      languageDiagnosticObserver = null;
+    }
+  };
+}
+
 export function markPendingLanguageDirection(language: AppLanguage): void {
   if (isAppLanguage(language) && pendingDirectionLanguage !== language) {
     pendingDirectionLanguage = language;
     notifyLanguageLifecycle();
+    try {
+      languageDiagnosticObserver?.({
+        category: 'pending_restart_recorded',
+        scope: 'language',
+        status: 'pending',
+        nativeDirectionTransition: 'direction_changing',
+      });
+    } catch {}
   }
 }
 
@@ -155,6 +201,13 @@ export function clearPendingLanguageDirection(): void {
   if (pendingDirectionLanguage !== null) {
     pendingDirectionLanguage = null;
     notifyLanguageLifecycle();
+    try {
+      languageDiagnosticObserver?.({
+        category: 'pending_restart_cleared',
+        scope: 'language',
+        status: 'confirmed',
+      });
+    } catch {}
   }
 }
 
@@ -290,8 +343,32 @@ if (Platform.OS === 'web' || synchronousLanguageAtBoot) {
 export function prepareNativeLayoutDirection(lang: AppLanguage): void {
   const isRtl = isRtlLanguage(lang);
   if (!writeSynchronousLanguageMirror(lang)) {
-    throw new Error('Failed to write the language mirror for the next native boot');
+    try {
+      languageDiagnosticObserver?.({
+        category: 'language_mirror_failed',
+        scope: 'language',
+        status: 'failed',
+        failureStage: 'mirror',
+        errorName: 'LanguageMirrorPreparationError',
+        errorCode: 'LANGUAGE_MIRROR_PREPARATION_FAILED',
+      });
+    } catch {}
+    throw new LanguageMirrorPreparationError();
   }
+  try {
+    languageDiagnosticObserver?.({
+      category: 'language_mirror_success',
+      scope: 'language',
+      status: 'confirmed',
+      failureStage: 'mirror',
+    });
+    languageDiagnosticObserver?.({
+      category: 'native_direction_prepared',
+      scope: 'language',
+      status: 'confirmed',
+      nativeDirectionTransition: 'prepared',
+    });
+  } catch {}
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;

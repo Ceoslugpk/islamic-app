@@ -218,6 +218,7 @@ function createFixture({ currentLanguage, nativeIsRTL, reloadAppAsync }) {
       persistedLanguage = nextLanguage;
       return { ...currentSettings, language: nextLanguage };
     },
+    publishSettingsScope: () => {},
     QURAN_FONT_SIZE_MIN: 18,
     QURAN_FONT_SIZE_MAX: 40,
     QURAN_FONT_SIZE_STEP: 2,

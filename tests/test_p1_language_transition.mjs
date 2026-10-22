@@ -69,7 +69,7 @@ function execute(file, requireMap, sandboxExtras = {}) {
 
 const LOCALES = ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'];
 
-function loadRealI18n({ platform = 'android', syncLanguage = null, persistedLanguage = null, deviceLanguage = 'en' } = {}) {
+function loadRealI18n({ platform = 'android', syncLanguage = null, persistedLanguage = null, deviceLanguage = 'en', mirrorWriteResult = true } = {}) {
   const runtime = {
     language: 'en',
     nativeCalls: [],
@@ -116,7 +116,7 @@ function loadRealI18n({ platform = 'android', syncLanguage = null, persistedLang
     'react-native': { I18nManager: nativeDirection, Platform: { OS: platform } },
     './db': {
       loadQuranCache: (key) => runtime.syncCache[key] ?? null,
-      saveQuranCache: (key, value) => { runtime.syncCache[key] = value; return true; },
+      saveQuranCache: (key, value) => { if (mirrorWriteResult) runtime.syncCache[key] = value; return mirrorWriteResult; },
     },
     ...Object.fromEntries(LOCALES.map((code) => [`../locales/${code}.json`, { __esModule: true, default: {} }])),
   });
@@ -309,7 +309,7 @@ function loadSettingsScreenHelpers() {
       prepareNativeLayoutDirection: () => {},
       isRtlLanguage: (language) => ['ur', 'ar', 'ps'].includes(language),
     },
-    '../lib/settings': { __esModule: true, useSettings: () => ({ settings: {}, updateSettings: () => {}, setLanguage: async () => {} }), persistLanguageChange: async () => {} },
+    '../lib/settings': { __esModule: true, useSettings: () => ({ settings: {}, updateSettings: () => {}, setLanguage: async () => {} }), persistLanguageChange: async () => {}, publishSettingsScope: () => {} },
     '../lib/theme': {
       useTheme: () => ({ colors: new Proxy({}, { get: () => '#000' }), mode: 'paper' }),
       useThemeTokens: () => ({ tokens: new Proxy({}, { get: () => '#000' }) }),
@@ -331,6 +331,9 @@ function loadSettingsScreenHelpers() {
 function loadRealSettingsScreenForLifecycle(i18nModule, {
   reloadAppAsync = async () => {},
   persistLanguageChange = async (currentSettings) => currentSettings,
+  settingsPersistence = null,
+  setLanguage = async () => {},
+  publishSettingsScope = () => {},
 } = {}) {
   let hookIndex = 0;
   const stateSlots = [];
@@ -402,12 +405,13 @@ function loadRealSettingsScreenForLifecycle(i18nModule, {
       cardTokens: colorProxy, getBrandLogoSource: () => ({}),
     },
     '../lib/i18n': {
-      ...i18nModule, t: (key) => key, prepareNativeLayoutDirection: () => {},
+      ...i18nModule, t: (key) => key, prepareNativeLayoutDirection: i18nModule.prepareNativeLayoutDirection ?? (() => {}),
       isRtlLanguage: (language) => ['ur', 'ar', 'ps'].includes(language),
     },
     '../lib/settings': {
-      useSettings: () => ({ settings, updateSettings: () => {}, setLanguage: async () => {} }),
+      useSettings: () => ({ settings, settingsPersistence, updateSettings: () => {}, setLanguage }),
       persistLanguageChange,
+      publishSettingsScope,
     },
     '../lib/haptics': { useHaptics: () => ({ haptic() {} }) },
     '../lib/quranLanguageState': { useQuranLanguage: () => ({ edition: { language: 'en', editionIdentifier: 'en.sahih', name: 'Sahih' }, flag: 'GB' }) },
@@ -783,6 +787,17 @@ console.log('6b. Durable language changes only after verified production persist
   console.log('   PASS: provisional setAppLanguage is non-durable; only verified persistence advances durable state');
 }
 
+console.log('6c. Native language-mirror preparation failure is typed and distinct from storage failure');
+{
+  const mirror = loadRealI18n({ syncLanguage: 'en', persistedLanguage: 'en', mirrorWriteResult: false });
+  assert.throws(
+    () => mirror.module.prepareNativeLayoutDirection('ur'),
+    (error) => error?.code === 'LANGUAGE_MIRROR_PREPARATION_FAILED' && error?.name === 'LanguageMirrorPreparationError',
+    'a failed native language mirror must be classified as a mirror-preparation failure',
+  );
+  console.log('   PASS: mirror preparation failure is not reported as a storage read/write rejection');
+}
+
 console.log('7. Cold start restores durable language after a fallback mirror wins first');
 {
   const boot = await runAppBootWithLateDurable({ mirror: 'en', durable: 'ar' });
@@ -908,6 +923,244 @@ console.log('9d. Reload rejection leaves exactly one pending-direction reopen in
   const afterColdStartText = collectText(screen.render());
   assert.equal(afterColdStartText.includes(pendingNotice), false, 'verified cold-start resolution must clear the pending notice');
   console.log('   PASS: rejected reload keeps one localized pending notice and cold-start clearing removes it');
+}
+
+console.log('9e. SettingsScreen classifies a queue timeout without a second screen-level timeout');
+{
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const scheduledDelays = [];
+  globalThis.setTimeout = (_callback, delay) => {
+    scheduledDelays.push(delay);
+    return { delay };
+  };
+  globalThis.clearTimeout = () => {};
+  try {
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  const screen = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    setLanguage: async () => {
+      const error = new Error('settings write timed out');
+      error.name = 'SettingsStorageTimeoutError';
+      throw error;
+    },
+    persistLanguageChange: async () => {
+      const error = new Error('settings write timed out');
+      error.name = 'SettingsStorageTimeoutError';
+      throw error;
+    },
+  });
+  const tree = screen.render();
+  const languageToggle = (() => {
+    let found = null;
+    walkHostTree(tree, (node) => {
+      if (node.type === 'Pressable' && String(node.props?.accessibilityLabel).includes('Language / زبان') && String(node.props?.accessibilityLabel).includes('Collapsed')) found = node;
+    });
+    return found;
+  })();
+  assert.ok(languageToggle, 'the real language section must expose its collapsed toggle');
+  languageToggle.props.onPress();
+
+  // Test Case A: Same-direction timeout (Urdu -> Arabic, both RTL)
+  // Must distinguish same-direction generic save failure from native direction reopen guidance
+  const sameDirRow = findLanguageRow(screen.render(), 'العربية');
+  sameDirRow.props.onPress();
+  await tick();
+  let text = collectText(screen.render());
+  assert.equal(text.includes('Failed to save settings. Please try again.'), true, 'same-direction timeout must map to generic save failure');
+  assert.equal(text.includes('Please restart the app to apply the new layout direction.'), false, 'same-direction timeout must not show layout direction restart guidance');
+
+  // Test Case B: Direction-changing timeout (Urdu -> English, RTL -> LTR)
+  // Must provide native direction reopen guidance
+  const dirChangeRow = findLanguageRow(screen.render(), 'English');
+  dirChangeRow.props.onPress();
+  await tick();
+  text = collectText(screen.render());
+  assert.equal(text.includes('Please restart the app to apply the new layout direction.'), true, 'direction-changing queue timeout must map to the reopen-required settings message');
+  assert.equal(text.includes('Still could not load. Try again later.'), false, 'settings timeout must not use generic content-loading wording');
+  assert.equal(scheduledDelays.includes(10_000), false, 'the SettingsScreen must not add a second 10-second persistence timeout');
+  console.log('   PASS: typed queue timeout maps to the actionable reopen-required message on direction change and generic save failure on same-direction');
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+}
+
+console.log('9f. Native mirror failure keeps pending-restart presentation and reports its own class');
+{
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  screenI18n.module.prepareNativeLayoutDirection = () => {
+    const error = new Error('mirror rejected');
+    error.code = 'LANGUAGE_MIRROR_PREPARATION_FAILED';
+    error.name = 'LanguageMirrorPreparationError';
+    throw error;
+  };
+  const screen = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    persistLanguageChange: async (currentSettings, nextLanguage) => ({ ...currentSettings, language: nextLanguage }),
+    reloadAppAsync: async () => {},
+  });
+  screen.render();
+  screen.runEffects();
+  const tree = screen.render();
+  let languageToggle = null;
+  walkHostTree(tree, (node) => {
+    if (node.type === 'Pressable' && String(node.props?.accessibilityLabel).includes('Language / زبان') && String(node.props?.accessibilityLabel).includes('Collapsed')) languageToggle = node;
+  });
+  languageToggle.props.onPress();
+  const row = findLanguageRow(screen.render(), 'English');
+  row.props.onPress();
+  await delay(10);
+  const text = collectText(screen.render());
+  assert.equal(text.filter((value) => value === 'Language saved. Reopening the app is required to finish switching the layout direction.').length, 1, 'mirror failure must keep one truthful pending-direction notice');
+  assert.equal(text.includes('Please restart the app to apply the new layout direction.'), false, 'mirror failure must not duplicate the pending reopen notice');
+  console.log('   PASS: mirror failure preserves pending restart and is not mislabeled as content loading');
+}
+
+console.log('9g. Queue-closed persistence reaches the actual Settings UI');
+{
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  const screen = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'unresolved',
+      generation: 7,
+      value: null,
+      error: { code: 'SETTINGS_STORAGE_QUEUE_CLOSED' },
+      reconciliationRequired: true,
+      scope: 'language',
+    },
+  });
+  const text = collectText(screen.render());
+  assert.equal(text.includes('Please restart the app to apply the new layout direction.'), true, 'queue-closed state must reach the real SettingsScreen message');
+  assert.equal(text.includes('Still could not load. Try again later.'), false, 'queue closure must not use content-loading wording');
+  console.log('   PASS: SettingsScreen renders the typed queue-closed action');
+}
+
+console.log('9h. SettingsScreen surfaces pending and confirmed persistence states');
+{
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  const basePersistence = {
+    generation: 8,
+    value: null,
+    error: null,
+    reconciliationRequired: false,
+    scope: 'theme',
+  };
+  const pending = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: { ...basePersistence, status: 'pending' },
+  });
+  assert.equal(collectText(pending.render()).includes('Pending'), true, 'pending persistence must be visible in Settings');
+
+  // Correction 1: Reconciliation status with value=null must NOT show "Saved"
+  const reconciled = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: { ...basePersistence, status: 'confirmed', value: null },
+  });
+  assert.equal(collectText(reconciled.render()).includes('Saved'), false, 'reconciliation status with null value must never show Saved');
+
+  // Confirmed user mutation with non-null value MUST show "Saved"
+  const confirmed = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: { ...basePersistence, status: 'confirmed', value: { themeMode: 'ink' } },
+  });
+  assert.equal(collectText(confirmed.render()).includes('Saved'), true, 'confirmed persistence must be visible in Settings');
+  console.log('   PASS: pending and confirmed lifecycle labels reach the real SettingsScreen');
+}
+
+console.log('9i. Correction 2: Theme and general unresolved vs failed contract and scope separation');
+{
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  const unresolvedMsg = 'Settings write could not be confirmed. Please reopen the app to reconcile settings.';
+  const retryableMsg = 'Failed to save settings. Please try again.';
+  const rtlRestartMsg = 'Please restart the app to apply the new layout direction.';
+
+  // Theme unresolved write: must require reopen and reconciliation, never retryable and never RTL restart
+  const themeUnresolved = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'unresolved',
+      generation: 9,
+      value: null,
+      error: new Error('theme storage timeout'),
+      reconciliationRequired: true,
+      scope: 'theme',
+    },
+  });
+  const themeUnresolvedText = collectText(themeUnresolved.render());
+  assert.equal(themeUnresolvedText.includes(rtlRestartMsg), false, 'theme failure must never use native RTL restart instruction');
+  assert.equal(themeUnresolvedText.includes(retryableMsg), false, 'unresolved theme write must not be shown as retryable');
+  assert.equal(themeUnresolvedText.includes(unresolvedMsg), true, 'unresolved theme write must explain reopen and reconciliation');
+
+  // Theme failed/rejected write: remains retryable
+  const themeFailed = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'failed',
+      generation: 9,
+      value: null,
+      error: new Error('theme storage rejected'),
+      reconciliationRequired: false,
+      scope: 'theme',
+    },
+  });
+  const themeFailedText = collectText(themeFailed.render());
+  assert.equal(themeFailedText.includes(rtlRestartMsg), false, 'theme rejected write must not use RTL restart instruction');
+  assert.equal(themeFailedText.includes(retryableMsg), true, 'rejected theme write remains retryable');
+  assert.equal(themeFailedText.includes(unresolvedMsg), false, 'rejected theme write is not unresolved');
+
+  // General unresolved write: must require reopen and reconciliation, never retryable and never RTL restart
+  const generalUnresolved = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'unresolved',
+      generation: 10,
+      value: null,
+      error: new Error('general settings write timeout'),
+      reconciliationRequired: true,
+      scope: 'settings',
+    },
+  });
+  const generalUnresolvedText = collectText(generalUnresolved.render());
+  assert.equal(generalUnresolvedText.includes(rtlRestartMsg), false, 'general settings failure must never use native RTL restart instruction');
+  assert.equal(generalUnresolvedText.includes(retryableMsg), false, 'unresolved general settings write must not be shown as retryable');
+  assert.equal(generalUnresolvedText.includes(unresolvedMsg), true, 'unresolved general write must explain reopen and reconciliation');
+
+  // General failed/rejected write: remains retryable
+  const generalFailed = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'failed',
+      generation: 10,
+      value: null,
+      error: new Error('general settings write rejected'),
+      reconciliationRequired: false,
+      scope: 'settings',
+    },
+  });
+  const generalFailedText = collectText(generalFailed.render());
+  assert.equal(generalFailedText.includes(rtlRestartMsg), false, 'general rejected write must not use RTL restart instruction');
+  assert.equal(generalFailedText.includes(retryableMsg), true, 'rejected general write remains retryable');
+  assert.equal(generalFailedText.includes(unresolvedMsg), false, 'rejected general write is not unresolved');
+
+  console.log('   PASS: unresolved theme/general requires reopen while rejected remains retryable');
+}
+
+console.log('9j. Correction 1: Direction-changing language failure renders only in Language ownership without stale theme message');
+{
+  const screenI18n = loadRealI18n({ syncLanguage: 'ur', persistedLanguage: 'ur' });
+  let publishedScope = null;
+  const screen = loadRealSettingsScreenForLifecycle(screenI18n.module, {
+    settingsPersistence: {
+      status: 'unresolved',
+      generation: 11,
+      value: null,
+      error: { code: 'SETTINGS_STORAGE_QUEUE_CLOSED' },
+      reconciliationRequired: true,
+      scope: 'language',
+    },
+    publishSettingsScope: (scope) => { publishedScope = scope; },
+  });
+
+  const tree = screen.render();
+  const text = collectText(tree);
+  // Direction-changing language failure must appear in language ownership (restart instruction)
+  assert.equal(text.includes('Please restart the app to apply the new layout direction.'), true, 'language failure must show in language section');
+  // It must NOT show any theme message (neither Saved, nor Pending, nor retryable save failure, nor unresolved theme message)
+  assert.equal(text.includes('Saved'), false, 'language failure must not show Saved in theme');
+  assert.equal(text.includes('Settings write could not be confirmed. Please reopen the app to reconcile settings.'), false, 'language failure must not show unresolved theme message');
+  console.log('   PASS: language failure appears only in Language ownership with zero stale theme message');
 }
 
 console.log('10. English -> Urdu -> Arabic -> Pashto -> English');

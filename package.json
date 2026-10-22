@@ -1,6 +1,6 @@
 {
   "name": "islamic-app",
-  "version": "1.1.98",
+  "version": "1.1.99",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/amiri": "^0.4.1",

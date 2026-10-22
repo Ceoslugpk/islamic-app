@@ -11,6 +11,31 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import ts from 'typescript';
+import * as settingsQueue from '../src/lib/settingsWriteQueue.ts';
+const { createSerializedSettingsWriter, SettingsStorageTimeoutError } = settingsQueue;
+
+function createTimedStorage(storage) {
+  return {
+    async getItem(key) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new SettingsStorageTimeoutError('read')), 10_000);
+        Promise.resolve(storage.getItem(key)).then(
+          (val) => { clearTimeout(timer); resolve(val); },
+          (err) => { clearTimeout(timer); reject(err); }
+        );
+      });
+    },
+    async setItem(key, value) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new SettingsStorageTimeoutError('write')), 10_000);
+        Promise.resolve(storage.setItem(key, value)).then(
+          () => { clearTimeout(timer); resolve(); },
+          (err) => { clearTimeout(timer); reject(err); }
+        );
+      });
+    },
+  };
+}
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 
@@ -294,7 +319,7 @@ function walkHostTree(node, visit) {
   walkHostTree(node.props?.children, visit);
 }
 
-function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timers, preparationEvents }) {
+function createSettingsFixture({ nativeIsRTL, setLanguage, storage, reloadAppAsync, timers, preparationEvents }) {
   const setterEvents = [];
   const settingsState = {
     language: 'en',
@@ -323,13 +348,31 @@ function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timer
     locationMode: 'manual',
   };
 
+  let activeSetLanguage = setLanguage;
+  let activePersistLanguageChange = async (_settings, language) => { persistedLanguageWrites.push(language); };
+  if (!activeSetLanguage && storage) {
+    const timedStorage = createTimedStorage(storage);
+    const writer = createSerializedSettingsWriter(timedStorage, 'islamic-settings', () => {}, { requireReconciliation: true });
+    activeSetLanguage = async (nextLang) => {
+      settingsState.language = nextLang;
+      await writer.reconcile();
+      await writer(settingsState);
+    };
+    activePersistLanguageChange = async (_settings, language) => {
+      persistedLanguageWrites.push(language);
+      settingsState.language = language;
+      await writer.reconcile();
+      await writer(settingsState);
+    };
+  }
+
   // The direction-changing path persists via the settings MODULE's own
   // persistLanguageChange (not the context's setLanguage), so spy on it here.
   const persistedLanguageWrites = [];
   const useSettings = () => ({
     settings: settingsState,
     updateSettings(updater) { Object.assign(settingsState, updater(settingsState)); },
-    setLanguage,
+    setLanguage: activeSetLanguage,
     setMethod: () => {},
     setTimeFormat: () => {},
     setReminders: () => {},
@@ -382,7 +425,12 @@ function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timer
     },
     expo: { reloadAppAsync },
     '../lib/i18n': i18n,
-    '../lib/settings': { __esModule: true, useSettings, persistLanguageChange: async (_settings, language) => { persistedLanguageWrites.push(language); }, },
+    '../lib/settings': {
+      __esModule: true,
+      useSettings,
+      persistLanguageChange: activePersistLanguageChange,
+      publishSettingsScope: () => {},
+    },
     '../lib/theme': {
       useTheme: () => ({ colors: themeValue, mode: 'paper' }),
       useThemeTokens: () => ({ tokens: themeValue }),
@@ -509,7 +557,10 @@ console.log('2. A never-settling language write unlocks the real Settings langua
   try {
     const fixture = createSettingsFixture({
       nativeIsRTL: false,
-      setLanguage: () => new Promise(() => {}),
+      storage: {
+        getItem: async (key) => JSON.stringify({ language: 'en' }),
+        setItem: () => new Promise(() => {}),
+      },
       reloadAppAsync: async () => {},
       timers,
       preparationEvents: [],
@@ -529,15 +580,72 @@ console.log('2. A never-settling language write unlocks the real Settings langua
       !timers.some((timer) => timer.delay === 10_000 && !timer.fired),
       'a failed language write must not arm a rollback timer (the choice is preserved, not reverted)',
     );
+    // Restored non-weakened assertion: same-direction write failure surfaces exact retryable save failure.
     assert.ok(
       fixture.setterEvents.some((event) => event.value === 'Failed to save settings. Please try again.'),
-      'a failed language write must surface an error to the user',
+      'a failed same-direction language write must surface generic retryable save failure',
+    );
+    assert.ok(
+      !fixture.setterEvents.some((event) => event.value === 'Please restart the app to apply the new layout direction.'),
+      'a failed same-direction language write must not surface layout direction restart error',
     );
     assert.ok(
       fixture.setterEvents.some((event) => event.value === false),
       'the real language handler must clear its disabled state after the write timeout rejects',
     );
-    console.log('   PASS: real SettingsScreen handler rejects the stuck write and unlocks its controls');
+    console.log('   PASS: same-direction handler rejects stuck write, unlocks, and shows retryable error');
+
+    // Direction-changing write timeout: surfaces layout direction restart instruction
+    const dirFixture = createSettingsFixture({
+      nativeIsRTL: false,
+      storage: {
+        getItem: async (key) => JSON.stringify({ language: 'en' }),
+        setItem: () => new Promise(() => {}),
+      },
+      reloadAppAsync: async () => {},
+      timers,
+      preparationEvents: [],
+    });
+    const dirTree = dirFixture.settings.default({ onClose() {} });
+    const urduRow = findLanguagePressable(dirTree, 'Urdu');
+    urduRow.props.onPress();
+    const dirWriteTimeout = timers.find((timer) => timer.delay === 10_000 && !timer.fired);
+    assert.ok(dirWriteTimeout, 'direction-changing persistence must arm queue timeout');
+    dirWriteTimeout.fired = true;
+    dirWriteTimeout.callback();
+    await tick();
+    assert.ok(
+      dirFixture.setterEvents.some((event) => event.value === 'Please restart the app to apply the new layout direction.'),
+      'direction-changing write timeout must surface actionable restart instruction',
+    );
+    assert.ok(
+      !dirFixture.setterEvents.some((event) => event.value === 'Failed to save settings. Please try again.'),
+      'direction-changing write timeout must not surface generic save failure',
+    );
+    console.log('   PASS: direction-changing handler surfaces exact restart instruction on queue timeout');
+
+    // Direct production queue timeout test: proves typed error contract and fail-closed state
+    const timedQueueStorage = createTimedStorage({
+      getItem: async () => JSON.stringify({ language: 'en' }),
+      setItem: () => new Promise(() => {}),
+    });
+    const queueWriter = createSerializedSettingsWriter(timedQueueStorage, 'islamic-settings', () => {}, { requireReconciliation: true });
+    await queueWriter.reconcile();
+    const queuePromise = queueWriter({ language: 'ur' });
+    await tick();
+    await tick();
+    const queueTimer = timers.find((timer) => timer.delay === 10_000 && !timer.fired && !timer.cleared);
+    assert.ok(queueTimer, 'queue writer must arm 10-second storage timeout');
+    queueTimer.fired = true;
+    queueTimer.callback();
+    await assert.rejects(
+      queuePromise,
+      (err) => err instanceof SettingsStorageTimeoutError && err.name === 'SettingsStorageTimeoutError',
+      'queue timeout must reject with typed SettingsStorageTimeoutError',
+    );
+    assert.equal(queueWriter.getState().status, 'unresolved', 'queue writer must enter unresolved state after timeout');
+    assert.equal(queueWriter.getState().error?.name, 'SettingsStorageTimeoutError', 'queue writer error must be typed');
+    console.log('   PASS: production queue timeout enforces typed error contract and unresolved state');
   } finally {
     globalThis.setTimeout = originalSetTimeout;
     globalThis.clearTimeout = originalClearTimeout;

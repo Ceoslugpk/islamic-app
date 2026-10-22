@@ -296,6 +296,55 @@ async function testThemeWriteRequiresReadbackConfirmation() {
   assert.equal(writes.length, 1, 'the test must use the real production theme persistence path');
 }
 
+async function testThemeLifecycleConfirmsSuccessesAndRollsBackOnlyFailedField() {
+  let raw = JSON.stringify({ language: 'en', themeMode: 'paper', hapticsEnabled: true });
+  let failNextWrite = false;
+  const writes = [];
+  const storage = {
+    async getItem(key) {
+      if (key === 'islamic-settings') return raw;
+      if (key === 'islamic-settings-method-migrated-v16') return 'true';
+      return null;
+    },
+    async setItem(key, value) {
+      if (key !== 'islamic-settings') return;
+      writes.push(value);
+      if (failNextWrite) {
+        failNextWrite = false;
+        throw new Error('theme write rejected');
+      }
+      raw = value;
+    },
+  };
+  const harness = loadRealSettings(storage);
+  harness.render();
+  for (const effect of harness.effects) effect();
+  await delay(30);
+  harness.render();
+
+  harness.context.setThemeMode('ink');
+  await delay(30);
+  harness.render();
+  assert.equal(harness.context.settings.themeMode, 'ink', 'the first successful theme write must remain active');
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'the first theme write must publish confirmed');
+
+  harness.context.setThemeMode('paper');
+  await delay(30);
+  harness.render();
+  assert.equal(harness.context.settings.themeMode, 'paper', 'the second successful theme write must remain active');
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'the second theme write must publish confirmed');
+  assert.equal(writes.length, 2, 'both successful theme changes must use the production queue');
+
+  failNextWrite = true;
+  harness.context.setThemeMode('ink');
+  harness.context.setHapticsEnabled(false);
+  await delay(50);
+  harness.render();
+  assert.equal(harness.context.settings.themeMode, 'paper', 'a rejected theme write must roll back its field');
+  assert.equal(harness.context.settings.hapticsEnabled, false, 'a newer unrelated field must survive theme rollback');
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'the newer unrelated write must recover the queue');
+}
+
 async function testTimedOutWriteFailsClosedBeforeSuccessor() {
   const writes = [];
   const started = [];
@@ -343,6 +392,49 @@ async function testTimedOutWriteFailsClosedBeforeSuccessor() {
   const retried = await relaunched.exports.persistLanguageChange(base, 'ar', storage);
   assert.equal(retried.language, 'ar', 'a new writer can retry after the failed lane is abandoned');
   assert.equal(relaunched.exports.getSettingsWriteState(storage).status, 'confirmed', 'a full relaunch plus read reconciliation can confirm recovery');
+}
+
+async function testThemeTimeoutRejectsLanguageWithoutSuccessorNativeWrite() {
+  const originalSetTimeout = globalThis.setTimeout;
+  const writesStarted = [];
+  let nativeWriteCount = 0;
+  let raw = persistedPaper;
+  const storage = {
+    async getItem(key) {
+      if (key === 'islamic-settings') return raw;
+      if (key === 'islamic-settings-method-migrated-v16') return 'true';
+      return null;
+    },
+    setItem(key, value) {
+      writesStarted.push([key, value]);
+      nativeWriteCount += 1;
+      if (nativeWriteCount === 1) {
+        raw = value;
+        return Promise.resolve().then(() => {});
+      }
+      return NEVER();
+    },
+  };
+  const fastTimeout = (callback, delay, ...args) => originalSetTimeout(callback, delay >= 1000 ? 5 : delay, ...args);
+  const harness = loadRealSettings(storage, { setTimeoutImpl: fastTimeout, asyncStorage: storage });
+  harness.render();
+  for (const effect of harness.effects) effect();
+  await delay(30);
+  harness.render();
+
+  harness.context.setThemeMode('ink');
+  await delay(20);
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'a confirmed theme write must precede the uncertain write');
+  assert.equal(harness.context.settings.themeMode, 'ink');
+
+  harness.context.setThemeMode('paper');
+  await delay(20);
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.status, 'unresolved', 'a never-settling theme write must publish unresolved');
+  await assert.rejects(harness.context.setLanguage('ur'), /queue closed/, 'language must receive the typed closed-lane error');
+  assert.equal(writesStarted.length, 2, 'language selection must not start a successor native write');
+  assert.equal(harness.exports.getSettingsWriteState(storage).status, 'unresolved');
 }
 
 async function testWriterLifecycleIsExplicitAndLateCompletionCannotConfirm() {
@@ -543,6 +635,83 @@ async function testStandaloneCustomStorageReconcilesBeforeFirstWrite() {
   assert.ok(reads >= 3, 'the path must read the snapshot, reconcile the writer, and verify the write');
 }
 
+async function testReconciliationStatusHasNullValueAndUserMutationHasNonNullValue() {
+  let raw = persistedPaper;
+  const storage = {
+    async getItem(key) {
+      if (key === 'islamic-settings') return raw;
+      if (key === 'islamic-settings-method-migrated-v16') return 'true';
+      return null;
+    },
+    async setItem(key, value) {
+      if (key === 'islamic-settings') raw = value;
+    },
+  };
+  const harness = loadRealSettings(storage);
+  harness.render();
+  for (const effect of harness.effects) effect();
+  await delay(30);
+  harness.render();
+
+  // On startup / hydration, initial state has value === null
+  assert.equal(harness.context.settingsPersistence.value, null, 'initial state must have value=null (not a user write)');
+  assert.equal(harness.context.settingsPersistence.scope, 'settings', 'initial scope must be settings');
+
+  // User mutation sets scope: 'theme' and confirmed state has non-null value
+  harness.context.setThemeMode('ink');
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.scope, 'theme', 'setThemeMode must set scope to theme');
+  await delay(30);
+  harness.render();
+
+  assert.equal(harness.context.settingsPersistence.scope, 'theme', 'confirmed theme write must retain theme scope');
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'successful theme write must confirm');
+  assert.ok(harness.context.settingsPersistence.value !== null, 'confirmed user mutation must have non-null value');
+  assert.equal(harness.context.settingsPersistence.value.themeMode, 'ink', 'confirmed value must reflect user mutation');
+
+  // General setting mutation sets scope: 'settings'
+  harness.context.setMethod(3);
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.scope, 'settings', 'general setting must set scope to settings');
+  await delay(30);
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.scope, 'settings', 'confirmed general write must retain settings scope');
+  assert.equal(harness.context.settingsPersistence.status, 'confirmed', 'general setting write must confirm');
+  assert.equal(harness.context.settingsPersistence.value.methodId, 3);
+}
+
+async function testDirectionChangingLanguagePersistencePublishesLanguageScope() {
+  let raw = JSON.stringify({ settingsVersion: 2, themeMode: 'paper', language: 'en' });
+  const storage = {
+    async getItem(key) {
+      if (key === 'islamic-settings') return raw;
+      if (key === 'islamic-settings-method-migrated-v16') return 'true';
+      return null;
+    },
+    async setItem(key, value) {
+      if (key === 'islamic-settings') {
+        raw = value;
+      }
+    },
+  };
+  const harness = loadRealSettings(storage);
+  harness.render();
+  for (const effect of harness.effects) effect();
+  await delay(30);
+  harness.render();
+
+  harness.context.setThemeMode('ink');
+  harness.render();
+  await delay(30);
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.scope, 'theme', 'scope must be theme after theme change');
+
+  // Direction-changing language persistence must publish scope='language'
+  await harness.exports.persistLanguageChange(harness.context.settings, 'ur');
+  harness.render();
+  assert.equal(harness.context.settingsPersistence.scope, 'language', 'persistLanguageChange must publish language scope');
+}
+
 const only = process.env.P1_ONLY;
 const cases = [
   ['hydration-failed', testFailedHydrationKeepsDurableSettings, 'failed hydration preserves the successful durable read without writing defaults'],
@@ -550,12 +719,16 @@ const cases = [
   ['hydration-race', testHydrationFailureRollsBackLiveThemeToConfirmedGeneration, 'hydration-time live theme failure rolls back to the confirmed generation'],
   ['hydration-change-back', testHydrationChangeBackPreservesFieldGeneration, 'hydration preserves a field whose generation advanced even after it returned to baseline'],
   ['theme-readback', testThemeWriteRequiresReadbackConfirmation, 'theme persistence requires readback confirmation'],
+  ['theme-lifecycle', testThemeLifecycleConfirmsSuccessesAndRollsBackOnlyFailedField, 'theme lifecycle confirms successes and rolls back only the failed field'],
   ['write-timeout', testTimedOutWriteFailsClosedBeforeSuccessor, 'timed-out writes fail closed after the native operation drains'],
+  ['theme-timeout-language', testThemeTimeoutRejectsLanguageWithoutSuccessorNativeWrite, 'theme timeout rejects language without a successor native write'],
   ['writer-lifecycle', testWriterLifecycleIsExplicitAndLateCompletionCannotConfirm, 'writer exposes lifecycle states and requires reconciliation after uncertainty'],
   ['writer-rejection', testWriterMarksRejectedWritesAndRecovers, 'writer distinguishes rejection and recovers for the next write'],
   ['hydration-migration-reconcile', testHydrationMigrationReconcilesBeforePersisting, 'hydration migration reconciles the shared writer before persisting'],
   ['hydration-migration-failure', testHydrationMigrationFailureRollsBackToConfirmedBaseline, 'failed hydration migration rolls back to the confirmed durable baseline'],
   ['standalone-custom-reconcile', testStandaloneCustomStorageReconcilesBeforeFirstWrite, 'standalone custom storage reconciles before its first write'],
+  ['reconcile-null-vs-user-mutation', testReconciliationStatusHasNullValueAndUserMutationHasNonNullValue, 'reconciliation has value=null while user mutations confirm non-null values with appropriate scopes'],
+  ['language-scope-ownership', testDirectionChangingLanguagePersistencePublishesLanguageScope, 'direction-changing language persistence publishes language scope before/with operation'],
 ];
 for (const [name, test, message] of cases) {
   if (only && only !== name) continue;

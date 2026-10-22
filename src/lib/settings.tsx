@@ -37,6 +37,7 @@ export type QuranArabicFont = 'amiri' | 'notonaskh';
 export type QuranScript = 'uthmani' | 'imlaei' | 'indopak' | 'tajweed';
 export type TafsirSourceId = string;
 export type Madhab = 'shafi' | 'hanafi';
+export type SettingsWriteScope = 'theme' | 'language' | 'settings';
 
 // Quran reader display ranges (shared by Settings UI + reader)
 export const QURAN_FONT_SIZE_MIN = 18;
@@ -130,7 +131,8 @@ export interface AppSettings {
 
 interface SettingsContextValue {
   settings: AppSettings;
-  updateSettings: (updater: (current: AppSettings) => AppSettings) => AppSettings;
+  settingsPersistence: SettingsPersistenceState;
+  updateSettings: (updater: (current: AppSettings) => AppSettings, scope?: SettingsWriteScope) => AppSettings;
   setMethod: (id: number) => void;
   setMadhab: (m: Madhab) => void;
   setTimeFormat: (f: TimeFormat) => void;
@@ -161,6 +163,10 @@ interface SettingsContextValue {
   setTafsirSourceId: (sourceId: TafsirSourceId) => void;
   setQuranPreloadRequested: (requested: boolean) => void;
   setLanguage: (lang: AppLanguage) => Promise<void> | void;
+}
+
+export interface SettingsPersistenceState extends SettingsWriteState<AppSettings> {
+  scope: SettingsWriteScope;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -251,7 +257,7 @@ const timedStorageFences =
   new WeakMap<object, TimedStorageFence>();
 timedStorageFenceGlobal[timedStorageFenceRegistryKey] = timedStorageFences;
 
-function createTimedStorage(storage: StringStorage): StringStorage {
+export function createTimedStorage(storage: StringStorage): StringStorage {
   const owner = storage as object;
   const fence = timedStorageFences.get(owner) ?? { pending: 0, unresolved: false };
   timedStorageFences.set(owner, fence);
@@ -676,6 +682,7 @@ export async function persistLanguageChange(
     getItem?: (key: string) => Promise<string | null>;
   } = AsyncStorage
 ): Promise<AppSettings> {
+  publishSettingsScope('language');
   const verify: StoredValueVerifier<AppSettings> = (raw) => {
     const parsed = raw ? JSON.parse(raw) : null;
     if (!parsed || parsed.language !== nextLang) {
@@ -691,6 +698,7 @@ export async function persistLanguageChange(
       (latest) => computeNextLanguageSettings(latest, nextLang),
       currentSettings,
       verify,
+      'language',
     );
     markLanguageDurable?.(nextLang);
     // Linked side effects run only after the durable language + readback.
@@ -705,8 +713,13 @@ export async function persistLanguageChange(
       getItem: storage.getItem ? (key: string) => storage.getItem!(key) : async () => null,
     };
     const writer = getSettingsWriter(stringStorage, storage as object);
-    await writer.reconcile();
-    await writer(nextSettings, storage.getItem ? verify : undefined);
+    const token = setOperationDiagnosticContext('language');
+    try {
+      await writer.reconcile();
+      await writer(nextSettings, storage.getItem ? verify : undefined);
+    } finally {
+      clearOperationDiagnosticContext(token);
+    }
     if (storage.getItem) markLanguageDurable?.(nextLang);
   }
   return nextSettings;
@@ -729,7 +742,87 @@ const defaultSharedSettingsWriter = createSerializedSettingsWriter<AppSettings>(
 
 const customSettingsWriters = new WeakMap<object, SettingsWriter>();
 
-function getSettingsWriter(storage: StringStorage, cacheKey: object = storage as object): SettingsWriter {
+export class LanguagePersistenceTimeoutError extends Error {
+  constructor(message = 'Language persistence timed out') {
+    super(message);
+    this.name = 'LanguagePersistenceTimeoutError';
+  }
+}
+
+let activeSettingsScope: SettingsWriteScope = 'settings';
+const activeScopeSubscribers = new Set<(scope: SettingsWriteScope) => void>();
+
+export function publishSettingsScope(scope: SettingsWriteScope): void {
+  activeSettingsScope = scope;
+  for (const subscriber of activeScopeSubscribers) {
+    try {
+      subscriber(scope);
+    } catch {}
+  }
+}
+
+export function subscribeSettingsScope(subscriber: (scope: SettingsWriteScope) => void): () => void {
+  activeScopeSubscribers.add(subscriber);
+  return () => {
+    activeScopeSubscribers.delete(subscriber);
+  };
+}
+
+export function getActiveDiagnosticScope(): 'theme' | 'language' | 'general' {
+  if (activeSettingsScope === 'theme') return 'theme';
+  if (activeSettingsScope === 'language') return 'language';
+  return 'general';
+}
+
+export interface OperationDiagnosticContext {
+  scope: 'theme' | 'language' | 'general';
+  correlationId: string;
+}
+
+let operationCorrelationCounter = 0;
+let activeOperationDiagnosticContext: OperationDiagnosticContext | null = null;
+let activeOperationToken: symbol | null = null;
+
+export function getActiveOperationDiagnosticContext(): OperationDiagnosticContext | null {
+  return activeOperationDiagnosticContext ? { ...activeOperationDiagnosticContext } : null;
+}
+
+export function setOperationDiagnosticContext(
+  scope: SettingsWriteScope | 'theme' | 'language' | 'general'
+): symbol {
+  try {
+    operationCorrelationCounter += 1;
+    const correlationId = `op-${operationCorrelationCounter}`;
+    const normalizedScope: 'theme' | 'language' | 'general' =
+      scope === 'theme' ? 'theme' : scope === 'language' ? 'language' : 'general';
+    const token = Symbol('diagnostic-op-token');
+    activeOperationDiagnosticContext = {
+      scope: normalizedScope,
+      correlationId,
+    };
+    activeOperationToken = token;
+    return token;
+  } catch {
+    return Symbol('fallback-token');
+  }
+}
+
+export function clearOperationDiagnosticContext(token: symbol): void {
+  try {
+    if (activeOperationToken === token) {
+      activeOperationDiagnosticContext = null;
+      activeOperationToken = null;
+    }
+  } catch {}
+}
+
+export function __resetOperationDiagnosticContextForTest(): void {
+  operationCorrelationCounter = 0;
+  activeOperationDiagnosticContext = null;
+  activeOperationToken = null;
+}
+
+export function getSettingsWriter(storage: StringStorage, cacheKey: object = storage as object): SettingsWriter {
   const key = cacheKey;
   const existing = customSettingsWriters.get(key);
   if (existing) return existing;
@@ -757,7 +850,7 @@ function verifySettingsReadback(raw: string, expected: AppSettings): void {
 
 let sharedSettingsOperationTail: Promise<void> = Promise.resolve();
 
-function enqueueSharedSettingsOperation<T>(operation: () => Promise<T>): Promise<T> {
+export function enqueueSharedSettingsOperation<T>(operation: () => Promise<T>): Promise<T> {
   const task = sharedSettingsOperationTail.then(operation, operation);
   sharedSettingsOperationTail = task.then(() => undefined, () => undefined);
   return task;
@@ -778,16 +871,22 @@ async function readLatestSettings(fallback?: AppSettings): Promise<AppSettings> 
   return sanitizeSettings(fallback ?? { ...DEFAULTS, language: getBootLanguage() });
 }
 
-function enqueueSharedSettingsMutation(
+export function enqueueSharedSettingsMutation(
   updater: (current: AppSettings) => AppSettings,
   fallback?: AppSettings,
   verify?: StoredValueVerifier<AppSettings>,
+  scope: SettingsWriteScope | 'general' = 'general',
 ): Promise<AppSettings> {
   return enqueueSharedSettingsOperation(async () => {
-    await defaultSharedSettingsWriter.reconcile();
-    const latest = await readLatestSettings(fallback);
-    const nextClean = sanitizeSettings(updater(latest));
-    return defaultSharedSettingsWriter(nextClean, verify ?? verifySettingsReadback);
+    const token = setOperationDiagnosticContext(scope);
+    try {
+      await defaultSharedSettingsWriter.reconcile();
+      const latest = await readLatestSettings(fallback);
+      const nextClean = sanitizeSettings(updater(latest));
+      return await defaultSharedSettingsWriter(nextClean, verify ?? verifySettingsReadback);
+    } finally {
+      clearOperationDiagnosticContext(token);
+    }
   });
 }
 
@@ -893,6 +992,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const locationMutatedDuringHydrationRef = useRef(false);
   const languageSwitchGenerationRef = useRef(0);
   const writeSettings = defaultSharedSettingsWriter;
+  const [settingsPersistence, setSettingsPersistence] = useState<SettingsPersistenceState>(() => ({
+    ...writeSettings.getState(),
+    scope: activeSettingsScope,
+  }));
+
+  useEffect(() => {
+    const handleScopeChange = (scope: SettingsWriteScope) => {
+      setSettingsPersistence((previous) => ({
+        ...previous,
+        scope,
+      }));
+    };
+    activeScopeSubscribers.add(handleScopeChange);
+    return () => {
+      activeScopeSubscribers.delete(handleScopeChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncPersistenceState = () => {
+      setSettingsPersistence((previous) => ({
+        ...writeSettings.getState(),
+        scope: activeSettingsScope,
+      }));
+    };
+    syncPersistenceState();
+    return writeSettings.subscribe(syncPersistenceState);
+  }, [writeSettings]);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -903,10 +1030,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       nextClean: AppSettings,
       verify?: StoredValueVerifier<AppSettings>,
       generation = settingsGenerationRef.current,
+      scope: SettingsWriteScope | 'general' = 'general',
     ): Promise<AppSettings> => {
       return enqueueSharedSettingsOperation(async () => {
-        await writeSettings.reconcile();
-        return writeSettings(nextClean, verify ?? verifySettingsReadback);
+        const token = setOperationDiagnosticContext(scope);
+        try {
+          await writeSettings.reconcile();
+          return await writeSettings(nextClean, verify ?? verifySettingsReadback);
+        } finally {
+          clearOperationDiagnosticContext(token);
+        }
       })
         .then((persisted) => {
           lastPersistedRef.current = persisted;
@@ -931,19 +1064,26 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       optimistic: AppSettings,
       verify?: StoredValueVerifier<AppSettings>,
       generation = settingsGenerationRef.current,
+      changedFields: readonly (keyof AppSettings)[] = Object.keys(DEFAULTS) as (keyof AppSettings)[],
+      scope: SettingsWriteScope = 'settings',
     ): Promise<AppSettings> => {
-      return enqueueSharedSettingsMutation(updater, optimistic, verify ?? verifySettingsReadback)
+      return enqueueSharedSettingsMutation(updater, optimistic, verify ?? verifySettingsReadback, scope)
         .then((persisted) => {
           lastPersistedRef.current = persisted;
           return persisted;
         })
         .catch((err) => {
-          if (settingsGenerationRef.current === generation) {
-            const rollback = lastPersistedRef.current;
-            settingsRef.current = rollback;
-            preloadRequestedMem = rollback.quranPreloadRequested;
-            setSettings(rollback);
+          const current = settingsRef.current;
+          const rollback = { ...current };
+          for (const field of changedFields) {
+            if ((settingsFieldGenerationRef.current[field] ?? 0) === generation) {
+              rollback[field] = lastPersistedRef.current[field] as never;
+            }
           }
+          const restored = sanitizeSettings(rollback);
+          settingsRef.current = restored;
+          preloadRequestedMem = restored.quranPreloadRequested;
+          setSettings(restored);
           throw err;
         });
     },
@@ -1076,7 +1216,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setActiveAdhanReciterId(changedDuringHydration.adhanReciterId || 'alafasy');
         setAppLanguage(changedDuringHydration.language);
         if (migrated || hasLiveChanges) {
-          enqueueWrite(changedDuringHydration, undefined, hydrationStartGeneration)
+          enqueueWrite(changedDuringHydration, undefined, hydrationStartGeneration, 'general')
             .then(() => {
               if (methodMigrationPending) {
                 AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
@@ -1096,17 +1236,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [enqueueWrite]);
 
-  const updateSettings = useCallback((update: (current: AppSettings) => AppSettings): AppSettings => {
+  const updateSettings = useCallback((update: (current: AppSettings) => AppSettings, scope: SettingsWriteScope = 'settings'): AppSettings => {
     const previous = settingsRef.current;
     const clean = sanitizeSettings(update(previous));
     const generation = ++settingsGenerationRef.current;
+    const changedFields = (Object.keys(DEFAULTS) as (keyof AppSettings)[]).filter((key) => !Object.is(previous[key], clean[key]));
     for (const key of Object.keys(DEFAULTS) as (keyof AppSettings)[]) {
       if (!Object.is(previous[key], clean[key])) settingsFieldGenerationRef.current[key] = generation;
     }
     settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
     setSettings(clean);
-    enqueueMutation(update, clean, undefined, generation).catch(() => {});
+    publishSettingsScope(scope);
+    enqueueMutation(update, clean, undefined, generation, changedFields, scope).catch(() => {});
     return clean;
   }, [enqueueMutation]);
 
@@ -1118,16 +1260,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [updateSettings]);
 
   const setThemeMode = useCallback(
-    (themeMode: ThemeMode) => updateSettings((prev) => ({ ...prev, themeMode })),
+    (themeMode: ThemeMode) => updateSettings((prev) => ({ ...prev, themeMode }), 'theme'),
     [updateSettings],
   );
   const setAccentKey = useCallback(
-    (accentKey: AccentKey) => updateSettings((prev) => ({ ...prev, accentKey })),
+    (accentKey: AccentKey) => updateSettings((prev) => ({ ...prev, accentKey }), 'theme'),
     [updateSettings],
   );
 
   const value: SettingsContextValue = {
     settings,
+    settingsPersistence,
     updateSettings,
     setMethod: (methodId) => updateSettings((prev) => ({ ...prev, methodId })),
     setMadhab: (madhab) => updateSettings((prev) => ({ ...prev, madhab })),
@@ -1201,6 +1344,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       const generation = ++languageSwitchGenerationRef.current;
+      publishSettingsScope('language');
 
       // Snapshot settings and compute sanitized clean state once.
       const currentSnapshot = settingsRef.current;
@@ -1226,7 +1370,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
               `Storage readback verification mismatch: expected "${nextLang}", got "${parsed?.language}"`
             );
           }
-        }, settingsGeneration);
+        }, settingsGeneration, ['language'], 'language');
       } catch (err) {
         // On failure: preserve any newer unrelated fields while restoring the previous language,
         // and ensure a queued newer selection cannot silently leave disk on the failed target language.
@@ -1238,7 +1382,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             preloadRequestedMem = restored.quranPreloadRequested;
             setSettings((prev) => (prev.language === nextLang ? sanitizeSettings({ ...prev, language: prevLang }) : prev));
             setAppLanguage(prevLang);
-            enqueueWrite(restored).catch(() => {});
+            enqueueWrite(restored, undefined, undefined, 'language').catch(() => {});
           } else if (currentLang === prevLang) {
             setAppLanguage(prevLang);
           }
