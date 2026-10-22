@@ -22,6 +22,10 @@ function loadProductionPrimitive() {
     useState(initial) {
       return [typeof initial === 'function' ? initial() : initial, () => {}];
     },
+    useRef(initial) {
+      return { current: initial };
+    },
+    useEffect() {},
     createElement(type, props, ...children) {
       return { type, props: { ...(props || {}), children: children.length <= 1 ? children[0] ?? null : children } };
     },
@@ -31,6 +35,10 @@ function loadProductionPrimitive() {
     View: 'View',
     StyleSheet: {
       absoluteFill: { position: 'absolute', inset: 0 },
+      flatten(style) {
+        if (!Array.isArray(style)) return style || undefined;
+        return style.reduce((result, item) => Object.assign(result, this.flatten(item) || {}), {});
+      },
       create: (styles) => styles,
     },
   };
@@ -302,14 +310,23 @@ const liveTree = LiveMiniPlayer({
 });
 const liveParentPath = findPath(liveTree, 'Pressable');
 const liveChildPaths = findPaths(liveTree, 'TouchableOpacity');
+assert.ok(liveParentPath, 'real LiveMiniPlayer must render the shared parent hit target');
 assert.equal(liveChildPaths.length, 2, 'real LiveMiniPlayer must retain both child controls');
+const liveSurface = liveParentPath[liveParentPath.length - 2];
+const liveSurfaceChildren = Array.isArray(liveSurface.props.children)
+  ? liveSurface.props.children
+  : [liveSurface.props.children];
+const liveContent = liveSurfaceChildren.find((node) => node?.type === 'View');
+assert.ok(
+  liveContent?.props?.style?.some((style) => style?.flexDirection === 'row'),
+  'real LiveMiniPlayer row style must reach the production content wrapper',
+);
 pressTarget(liveTree, 'Pressable', event);
 pressTarget(liveTree, 'TouchableOpacity', event);
 assert.deepEqual(expandCalls, [event], 'LiveMiniPlayer parent callback must fire once with the event');
 assert.deepEqual(closeCalls, [], 'the first LiveMiniPlayer child is play/pause, not close');
 pressPath(liveChildPaths[1], event);
 assert.deepEqual(closeCalls, [event], 'LiveMiniPlayer close callback must fire once with the same event');
-assert.ok(liveParentPath, 'real LiveMiniPlayer must render the shared parent hit target');
 
 const ToolsAccessiblePressable = loadProductionToolsAccessiblePressable(InteractiveSurface);
 const toolsOuterCalls = [];
